@@ -106,7 +106,7 @@ def main():
     try:
         world = client.get_world()
 
-        test_loc = carla.Location(215, -169.4, 1)
+        test_loc = carla.Location(0, 0, 0)
         test_loc_geo = world.get_map().transform_to_geolocation(test_loc)
         print("test_loc_geo: " + str(test_loc_geo))
         

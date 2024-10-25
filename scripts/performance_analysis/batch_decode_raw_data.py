@@ -7,6 +7,7 @@ from datetime import datetime
 import csv
 import re
 import split_tdcs_for_throughput
+import argparse
 
 ## TODO: 
 #   - move the confirmation to delete from the create_folder function
@@ -49,13 +50,30 @@ def create_folder(directory_path,directory_name_list):
         # Check if the folder already exists and there are files in it
         if os.path.exists(exported_folder_path) and len([file for file in os.listdir(directory_path) if os.path.isfile(os.path.join(directory_path, file))]) > 0:
             # Confirm with the user before deleting
-            confirmation = input(f"\nExsisting {directory_name} data found, delete old data and re-export? [y/n]: ").lower()
-            if confirmation == 'y':
+            if directory_name_list[0].startswith("pcap") and args.export_pcap == True:
                 delete_old_data = True
                 break
-            else:
+
+            elif directory_name_list[0].endswith("tdcs") and args.export_tdcs == True:
+                delete_old_data = True
+                break
+
+            elif directory_name_list[0].startswith("pcap") and args.export_pcap == False:
                 delete_old_data = False
                 print("\tKeeping old data.")
+
+            elif directory_name_list[0].endswith("tdcs") and args.export_tdcs == False:
+                delete_old_data = False
+                print("\tKeeping old data.")
+
+            else:
+                confirmation = input(f"\nExsisting {directory_name} data found, delete old data and re-export? [y/n]: ").lower()
+                if confirmation == 'y':
+                    delete_old_data = True
+                    break
+                else:
+                    delete_old_data = False
+                    print("\tKeeping old data.")
             
     # if we confrirmed, delete the data
     if delete_old_data:
@@ -303,20 +321,97 @@ def export_tdcs_data(site_dir_abs,this_site_metadata):
             print(f"\n\tError loading TDCS: \n{e}")
             this_site_metadata["tdcs_export_success"] = False
             sys.exit()
-
     if this_site_metadata["adapter_addresses_by_type"] == {}:
         this_site_metadata["adapter_addresses_by_type"] = get_adapter_addresses_by_type(this_site_metadata["tdcs_dir"],this_site_metadata["ip_address"])
     else:
-        confirmation = input(f"\nWould you like to recheck for adapter endpoints? [y/n]: ").lower()
-        if confirmation == 'y':
-            this_site_metadata["adapter_addresses_by_type"] = get_adapter_addresses_by_type(this_site_metadata["tdcs_dir"],this_site_metadata["ip_address"])
+        if not args.get_endpoints == False:
+            
+            if args.get_endpoints == True:
+                confirmation = 'y'
+            else:
+                confirmation = input(f"\nWould you like to recheck for adapter endpoints? [y/n]: ").lower()
+
+            if confirmation == 'y':
+                this_site_metadata["adapter_addresses_by_type"] = get_adapter_addresses_by_type(this_site_metadata["tdcs_dir"],this_site_metadata["ip_address"])
     
 
     return this_site_metadata
 
+def parse_args():
+    argparser = argparse.ArgumentParser(
+    description='Batch decode distributed testing data')
+
+    argparser.add_argument(
+        '--use_metadata',
+        dest='use_metadata',
+        action='store_true',
+        default=None,
+        help='Use metadata if found in folder'
+    )
+    argparser.add_argument(
+        '--split_tdcs',
+        dest='split_tdcs',
+        action='store_true',
+        default=None,
+        help='Split TDCS into inbound and outbound tdcs files'
+    )
+    argparser.add_argument(
+        '--no_split_tdcs',
+        dest='split_tdcs',
+        action='store_false',
+        default=None,
+        help='Skip split TDCS into inbound and outbound tdcs files'
+    )
+    argparser.add_argument(
+        '--export_pcap',
+        dest='export_pcap',
+        action='store_true',
+        default=None,
+        help='Export PCAP files to CSV'
+    )
+    argparser.add_argument(
+        '--no_export_pcap',
+        dest='export_pcap',
+        action='store_false',
+        default=None,
+        help='Skip export PCAP files to CSV'
+    )
+    argparser.add_argument(
+        '--export_tdcs',
+        dest='export_tdcs',
+        action='store_true',
+        default=None,
+        help='Export TDCS to CSV'
+    )
+    argparser.add_argument(
+        '--no_export_tdcs',
+        dest='export_tdcs',
+        action='store_false',
+        default=None,
+        help='Skip export TDCS to CSV'
+    )
+    argparser.add_argument(
+        '--get_endpoints',
+        dest='get_endpoints',
+        action='store_true',
+        default=None,
+        help='Find adapter endpoints by IP'
+    )
+    argparser.add_argument(
+        '--no_get_endpoints',
+        dest='get_endpoints',
+        action='store_false',
+        default=None,
+        help='Skip find adapter endpoints by IP'
+    )
+    
+    return argparser.parse_args()
 
 def main(): 
     
+    print(f'export_pcap { args.export_pcap}')
+
+    print(f'get_endpoints { args.get_endpoints}')
 
     start_log_dir = os.environ["VUG_LOG_FILES_ROOT"]
     current_log_dir = start_log_dir
@@ -324,6 +419,10 @@ def main():
 
     while True:
         chosen_log_dir = select_data_folder(current_log_dir)
+        if chosen_log_dir == None:
+            sys.exit()
+            
+            # continue
         if chosen_log_dir == current_log_dir:
             break
         else:
@@ -339,7 +438,11 @@ def main():
     metadata_file_path = os.path.join(chosen_log_dir, "metadata.json")
 
     if os.path.exists(metadata_file_path):
-        use_existing_metadata = input("\nExisting metadata file found, use existing metadata? [y/n] ").lower()
+
+        if args.use_metadata == True:
+            use_existing_metadata = "y"
+        else:
+            use_existing_metadata = input("\nExisting metadata file found, use existing metadata? [y/n] ").lower()
 
         if use_existing_metadata == 'y':
             print("")
@@ -449,7 +552,7 @@ def main():
 
         ##### SPLIT TDCS DATA #####
         tdcs_to_split = find_largest_sqlite_file(site_dir_abs)
-        split_tdcs_for_throughput.split_tdcs(tdcs_to_split,this_site_metadata["ip_address"])
+        split_tdcs_for_throughput.split_tdcs(tdcs_to_split,this_site_metadata["ip_address"],args.split_tdcs)
 
 
         this_site_metadata_exists = False
@@ -478,6 +581,7 @@ def main():
     
     print("\nFINISHED EXPORTING AND DECODING ALL DATA")
 
+args = parse_args()
 
 if __name__ == "__main__":
     main()

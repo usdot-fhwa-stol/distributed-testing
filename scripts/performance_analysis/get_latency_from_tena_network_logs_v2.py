@@ -3,8 +3,8 @@ import re
 import argparse
 import os
 
-id_ip_found_map = {}
-ip_map = {
+id_ip_found_map_e2 = {}
+ip_map_event2 = {
     "10.91.0.35" : "UCLA",
     "10.91.0.4" : "MCITY",
     "10.91.0.3" : "FHWA",
@@ -15,6 +15,46 @@ ip_map = {
     "unknown" : "FHWA",
 
 }
+
+id_ip_found_map_e1 = {
+    "11" : "10.0.0.170",
+    "13" : "10.0.0.170",
+    "14" : "192.168.201.33",
+    "15" : "192.168.201.33",
+}
+
+ip_map_event1 = {
+    "192.168.201.33" : "VW",
+    "10.0.0.170" : "TTS",
+    "192.168.1.90" : "FHWA",
+    "141.211.55.146" : "MCITY",
+    "192.168.201.33" : "?",
+    # "unknown" : "FHWA",
+
+}
+
+id_ip_found_map_e0 = {
+    
+}
+
+ip_map_event0 = {
+    "192.168.2.6" : "UCLA",
+    "141.211.55.146" : "MCITY",
+    "192.168.1.90" : "FHWA",
+    "10.7.108.132" : "ORNL",
+    "192.168.26.101" : "ANL",
+    "192.168.201.33" : "VW",
+    "10.0.0.170" : "TTS",
+    "10.40.36.12" : "Econ",
+    # "" : "AWS TDCS",
+    # "" : "AWS JSON Streamer",
+    # "unknown" : "FHWA",
+
+}
+
+id_ip_found_map = id_ip_found_map_e2
+ip_map = ip_map_event2
+
 def repair_current_entry(repaired_entry):
 
     if repaired_entry["IP address"] == "unknown":
@@ -221,7 +261,8 @@ def generate_averages(parsed_data,args):
                 results_file.write("    Dest: " + dest_app + "\n")
             # print("    Dest: " + dest_app)
             results_file.write("        Pings: " + str(num_dest_app_datapoints) + "\n")
-            results_file.write("        Latency: " + str(dest_app_latency_average)  + " ms" + "\n")
+            results_file.write("        Round Trip Latency: " + str(dest_app_latency_average)  + " ms" + "\n")
+            results_file.write("        One Way Latency: " + str(dest_app_latency_average/2)  + " ms" + "\n")
             results_file.write("        Jitter: " + str(dest_app_jitter)  + " ms" + "\n")
 
     print(f'app_ip_id_map: \n {app_ip_id_map}')
