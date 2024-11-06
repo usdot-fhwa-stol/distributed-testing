@@ -43,7 +43,7 @@ def filter_speed_data(df, run_name, speed_column='calculated_speed', threshold=2
     # Smooth the data using a rolling mean to handle early spikes
     # df[speed_column] = df[speed_column].rolling(window=window, min_periods=1).mean()
 
-    # df[speed_column] = df[speed_column].ewm(alpha=0.1).mean()
+    df[speed_column] = df[speed_column].ewm(alpha=0.1).mean()
 
     # Find the first index where speed exceeds the threshold (trim beginning)
     first_above_threshold_idx = df[df[speed_column] > threshold].index.min()
@@ -91,7 +91,7 @@ def load_and_plot_speeds(csv_files, plots_dir):
     - csv_files: Dictionary with vehicle names as keys and paths to their Group and Solo files.
     - plots_dir: Directory where the plots should be saved.
     """
-    print(f'csv_files: {csv_files}')
+    # print(f'csv_files: {csv_files}')
     
     for vehicle, files in csv_files.items():
         print(f'\tPlotting: {vehicle}')
@@ -223,17 +223,17 @@ def load_and_plot_speed_averages(csv_files, plots_dir):
 
             # Combine Series into a DataFrame
 
-        print(f'group_series_list:\n\n {group_series_list }\n\n')
+        # print(f'group_series_list:\n\n {group_series_list }\n\n')
 
         # Combine Series into a DataFrame
         group_series_combined = pd.concat(group_series_list, axis=1)
 
-        print(f'group_series_combined:\n\n {group_series_combined }\n\n')
+        # print(f'group_series_combined:\n\n {group_series_combined }\n\n')
 
         # Calculate the mean across the columns (axis=1)
         average_group_series = group_series_combined.mean(axis=1)
 
-        print(f'average_group_series:\n\n {average_group_series }\n\n')
+        # print(f'average_group_series:\n\n {average_group_series }\n\n')
 
 
 
@@ -272,17 +272,17 @@ def load_and_plot_speed_averages(csv_files, plots_dir):
             solo_series_list.append(df['calculated_speed'])
 
 
-        print(f'solo_series_list:\n\n {solo_series_list }\n\n')
+        # print(f'solo_series_list:\n\n {solo_series_list }\n\n')
 
         # Combine Series into a DataFrame
         solo_series_combined = pd.concat(solo_series_list, axis=1)
 
-        print(f'solo_series_combined:\n\n {solo_series_combined }\n\n')
+        # print(f'solo_series_combined:\n\n {solo_series_combined }\n\n')
 
         # Calculate the mean across the columns (axis=1)
         average_solo_series = solo_series_combined.mean(axis=1)
 
-        print(f'average_solo_series:\n\n {average_solo_series }\n\n')
+        # print(f'average_solo_series:\n\n {average_solo_series }\n\n')
 
 
 
