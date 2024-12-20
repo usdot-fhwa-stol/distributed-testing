@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 import shutil
 import re
 import numpy as np
-
+from scipy.signal import find_peaks
 
 
 def filter_speed_data(df, run_name, speed_column='calculated_speed', threshold=2, window=5):
@@ -75,12 +75,51 @@ line_styles = [
             ]
 
 
-import os
-import re
-import pandas as pd
-import matplotlib.pyplot as plt
+def find_plot_spikes(series_x,series_y):
+    # slope_change_threshold = 1
+                                
+    # # Calculate slope
+    # dydx = np.gradient(series_y, series_x)
 
-def load_and_plot_speeds(csv_files, plots_dir):
+    # # Calculate the difference in slope between consecutive points
+    # slope_diff = np.diff(dydx)
+
+    # # Smooth the slope difference using a moving average filter
+    # window_size = 3  # Adjust window size as needed
+    # smoothed_slope_diff = np.convolve(slope_diff, np.ones(window_size)/window_size, mode='valid')
+
+    # # Find points where slope changes sign
+    # significant_change_indices = np.where(np.abs(smoothed_slope_diff) > slope_change_threshold)[0] + 1
+
+    # Find peaks
+    peaks, _ = find_peaks(series_y,distance=30,prominence=3)
+
+    # Find valleys (by inverting the signal)
+    valleys, _ = find_peaks(-series_y,distance=30,prominence=3)
+
+    annotation_offset_x = 0.5
+    annotation_offset_y = 2
+
+    # Label the sign change points
+    for i in peaks:
+                
+        # plt.plot(series_x[i], series_y[i], 'ro')
+        # plt.text(series_x[i], series_y[i], f'({series_x[i]:.2f}, {series_y[i]:.2f})', ha='right', va='bottom', arrowprops=dict(arrowstyle="->"), fontsize=8)
+        
+        plt.annotate(f'({series_x[i]:.2f}, {series_y[i]:.2f})', xy=(series_x[i], series_y[i]), xytext=(series_x[i] + annotation_offset_x, series_y[i] + annotation_offset_y), 
+             arrowprops=dict(arrowstyle="->"), fontsize=6, rotation=90)
+        
+    # Label the sign change points
+    for i in valleys:
+                
+        # plt.plot(series_x[i], series_y[i], 'ro')
+        # plt.text(series_x[i], series_y[i], f'({series_x[i]:.2f}, {series_y[i]:.2f})', ha='right', va='bottom', arrowprops=dict(arrowstyle="->"), fontsize=8)
+        
+        plt.annotate(f'({series_x[i]:.2f}, {series_y[i]:.2f})', xy=(series_x[i], series_y[i]), xytext=(series_x[i] + annotation_offset_x, series_y[i] - annotation_offset_y*2), 
+             arrowprops=dict(arrowstyle="->"), fontsize=6, rotation=-90)
+
+
+def load_and_plot_speeds(csv_files,speed_column,plots_dir,data_dir,args):
     """
     Loads CSV files and generates three plots for each vehicle: 
     1. Combined plot with both Group and Solo runs.
@@ -106,11 +145,17 @@ def load_and_plot_speeds(csv_files, plots_dir):
             run_number = match.group(1) if match else "Unknown"
             run_name = f"Group {run_number}"
             df = filter_speed_data(df, run_name)  # Filter and trim speed data
+
             label = run_name
             plt.plot(df.index * 0.1,
-                     df['calculated_speed'], 
+                     df[speed_column], 
                      label=label, 
                      linestyle=line_styles[idx % len(line_styles)])  # Different line styles for Group runs
+            
+
+            if args.save_csv: df.to_csv(os.path.join(data_dir, f'group_{vehicle}_{run_name.replace(" ","_")}.csv'))
+            if args.label_peaks: find_plot_spikes(df.index * 0.1,df[speed_column])
+
 
         # Plot Solo runs
         for idx, file in enumerate(files['Solo']):
@@ -119,14 +164,22 @@ def load_and_plot_speeds(csv_files, plots_dir):
             run_number = match.group(1) if match else "Unknown"
             run_name = f'{vehicle} SR{run_number}'
             df = filter_speed_data(df, run_name)  # Filter and trim speed data
+
+            
+
             label = run_name
             plt.plot(df.index * 0.1,
-                df['calculated_speed'], 
+                df[speed_column], 
                      label=label, 
                      linestyle=line_styles[(idx + len(files['Group'])) % len(line_styles)])  # Different line styles for Solo runs
+            
+            if args.save_csv: df.to_csv(os.path.join(data_dir, f'solo_{run_name.replace(" ","_")}.csv'))
+            if args.label_peaks: find_plot_spikes(df.index * 0.1,df[speed_column])
 
         plt.xlabel('Time (s)')
         plt.ylabel('Speed (km/h)')
+        ax = plt.gca()
+        ax.set_ylim([0,25])
         plt.legend()
         plt.grid(True)
         plot_path = os.path.join(plots_dir, f'{vehicle}_combined_speeds.png')
@@ -143,12 +196,15 @@ def load_and_plot_speeds(csv_files, plots_dir):
             run_name = f'{vehicle} SR{run_number}'
             df = filter_speed_data(df, run_name)
             plt.plot(df.index * 0.1,
-                     df['calculated_speed'], 
+                     df[speed_column], 
                      label=run_name, 
                      linestyle=line_styles[idx % len(line_styles)])  # Different line styles for Solo runs
+            if args.label_peaks: find_plot_spikes(df.index * 0.1,df[speed_column])
 
         plt.xlabel('Time (s)')
         plt.ylabel('Speed (km/h)')
+        ax = plt.gca()
+        ax.set_ylim([0,25])
         plt.legend()
         plt.grid(True)
         plot_path = os.path.join(plots_dir, f'{vehicle}_solo_speeds.png')
@@ -165,12 +221,15 @@ def load_and_plot_speeds(csv_files, plots_dir):
             run_name = f"Group {run_number}"
             df = filter_speed_data(df, run_name)
             plt.plot(df.index * 0.1,
-                df['calculated_speed'], 
+                df[speed_column], 
                      label=run_name, 
                      linestyle=line_styles[idx % len(line_styles)])  # Different line styles for Group runs
+            if args.label_peaks: find_plot_spikes(df.index * 0.1,df[speed_column])
 
         plt.xlabel('Time (s)')
         plt.ylabel('Speed (km/h)')
+        ax = plt.gca()
+        ax.set_ylim([0,25])
         plt.legend()
         plt.grid(True)
         plot_path = os.path.join(plots_dir, f'{vehicle}_group_speeds.png')
@@ -182,7 +241,7 @@ def load_and_plot_speeds(csv_files, plots_dir):
 def to_numeric(series):
     return pd.to_numeric(series, errors='coerce')  # Convert to numeric, setting invalid parsing to NaN
 
-def load_and_plot_speed_averages(csv_files, plots_dir):
+def load_and_plot_speed_averages(csv_files, speed_column, plots_dir, data_dir, args):
     """
     Loads CSV files and generates plots for each vehicle, with Group and Solo runs labeled.
     
@@ -190,7 +249,7 @@ def load_and_plot_speed_averages(csv_files, plots_dir):
     - csv_files: Dictionary with vehicle names as keys and paths to their Group and Solo files.
     - plots_dir: Directory where the plots should be saved.
     """
-    print(f'csv_files: {csv_files}')
+    # print(f'csv_files: {csv_files}')
     for vehicle, files in csv_files.items():
         print(f'\tPlotting: {vehicle}')
         plt.figure(figsize=(12, 8))  # Increase figure size for better visibility
@@ -219,7 +278,7 @@ def load_and_plot_speed_averages(csv_files, plots_dir):
             # Handle missing values (NaNs)
             df = df.fillna(0) 
 
-            group_series_list.append(df['calculated_speed'])
+            group_series_list.append(df[speed_column])
 
             # Combine Series into a DataFrame
 
@@ -233,6 +292,8 @@ def load_and_plot_speed_averages(csv_files, plots_dir):
         # Calculate the mean across the columns (axis=1)
         average_group_series = group_series_combined.mean(axis=1)
 
+        
+
         # print(f'average_group_series:\n\n {average_group_series }\n\n')
 
 
@@ -242,6 +303,9 @@ def load_and_plot_speed_averages(csv_files, plots_dir):
                     average_group_series,
                     label="Group Run", 
                     linestyle="--")  # Use different line styles for Group runs
+        
+        if args.save_csv: average_group_series.to_csv(os.path.join(data_dir, f'group_speeds_averages_{vehicle}.csv'))
+        if args.label_peaks: find_plot_spikes(average_group_series.index * 0.1,average_group_series)
         
         # Plot Solo runs
         for idx, file in enumerate(files['Solo']):
@@ -269,7 +333,8 @@ def load_and_plot_speed_averages(csv_files, plots_dir):
             df = df.fillna(0) 
 
             # Append Series to list
-            solo_series_list.append(df['calculated_speed'])
+            solo_series_list.append(df[speed_column])
+            
 
 
         # print(f'solo_series_list:\n\n {solo_series_list }\n\n')
@@ -285,16 +350,20 @@ def load_and_plot_speed_averages(csv_files, plots_dir):
         # print(f'average_solo_series:\n\n {average_solo_series }\n\n')
 
 
-
         plt.plot(average_solo_series.index * 0.1,
                  average_solo_series,
                     label="Solo Runs", 
                     linestyle="-")  # Use different line styles for Solo runs
+        
+        if args.save_csv: average_solo_series.to_csv(os.path.join(data_dir, f'solo_speeds_averages_{vehicle}.csv'))
+        if args.label_peaks: find_plot_spikes(average_solo_series.index * 0.1, average_solo_series)
 
         # Customize plot
         # plt.title(f'{vehicle} - Solo vs Group Runs (Filtered)')
         plt.xlabel('Time (s)')
         plt.ylabel('Speed (km/h)')
+        ax = plt.gca()
+        ax.set_ylim([0,25])
         plt.legend()
         plt.grid(True)
 
@@ -377,22 +446,34 @@ run_time_data = {
 def main():
     parser = argparse.ArgumentParser(description='Plot Solo vs Group Speeds for Multiple Vehicles.')
     parser.add_argument('-d', '--directory', type=str, required=True, help='Base directory containing the Group and Solo folders.')
+    parser.add_argument('-s','--save_csv',dest='save_csv',action='store_true',default=None,help='Save series used in plots to csv')
+    parser.add_argument('-l','--label_peaks',dest='label_peaks',action='store_true',default=None,help='label plot peaks')
     args = parser.parse_args()
 
     base_dir = args.directory
     plots_dir = os.path.join(base_dir, 'plots')
+    data_dir = os.path.join(base_dir, 'data')
+
+    speed_column = "calculated_speed"
 
     # If plots directory exists, remove it and recreate
     if os.path.exists(plots_dir):
         shutil.rmtree(plots_dir)
+    
     os.makedirs(plots_dir)
+
+    if args.save_csv:
+        if os.path.exists(data_dir):
+            shutil.rmtree(data_dir)
+        
+        os.makedirs(data_dir)
 
     # Find CSV files
     csv_files = find_csv_files(base_dir)
 
     # Load and plot speeds
-    load_and_plot_speeds(csv_files, plots_dir)
-    load_and_plot_speed_averages(csv_files, plots_dir)
+    load_and_plot_speeds(csv_files, speed_column, plots_dir,data_dir,args)
+    load_and_plot_speed_averages(csv_files, speed_column, plots_dir,data_dir,args)
 
 if __name__ == "__main__":
     main()
