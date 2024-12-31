@@ -4,11 +4,10 @@ FROM usdotfhwastoldev/voices:base-latest
 # On macos I increased the memory available from 2.0GB to 6.0GB.  I didn't try lower than this yet.
 # The settings are for the VM that runs the containers and can be accessed through the Docker UI settings.
 # Click on the gear icon (Setting) | Resoures then increase the memory.
-# VERSION=0.0.1 && sudo docker build --build-arg LEIDOS_TOKEN=$LEIDOS_TOKEN --build-arg version=$VERSION -t usdotfhwastoldev/voices:build-general-$VERSION . --progress=plain -f build-general_Dockerfile
+# VERSION=0.0.1 && sudo docker build --secret id=usdotfhwastol_token,src=usdotfhwastol_token --build-arg version=$VERSION -t usdotfhwastoldev/voices:build-general-$VERSION . --progress=plain -f build-general_Dockerfile
 
 ARG DEBIAN_FRONTEND="noninteractive" 
 ARG TZ="America/New_York"
-ARG LEIDOS_TOKEN
 
 RUN apt-get update && apt-get install -y wget software-properties-common
 
@@ -22,6 +21,8 @@ RUN apt-get install -y \
     update-alternatives --install /usr/bin/clang++ clang++ /usr/lib/llvm-8/bin/clang++ 180 && \
     update-alternatives --install /usr/bin/clang clang /usr/lib/llvm-8/bin/clang 180
 
-RUN git clone https://${LEIDOS_TOKEN}@github.com/usdot-fhwa-stol/vug-cmake-package.git cmake_temp && \
+RUN --mount=type=secret,id=usdotfhwastol_token \
+    USDOTFHWASTOL_TOKEN=$(cat /run/secrets/usdotfhwastol_token) && \
+    git clone https://${USDOTFHWASTOL_TOKEN}@github.com/usdot-fhwa-stol/vug-cmake-package.git cmake_temp && \
 	mv cmake_temp/cmake/ /home/TENA/lib/ && \
 	rm -rf cmake_temp   
