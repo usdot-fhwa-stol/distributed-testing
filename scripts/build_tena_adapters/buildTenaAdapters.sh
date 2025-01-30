@@ -216,7 +216,7 @@ elif [[ $tenaAppIndex == 6 ]]; then
 elif [[ $tenaAppIndex == 7 ]]; then
 	tenaApp=vug-v2x-adapter
 	gitCloneUrl="https://github.com/usdot-fhwa-stol/vug-v2x-adapter.git"
-	dockerContainer=usdotfhwastoldev/voices:build-general-latest
+	dockerContainer=usdotfhwastoldev/voices:build-v2x-0.0.1
 	remoteAppDir=/home/$tenaApp 			#DO NOT CHANGE: internal docker directory mapped to localAppDir
 	isV2xhubPlugin=false
 	requiresProtocolio=false
