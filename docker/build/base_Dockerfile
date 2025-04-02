@@ -26,8 +26,8 @@ FROM ubuntu:20.04
 
 COPY --from=build /home/TENA /home/TENA
 
-LABEL version="0.0.1"
-LABEL description="Base VOICES Docker image with base tena installation"
+LABEL version=${VERSION}
+LABEL description="Base Distributed Testing Docker image with base tena installation"
 
 SHELL ["/bin/bash", "-ec"]
 

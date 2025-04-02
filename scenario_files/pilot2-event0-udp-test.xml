@@ -143,7 +143,7 @@
 
     <vehicle name="FHWA-SUMO-01" bsmid="f03ad628" type="vehicle.volkswagen.t2" owner="CARLA-FHWA-A" material="Aluminum" lvcIndicator="Live">
         <userData>
-                <CARMA CARLAcosimulationIdentifier="CARLA-FHWA-L" roleName="FHWA-SUMO-01" generate_bsms="true"/>
+                <CARMA CARLAcosimulationIdentifier="CARLA-FHWA-A" roleName="FHWA-SUMO-01" generate_bsms="true"/>
         </userData>
         <initialTSPI>
             <GeodeticPosition latitudeInDegrees="42.301177" longitudeInDegrees="-83.698684" heightAboveEllipsoidInMeters="250"/>
@@ -154,7 +154,7 @@
 
     <vehicle name="FHWA-SUMO-02" bsmid="f03ad629" type="vehicle.mercedes-benz.coupe" owner="CARLA-FHWA-A" material="Aluminum" lvcIndicator="Live">
         <userData>
-                <CARMA CARLAcosimulationIdentifier="CARLA-FHWA-L" roleName="FHWA-SUMO-02" generate_bsms="true"/>
+                <CARMA CARLAcosimulationIdentifier="CARLA-FHWA-A" roleName="FHWA-SUMO-02" generate_bsms="true"/>
         </userData>
         <initialTSPI>
             <GeodeticPosition latitudeInDegrees="42.301152" longitudeInDegrees="-83.697944" heightAboveEllipsoidInMeters="250"/>
@@ -204,7 +204,7 @@
 
   <simulations>
 
-    <simulation name="CARLA-FHWA-L" type="CARLA">
+    <simulation name="CARLA-FHWA-A" type="CARLA">
       <WeatherState>ClearNoon</WeatherState>
     </simulation>
     
