@@ -2,7 +2,7 @@
 # BUILD COMMAND: VERSION=P-0.0.1 && sudo DOCKER_BUILDKIT=1 docker build --build-arg VERSION=$VERSION -t usdotfhwastoldev/voices:base-$VERSION . --progress=plain -f base_Dockerfile
 #
 
-FROM ubuntu:20.04 AS build
+FROM ubuntu:22.04 AS build
 
 RUN apt update && \
     apt install -y python3-pip
@@ -11,30 +11,29 @@ RUN pip3 install gdown
 
 WORKDIR /home
 
-# TENA-MiddlewareSDK-v6.0.8.B@Product@u2004-gcc9-64-va0b09d44
-RUN gdown 10RaCptmxrcWPoEgWsPy8I2DrBeVWsnEG
+# # TENA-MiddlewareSDK-v6.0.8.B@Product@u2004-gcc9-64-va0b09d44
+# RUN gdown 10RaCptmxrcWPoEgWsPy8I2DrBeVWsnEG
+
+# TENA-MiddlewareSDK-v6.0.9.A@Product@u2204-gcc11-64-va3bc16dc.deb
+RUN 1WrMDiZ1YkaK0MpHlOVrkHC2vMWN8COBQ
 
 # VUG-Combined-Distribution-v1.0.0@Product@u2004-gcc9-64-v18ba728f.bin
 # RUN gdown --id 17UovGmLGn7VPo4vUNAw5dh7Po_Y_Ukx-
 
 # VUG-P???-Combined-Distribution-v1.1.0@Product@u2004-gcc9-64-v64792838
+# NEED TO UPDATE FOR 609 2204
 RUN gdown 14rxoTiXTYduB2HtQa_vgolE7FnBEEF2d
 
 
-RUN chmod a+x ./*.bin
-
-RUN /home/TENA-MiddlewareSDK-v6.0.8.B@Product@u2004-gcc9-64-*.bin -i /home/ --auto && \
-    rm -rf /tmp/*
-
 # INSTALL TENA deb
 RUN apt install -o DPkg::options::=--force-overwrite \
-    /home/VUG-P???-Combined-Distribution-v1.1.0@Product@u2004-gcc9-64-*.deb && \
+    /home/TENA-MiddlewareSDK-v6.0.9.A@Product@u2204-gcc11-64-*.deb \
+    /home/VUG-P???-Combined-Distribution-v1.1.0@Product@u2204-gcc11-64-*.deb && \
     # Fix permissions for installed TENA apps
     chmod -R a+rw /opt/TENA
 
-FROM ubuntu:20.04
+FROM ubuntu:22.04
 
-COPY --from=build /home/TENA /home/TENA
 COPY --from=build /opt/TENA /opt/TENA
 
 LABEL version=${VERSION}
@@ -48,11 +47,4 @@ ARG TZ="America/New_York"
 ARG USER="root"
 
 WORKDIR /home
-
-# INSTALL TENA bin
-
-# RUN /home/BUILD/TENA-MiddlewareSDK-v6.0.8.B@Product@u2004-gcc9-64-*.bin -i /home/ --auto && \
-#     /home/BUILD/VUG-Combined-Distribution-*.bin -i /home/ --auto && \
-#     # /home/BUILD/VUG-Combined-DataCollectionDistribution-*.bin -i /home/ --auto && \
-#     rm -rf /tmp/*
 

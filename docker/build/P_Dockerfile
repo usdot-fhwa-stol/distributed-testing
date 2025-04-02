@@ -31,10 +31,6 @@ RUN gdown --id 1WS0KFmji8DR_K2ECelfpbdu_yH-iliyr
 # RUN chmod a+x ./*.bin
 RUN chmod a+x ./*.deb
 
-# INSTALL TENA bin
-# RUN /home/VUG-Combined-DataCollectionDistribution-*.bin -i /home/ --auto && \
-#     rm -rf /tmp/*
-
 # INSTALL TENA deb
 RUN apt install -o DPkg::options::=--force-overwrite \
     /home/TENA-Console-v2.0.1@Product@u2004-gcc9-64-*.deb \
@@ -45,7 +41,6 @@ RUN apt install -o DPkg::options::=--force-overwrite \
 
 FROM usdotfhwastoldev/voices:base-P-0.0.2
 
-COPY --from=build /home/TENA /home/TENA
 COPY --from=build /opt/TENA /opt/TENA
 
 LABEL version=${VERSION}

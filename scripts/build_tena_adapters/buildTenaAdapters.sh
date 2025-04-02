@@ -94,8 +94,8 @@ numBuildJobs=4    # number of build jobs to speed up compilation
 #---------------------------------------------------------#
 
 #-------------------| TENA VARIABLES |-------------------#
-tenaVersion=6.0.8
-tenaBuildVersion=u2004-gcc9-64
+tenaVersion=6.0.9
+tenaBuildVersion=u2204-gcc11-64
 # VUG_TENA_SOURCE_SCRIPT_FILE=$VUG_TENA_SOURCE_SCRIPT_FILE
 #--------------------------------------------------------#
 
@@ -108,7 +108,7 @@ remoteInstallDir=/home/INSTALL		#DO NOT CHANGE: internal docker directory mapped
 remoteCarlaDir=/home/carla
 #--------------------------------------------------------#
 
-middlewareVersion="MiddlewareSDK-v6.0.8"
+middlewareVersion="MiddlewareSDK-v6.0.9"
 
 # boostVersion="TENA_boost_1.77.0.1_Library"
 # vugCombinedVersion="VUG-Combined-v1.0.0"
@@ -185,7 +185,7 @@ elif [[ $tenaAppIndex == 3 ]]; then
 elif [[ $tenaAppIndex == 4 ]]; then
 	tenaApp=$vug_carla_adapter_name
 	gitCloneUrl=$carlaTenaAdapterGitUrl
-	dockerContainer=usdotfhwastoldev/voices:build-carla-0.0.2
+	dockerContainer=usdotfhwastoldev/voices:build-carla-P-0.0.3
 	remoteAppDir=/home/$tenaApp 			#DO NOT CHANGE: internal docker directory mapped to localAppDir
 	isV2xhubPlugin=false
 	requiresProtocolio=false
@@ -604,7 +604,7 @@ echo "#### Running CMAKE ####"
 
 echo
 
-if ! ( set -x ; sudo docker run --entrypoint /bin/bash --rm -v $localAppDir:$remoteAppDir  -v $localInstallDir:$remoteInstallDir $dockerContainer -c "cd $remoteAppDir/build; export TENA_PLATFORM=$tenaBuildVersion; export TENA_HOME=$remoteTenaDir; export TENA_VERSION=6.0.8; export CARLA_HOME=$remoteCarlaDir; cmake -D CMAKE_EXPORT_COMPILE_COMMANDS=ON $buildVersionDirArg $buildVersionCmakeArg -D CMAKE_PREFIX_PATH='$remoteTenaDir/lib/cmake;$remoteInstallDir;/opt/carma/cmake' -D VUG_INSTALL_DIR=$remoteInstallDir -D tmx-plugin_DIR=/usr/local/share/tmx/ ../" ); then
+if ! ( set -x ; sudo docker run --entrypoint /bin/bash --rm -v $localAppDir:$remoteAppDir  -v $localInstallDir:$remoteInstallDir $dockerContainer -c "cd $remoteAppDir/build; export TENA_PLATFORM=$tenaBuildVersion; export TENA_HOME=$remoteTenaDir; export TENA_VERSION=6.0.9; export CARLA_HOME=$remoteCarlaDir; cmake -D CMAKE_EXPORT_COMPILE_COMMANDS=ON $buildVersionDirArg $buildVersionCmakeArg -D CMAKE_PREFIX_PATH='$remoteTenaDir/lib/cmake;$remoteInstallDir;/opt/carma/cmake' -D VUG_INSTALL_DIR=$remoteInstallDir -D tmx-plugin_DIR=/usr/local/share/tmx/ ../" ); then
 	echo
 	echo "[!!!] CMAKE FAILED"
 	exit
@@ -628,7 +628,7 @@ if [[ "$skipMake" == true ]]
 		echo
 		echo "MAKE COMMAND: "
 		echo
-		if ! ( set -x ; sudo docker run --entrypoint /bin/bash --rm -v $localAppDir:$remoteAppDir  -v $localInstallDir:$remoteInstallDir $dockerContainer -c "cd $remoteAppDir/build/$buildVersion; export TENA_PLATFORM=$tenaBuildVersion; export TENA_HOME=$remoteTenaDir; export TENA_VERSION=6.0.8; export CARLA_HOME=$remoteCarlaDir; make -j $numBuildJobs VERBOSE=1" ); then
+		if ! ( set -x ; sudo docker run --entrypoint /bin/bash --rm -v $localAppDir:$remoteAppDir  -v $localInstallDir:$remoteInstallDir $dockerContainer -c "cd $remoteAppDir/build/$buildVersion; export TENA_PLATFORM=$tenaBuildVersion; export TENA_HOME=$remoteTenaDir; export TENA_VERSION=6.0.9; export CARLA_HOME=$remoteCarlaDir; make -j $numBuildJobs VERBOSE=1" ); then
 			echo
 			echo "[!!!] MAKE FAILED"
 			exit
@@ -645,7 +645,7 @@ if [[ "$skipMake" == true ]]
 				
 				echo
 				echo "MAKE PACKAGE COMMAND: "
-				if ! ( set -x ; sudo docker run --entrypoint /bin/bash --rm -v $localAppDir:$remoteAppDir  -v $localInstallDir:$remoteInstallDir $dockerContainer -c "cd $remoteAppDir/build/$buildVersion; export TENA_PLATFORM=$tenaBuildVersion; export TENA_HOME=$remoteTenaDir; export TENA_VERSION=6.0.8; export CARLA_HOME=$remoteCarlaDir; make -j $numBuildJobs package VERBOSE=1" ); then
+				if ! ( set -x ; sudo docker run --entrypoint /bin/bash --rm -v $localAppDir:$remoteAppDir  -v $localInstallDir:$remoteInstallDir $dockerContainer -c "cd $remoteAppDir/build/$buildVersion; export TENA_PLATFORM=$tenaBuildVersion; export TENA_HOME=$remoteTenaDir; export TENA_VERSION=6.0.9; export CARLA_HOME=$remoteCarlaDir; make -j $numBuildJobs package VERBOSE=1" ); then
 					echo
 					echo "[!!!] MAKE PACKAGE FAILED"
 					exit
@@ -661,7 +661,7 @@ if [[ "$skipMake" == true ]]
 				
 				echo
 				echo "MAKE INSTALL COMMAND: "
-				if ! ( set -x ; sudo docker run --entrypoint /bin/bash --rm -v $localAppDir:$remoteAppDir -v $localInstallDir:$remoteInstallDir $dockerContainer -c "cd $remoteAppDir/build/$buildVersion; export TENA_PLATFORM=$tenaBuildVersion; export TENA_HOME=$remoteTenaDir; export TENA_VERSION=6.0.8; export CARLA_HOME=/home/carla; make install VERBOSE=1" ); then
+				if ! ( set -x ; sudo docker run --entrypoint /bin/bash --rm -v $localAppDir:$remoteAppDir -v $localInstallDir:$remoteInstallDir $dockerContainer -c "cd $remoteAppDir/build/$buildVersion; export TENA_PLATFORM=$tenaBuildVersion; export TENA_HOME=$remoteTenaDir; export TENA_VERSION=6.0.9; export CARLA_HOME=/home/carla; make install VERBOSE=1" ); then
 					echo
 					echo "[!!!] MAKE INSTALL FAILED"
 					exit

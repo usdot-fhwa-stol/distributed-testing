@@ -74,7 +74,7 @@ fi
 
 if [[ $VUG_DOCKER_START_CANARY == true ]]; then
    echo "STARTING TENA CANARY"
-   /home/TENA/tenaCanary-v1.0.12/start.sh -emEndpoints $VUG_EM_ADDRESS:$VUG_EM_PORT -listenEndpoints $VUG_LOCAL_ADDRESS -auto &
+   /opt/TENA/tenaCanary-v1.0.12/start.sh -emEndpoints $VUG_EM_ADDRESS:$VUG_EM_PORT -listenEndpoints $VUG_LOCAL_ADDRESS -auto &
 
    sleep 5s
 fi
