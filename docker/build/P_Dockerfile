@@ -1,0 +1,110 @@
+#
+# BUILD COMMAND: VERSION=0.0.1 && sudo DOCKER_BUILDKIT=1 docker build --build-arg version=$VERSION -t usdotfhwastoldev/voices:P-$VERSION . --progress=plain -f P_Dockerfile
+#
+
+FROM usdotfhwastoldev/voices:base-P-0.0.2 as build
+
+SHELL ["/bin/bash", "-ec"]
+
+USER root
+ARG DEBIAN_FRONTEND="noninteractive"
+ARG TZ="America/New_York"
+ARG USER="root"
+
+RUN apt update && \
+    apt install -y python3-pip
+
+RUN pip3 install gdown
+
+WORKDIR /home
+
+# VUG-P???-Combined-DataCollectionDistribution-v1.1.0@Product@u2004-gcc9-64-vbe110466.deb
+RUN gdown --id 1qtT18TDb5w1BbOurSNG0HBo-8Mr5UIdl
+
+# TENA-Console-v2.0.1@Product@u2004-gcc9-64-v244836f9
+RUN gdown --id 1C04vOrIOuO3Mr2MhceBv7xQ1mGRmGnPd
+
+# TDCS-DataView-v1.5.4@Product@u2004-gcc9-64-vall
+RUN gdown --id 1WS0KFmji8DR_K2ECelfpbdu_yH-iliyr
+
+
+# RUN chmod a+x ./*.bin
+RUN chmod a+x ./*.deb
+
+# INSTALL TENA bin
+# RUN /home/VUG-Combined-DataCollectionDistribution-*.bin -i /home/ --auto && \
+#     rm -rf /tmp/*
+
+# INSTALL TENA deb
+RUN apt install -o DPkg::options::=--force-overwrite \
+    /home/TENA-Console-v2.0.1@Product@u2004-gcc9-64-*.deb \
+    /home/TDCS-DataView-v1.5.4@Product@u2004-gcc9-64-*.deb \
+    /home/VUG-P???-Combined-DataCollectionDistribution-*.deb && \
+    # Fix permissions for installed TENA apps
+    chmod -R a+rw /opt/TENA
+
+FROM usdotfhwastoldev/voices:base-P-0.0.2
+
+COPY --from=build /home/TENA /home/TENA
+COPY --from=build /opt/TENA /opt/TENA
+
+LABEL version=${VERSION}
+LABEL description="Docker image for interoperability test"
+
+SHELL ["/bin/bash", "-ec"]
+
+USER root
+ARG DEBIAN_FRONTEND="noninteractive" 
+ARG TZ="America/New_York"
+ARG USER="root"
+
+WORKDIR /home
+
+
+# INSTALL apt packages 
+RUN apt clean && apt-get update && \
+    # add sumo repo 
+    apt install -y software-properties-common && \
+    add-apt-repository ppa:sumo/stable && apt-get update && \
+    apt install -y \
+    # install apt utils for installing packages (mostly for TENA console)
+    apt-utils \
+    # install boost
+    libboost-all-dev \
+    # install qt packages
+    libxcb-xinerama0 libfreetype6 libfontconfig libsm6 libxi6 libx11-xcb-dev libxcb-icccm4 libxcb-image0 libxcb-keysyms1 libxcb-randr0 libxcb-render-util0 libxcb-shape0 libxcb-sync1 libxcb-xfixes0 libxcb-xkb1 libxkbcommon-x11-0 libjpeg8 libtiff5 \
+    # install pip
+    python3-pip \
+    # install debug tools
+    iputils-ping nano tshark git tcpdump nethogs \
+    # install sumo tools
+    sumo=1.22.0-1~focal sumo-tools=1.22.0-1~focal sumo-doc=1.22.0-1~focal \
+    # install iproute2
+    iproute2 \
+    # install dumb init to enable gracefully stopping container processes
+    dumb-init \
+    # cleanup apt lists
+    && rm -rf /var/lib/apt/lists/*
+
+# INSTALL python packages
+
+RUN pip install numpy pygame pycrate traci lxml networkx pynput matplotlib && \
+    # have to install pandas separately because it requires a specific version of numpy
+    pip install pandas && \
+    rm -rf /root/.cache
+
+COPY ./lib/COPY /home
+
+# Make Start Scripts executable
+
+RUN chmod a+x -R /home/start_scripts/
+
+# CLEANUP
+
+RUN rm -rf /home/BUILD /tmp/* && \
+    apt-get -qy autoremove
+
+RUN echo 'source /home/start_scripts/setup-docker.sh' >> /root/.bashrc
+
+
+CMD ["/usr/bin/dumb-init","-v","--","/bin/bash","-l","-c","/home/start_scripts/startup-apps.sh"]
