@@ -1,36 +1,47 @@
 #
-# BUILD COMMAND: VERSION=P-0.0.1 && sudo DOCKER_BUILDKIT=1 docker build --build-arg VERSION=$VERSION -t usdotfhwastoldev/voices:base-$VERSION . --progress=plain -f base_Dockerfile
+# BUILD COMMAND: VERSION=P-0.0.3 && sudo DOCKER_BUILDKIT=1 docker build --build-arg VERSION=$VERSION -t usdotfhwastoldev/voices:base-$VERSION . --progress=plain -f base_Dockerfile
 #
 
 FROM ubuntu:22.04 AS build
+
+# Avoid interactive prompts during apt installs
+ENV DEBIAN_FRONTEND=noninteractive
 
 RUN apt update && \
     apt install -y python3-pip
 
 RUN pip3 install gdown
 
-WORKDIR /home
+# Create a non-root user and set up sudo
+RUN apt-get update && apt-get install -y sudo \
+ && useradd -m -s /bin/bash myuser \
+ && echo 'myuser ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers
+#  && echo 'myuser:password' | chpasswd
+
+# Copy your install script or run inline as the non-root user
+USER myuser
+WORKDIR /home/myuser
 
 # # TENA-MiddlewareSDK-v6.0.8.B@Product@u2004-gcc9-64-va0b09d44
 # RUN gdown 10RaCptmxrcWPoEgWsPy8I2DrBeVWsnEG
 
 # TENA-MiddlewareSDK-v6.0.9.A@Product@u2204-gcc11-64-va3bc16dc.deb
-RUN 1WrMDiZ1YkaK0MpHlOVrkHC2vMWN8COBQ
+RUN gdown 1WrMDiZ1YkaK0MpHlOVrkHC2vMWN8COBQ
 
 # VUG-Combined-Distribution-v1.0.0@Product@u2004-gcc9-64-v18ba728f.bin
 # RUN gdown --id 17UovGmLGn7VPo4vUNAw5dh7Po_Y_Ukx-
 
 # VUG-P???-Combined-Distribution-v1.1.0@Product@u2004-gcc9-64-v64792838
 # NEED TO UPDATE FOR 609 2204
-RUN gdown 14rxoTiXTYduB2HtQa_vgolE7FnBEEF2d
+RUN gdown 1pXts1PIQeSyf10MTK462H4nTeANI5edQ
 
 
 # INSTALL TENA deb
-RUN apt install -o DPkg::options::=--force-overwrite \
-    /home/TENA-MiddlewareSDK-v6.0.9.A@Product@u2204-gcc11-64-*.deb \
-    /home/VUG-P???-Combined-Distribution-v1.1.0@Product@u2204-gcc11-64-*.deb && \
+RUN sudo apt install -o DPkg::options::=--force-overwrite \
+    /home/myuser/TENA-MiddlewareSDK-v6.0.9.A@Product@u2204-gcc11-64-*.deb \
+    /home/myuser/VUG-P???-Combined-Distribution-v1.1.0@Product@u2204-gcc11-64-*.deb && \
     # Fix permissions for installed TENA apps
-    chmod -R a+rw /opt/TENA
+    sudo chmod -R a+rw /opt/TENA
 
 FROM ubuntu:22.04
 
