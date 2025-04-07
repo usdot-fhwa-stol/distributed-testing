@@ -103,9 +103,9 @@ tenaBuildVersion=u2204-gcc11-64
 #-------------------| REMOTE VARIABLES |-------------------#
 #-------------------|  DO NOT CHANGE   |-------------------#
 # remoteDownloadsDir=/home/Downloads 		#DO NOT CHANGE: internal docker directory mapped to localTenaPackageDownloadDir
-remoteTenaDir=/opt/TENA			#DO NOT CHANGE: internal docker directory mapped to localTenaDir
-remoteInstallDir=/home/INSTALL		#DO NOT CHANGE: internal docker directory mapped to localInstallDir	
-remoteCarlaDir=/home/carla
+remoteTenaDir=/home/dt_user/TENA			#DO NOT CHANGE: internal docker directory mapped to localTenaDir
+remoteInstallDir=/home/dt_user/INSTALL		#DO NOT CHANGE: internal docker directory mapped to localInstallDir	
+remoteCarlaDir=/home/dt_user/carla
 #--------------------------------------------------------#
 
 middlewareVersion="MiddlewareSDK-v6.0.9"
@@ -185,7 +185,7 @@ elif [[ $tenaAppIndex == 3 ]]; then
 elif [[ $tenaAppIndex == 4 ]]; then
 	tenaApp=$vug_carla_adapter_name
 	gitCloneUrl=$carlaTenaAdapterGitUrl
-	dockerContainer=usdotfhwastoldev/voices:build-carla-P-0.0.3
+	dockerContainer=usdotfhwastoldev/voices:build-carla-P-0.0.4
 	remoteAppDir=/home/$tenaApp 			#DO NOT CHANGE: internal docker directory mapped to localAppDir
 	isV2xhubPlugin=false
 	requiresProtocolio=false
