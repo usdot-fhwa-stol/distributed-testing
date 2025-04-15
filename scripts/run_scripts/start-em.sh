@@ -49,8 +49,8 @@ else
     exit 1
 fi
 
-$VUG_EM_PATH/bin/executionManager \
-    -listenendpoints $VUG_EM_ADDRESS:$VUG_EM_PORT \
+$VUG_EM_PATH/start.sh \
+    -listenEndpoints $VUG_EM_ADDRESS:$VUG_EM_PORT \
     -logDir $VUG_EM_PATH/log \
     -recoveryDir $VUG_EM_PATH/save \
     -connectionTimeoutInMilliseconds 10000 -twowayTimeoutInMilliseconds 20000 \

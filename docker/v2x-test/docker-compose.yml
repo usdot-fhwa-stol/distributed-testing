@@ -27,7 +27,7 @@ services:
 
   voices:
     container_name: voices
-    image: usdotfhwastoldev/voices:P-0.0.4
+    image: usdotfhwastoldev/voices:P-0.0.5
     tty: true 
     depends_on:
       - carla-voices

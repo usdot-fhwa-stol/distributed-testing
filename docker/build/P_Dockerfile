@@ -6,7 +6,6 @@ FROM usdotfhwastoldev/voices:base-P-latest AS build
 
 SHELL ["/bin/bash", "-ec"]
 
-USER root
 ARG DEBIAN_FRONTEND="noninteractive"
 ARG TZ="America/New_York"
 
@@ -18,41 +17,49 @@ WORKDIR /home/$USER
 USER root
 
 RUN apt update && \
-    apt install -y python3-pip rsync
+    apt install -y python3-pip rsync zstd unzip
 
 RUN pip3 install gdown
 
 USER dt_user
 
-# VUG-P???-Combined-DataCollectionDistribution-v1.1.0@Product@u2004-gcc9-64-vbe110466.deb
-RUN gdown --id 1qtT18TDb5w1BbOurSNG0HBo-8Mr5UIdl
+RUN mkdir /home/$USER/INSTALL && mkdir /home/$USER/INSTALL/TDCS && mkdir /home/$USER/INSTALL/DV
 
-# TDCS-DataView-v1.5.4@Product@u2004-gcc9-64-vall
-RUN gdown --id 1WS0KFmji8DR_K2ECelfpbdu_yH-iliyr
+# VUG-P???-Combined-DataCollectionDistribution-v1.1.0@Product@u2204-gcc11-64-vbe110466.deb
+WORKDIR /home/$USER/INSTALL/TDCS
+RUN gdown 1xuLT9aZ4GFpiVsrtc3RUBUO-ziDxv_yZ
 
+# TDCS-DataView-v1.5.4@Product@u2204-gcc11-64-vall
+WORKDIR /home/$USER/INSTALL/DV
+RUN gdown 1UojRtJBZHgS9U17hwq653sH2VjqRbOzq
 
-# # RUN chmod a+x ./*.bin
-# RUN chmod a+x ./*.deb
-
-# INSTALL TENA deb
-
-# INSTALL TENA deb
-RUN dpkg -x --force-overwrite /home/$USER/TDCS-DataView-v1.5.4@Product@u2004-gcc9-64-*.deb .
-RUN ar -x TDCS-DataView-v1.5.4@Product@u2004-gcc9-64-*.deb
+# INSTALL TENA Data Collection System
+WORKDIR /home/$USER/INSTALL/DV
+RUN dpkg -x --force-overwrite ./TDCS-DataView-v1.5.4@Product@u2204-gcc11-64-*.deb .
+RUN ar -x ./TDCS-DataView-v1.5.4@Product@u2204-gcc11-64-*.deb
 RUN tar xf control.tar.*
 # move the postinst script into TENA dir to make it easier to copy and run later on final container
 RUN mv ./postinst ./opt/TENA/postinst-DV
 
-# INSTALL TENA deb
-RUN dpkg -x --force-overwrite /home/$USER/VUG-P???-Combined-DataCollectionDistribution-*.deb .
-RUN ar -x /home/$USER/VUG-P???-Combined-DataCollectionDistribution-*.deb
+# INSTALL TENA DataView
+WORKDIR /home/$USER/INSTALL/TDCS
+RUN dpkg -x --force-overwrite ./VUG-P???-Combined-DataCollectionDistribution-*.deb .
+RUN ar -x ./VUG-P???-Combined-DataCollectionDistribution-*.deb
 RUN tar xf control.tar.*
 # move the postinst script into TENA dir to make it easier to copy and run later on final container
 RUN mv ./postinst ./opt/TENA/postinst-TDCS
 
+WORKDIR /home/$USER
+
 USER root
-RUN rsync -a /home/$USER/opt/TENA/ /home/$USER/TENA/
+RUN rsync -a /home/$USER/INSTALL/TDCS/opt/TENA/ /home/$USER/INSTALL/DV/opt/TENA/ /home/$USER/TENA
+RUN chown -R $USER:$USER /home/$USER/TENA
 USER $USER
+ENV USER="dt_user"
+
+# CARLA_0.9.10 (contains just the PythonAPI folder for CARLA PythonAPI capabilities)
+RUN gdown 1yFN-G2PaNna3kHtXop3XqVFu632l62HB
+RUN unzip CARLA_0.9.10.zip
 
 FROM usdotfhwastoldev/voices:base-P-latest
 
@@ -70,8 +77,12 @@ WORKDIR /home/$USER
 
 USER root
 
+RUN apt update && apt install -y software-properties-common
+
+
 # INSTALL apt packages 
-RUN apt clean && apt-get update && \
+RUN apt clean && \
+    apt-get update && \
     # add sumo repo 
     apt install -y software-properties-common && \
     add-apt-repository ppa:sumo/stable && apt-get update && \
@@ -82,8 +93,6 @@ RUN apt clean && apt-get update && \
     libboost-all-dev \
     # install qt packages
     libxcb-xinerama0 libfreetype6 libfontconfig libsm6 libxi6 libx11-xcb-dev libxcb-icccm4 libxcb-image0 libxcb-keysyms1 libxcb-randr0 libxcb-render-util0 libxcb-shape0 libxcb-sync1 libxcb-xfixes0 libxcb-xkb1 libxkbcommon-x11-0 libjpeg8 libtiff5 \
-    # install pip
-    python3-pip \
     # install debug tools
     iputils-ping nano tshark git tcpdump nethogs rsync \
     # install sumo tools
@@ -91,30 +100,48 @@ RUN apt clean && apt-get update && \
     # install iproute2
     iproute2 \
     # install dumb init to enable gracefully stopping container processes
-    dumb-init \
+    dumb-init && \
     # cleanup apt lists
-    && rm -rf /var/lib/apt/lists/*
+    rm -rf /var/lib/apt/lists/*
 
-# INSTALL python packages
+# Install Python 3.8 and clean NumPy
+RUN apt-get clean && \
+    add-apt-repository -y ppa:deadsnakes/ppa && \
+    apt-get update && \
+    apt-get purge -y python3-numpy && \
+    rm -rf /usr/lib/python3*/dist-packages/numpy* && \
+    apt-get install -y \
+        python3.8 \
+        python3.8-dev \
+        python3.8-distutils \
+        curl && \
+    update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.8 100 && \
+    update-alternatives --set python3 /usr/bin/python3.8 && \
+    curl -sS https://bootstrap.pypa.io/get-pip.py | python3.8 && \
+    python3 -m pip install --upgrade pip
 
-RUN pip install numpy pygame pycrate traci lxml networkx pynput matplotlib && \
-    # have to install pandas separately because it requires a specific version of numpy
-    pip install pandas && \
-    rm -rf /home/$USER/.cache
-
+# Switch to non-root user
 USER dt_user
+ENV PATH="/home/dt_user/.local/bin:$PATH"
 
-COPY --from=build /home/$USER/TENA /home/$USER/TENA
+# Install Python packages as dt_user
+RUN python3 -m pip install --no-cache-dir --user --force-reinstall numpy && \
+    python3 -m pip install --no-cache-dir --user pygame pycrate traci lxml networkx pynput matplotlib && \
+    python3 -m pip install --no-cache-dir --user pandas && \
+    rm -rf /home/dt_user/.cache
 
 USER root
-RUN chown -R $USER:$USER /home/$USER/TENA
+RUN rm -rf /home/$USER/TENA
 USER $USER
+
+COPY --chown=dt_user:dt_user --from=build /home/$USER/TENA /home/$USER/TENA
 
 RUN DSTROOT=/home/dt_user ./TENA/postinst-DV
 RUN DSTROOT=/home/dt_user ./TENA/postinst-TDCS
 
+COPY --chown=dt_user:dt_user --from=build /home/$USER/CARLA_0.9.10 /home/$USER/CARLA_0.9.10
 
-COPY ./lib/COPY /home/$USER
+COPY --chown=dt_user:dt_user ./lib/COPY /home/$USER
 
 # Make Start Scripts executable
 

@@ -175,7 +175,7 @@ elif [[ $tenaAppIndex == 2 ]]; then
 elif [[ $tenaAppIndex == 3 ]]; then
 	tenaApp=vug-scenario-publisher
 	gitCloneUrl="https://github.com/usdot-fhwa-stol/vug-scenario-publisher.git"
-	dockerContainer=usdotfhwastoldev/voices:build-general-latest
+	dockerContainer=usdotfhwastoldev/voices:build-general-P-latest
 	remoteAppDir=/home/$tenaApp	#DO NOT CHANGE: internal docker directory mapped to localAppDir
 	isV2xhubPlugin=false
 	requiresProtocolio=false
@@ -185,7 +185,7 @@ elif [[ $tenaAppIndex == 3 ]]; then
 elif [[ $tenaAppIndex == 4 ]]; then
 	tenaApp=$vug_carla_adapter_name
 	gitCloneUrl=$carlaTenaAdapterGitUrl
-	dockerContainer=usdotfhwastoldev/voices:build-carla-P-0.0.4
+	dockerContainer=usdotfhwastoldev/voices:build-carla-P-latest
 	remoteAppDir=/home/$tenaApp 			#DO NOT CHANGE: internal docker directory mapped to localAppDir
 	isV2xhubPlugin=false
 	requiresProtocolio=false
