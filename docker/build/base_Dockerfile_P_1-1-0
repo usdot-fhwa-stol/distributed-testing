@@ -1,5 +1,5 @@
 #
-# BUILD COMMAND: VERSION=P-0.0.1 && sudo DOCKER_BUILDKIT=1 docker build --build-arg VERSION=$VERSION -t usdotfhwastoldev/voices:base-$VERSION . --progress=plain -f base_Dockerfile
+# BUILD COMMAND: VERSION=P-0.0.3 && sudo DOCKER_BUILDKIT=1 docker build --build-arg VERSION=$VERSION -t usdotfhwastoldev/voices:base-$VERSION . --progress=plain -f base_Dockerfile
 #
 
 FROM ubuntu:22.04 AS build
