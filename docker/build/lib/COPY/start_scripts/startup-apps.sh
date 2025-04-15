@@ -14,7 +14,7 @@ cleanup() {
 
 trap 'cleanup' SIGINT SIGTERM ERR EXIT
 
-source /home/start_scripts/setup-docker.sh
+source $HOME/start_scripts/setup-docker.sh
 
 
 sleep 5s
@@ -28,7 +28,7 @@ fi
 
 if [[ $VUG_DOCKER_START_CONSOLE == true ]]; then
    echo "STARTING TENA CONSOLE"
-   /opt/TENA/Console-v2.0.1/start.sh -emEndpoints $VUG_EM_ADDRESS:$VUG_EM_PORT -listenEndpoints $VUG_LOCAL_ADDRESS -autoConnect &
+   $VUG_LOCAL_TENA_PATH/Console-v2.0.1/start.sh -emEndpoints $VUG_EM_ADDRESS:$VUG_EM_PORT -listenEndpoints $VUG_LOCAL_ADDRESS -autoConnect &
 
    sleep 5s
 fi
@@ -74,7 +74,7 @@ fi
 
 if [[ $VUG_DOCKER_START_CANARY == true ]]; then
    echo "STARTING TENA CANARY"
-   /opt/TENA/tenaCanary-v1.0.12/start.sh -emEndpoints $VUG_EM_ADDRESS:$VUG_EM_PORT -listenEndpoints $VUG_LOCAL_ADDRESS -auto &
+   $VUG_LOCAL_TENA_PATH/tenaCanary-v1.0.13/start.sh -emEndpoints $VUG_EM_ADDRESS:$VUG_EM_PORT -listenEndpoints $VUG_LOCAL_ADDRESS -auto &
 
    sleep 5s
 fi
@@ -95,7 +95,7 @@ fi
 
 if [[ $VUG_DOCKER_START_DATAVIEW == true ]]; then
    echo "STARTING TENA DATAVIEW"
-   /opt/TENA/DataView-v1.5.4/start.sh &
+   $VUG_LOCAL_TENA_PATH/DataView-v1.5.4/start.sh &
 
    sleep 5s
 fi

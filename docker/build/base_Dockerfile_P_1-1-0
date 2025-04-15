@@ -4,47 +4,60 @@
 
 FROM ubuntu:22.04 AS build
 
+RUN useradd -ms /bin/bash dt_user
+WORKDIR /home/dt_user
+USER dt_user
+
+USER root
+
 RUN apt update && \
-    apt install -y python3-pip
+    apt install -y python3-pip \
+    # add some build packages
+    zstd 
 
 RUN pip3 install gdown
 
-WORKDIR /home
-
-# # TENA-MiddlewareSDK-v6.0.8.B@Product@u2004-gcc9-64-va0b09d44
-# RUN gdown 10RaCptmxrcWPoEgWsPy8I2DrBeVWsnEG
+USER dt_user
 
 # TENA-MiddlewareSDK-v6.0.9.A@Product@u2204-gcc11-64-va3bc16dc.deb
-RUN 1WrMDiZ1YkaK0MpHlOVrkHC2vMWN8COBQ
+RUN gdown 1WrMDiZ1YkaK0MpHlOVrkHC2vMWN8COBQ
 
-# VUG-Combined-Distribution-v1.0.0@Product@u2004-gcc9-64-v18ba728f.bin
-# RUN gdown --id 17UovGmLGn7VPo4vUNAw5dh7Po_Y_Ukx-
-
-# VUG-P???-Combined-Distribution-v1.1.0@Product@u2004-gcc9-64-v64792838
-# NEED TO UPDATE FOR 609 2204
-RUN gdown 14rxoTiXTYduB2HtQa_vgolE7FnBEEF2d
-
+# VUG-P???-Combined-Distribution-v1.1.0@Product@u2204-gcc11-64
+RUN gdown 1pXts1PIQeSyf10MTK462H4nTeANI5edQ
 
 # INSTALL TENA deb
-RUN apt install -o DPkg::options::=--force-overwrite \
-    /home/TENA-MiddlewareSDK-v6.0.9.A@Product@u2204-gcc11-64-*.deb \
-    /home/VUG-P???-Combined-Distribution-v1.1.0@Product@u2204-gcc11-64-*.deb && \
-    # Fix permissions for installed TENA apps
-    chmod -R a+rw /opt/TENA
+RUN dpkg -x --force-overwrite ./TENA-MiddlewareSDK-v6.0.9.A@Product@u2204-gcc11-64-*.deb .
+RUN ar -x ./TENA-MiddlewareSDK-v6.0.9.A@Product@u2204-gcc11-64-*.deb
+RUN tar xf control.tar.zst
+# move the postinst script into TENA dir to make it easier to copy and run later on final container
+RUN mv ./postinst ./opt/TENA/postinst-MW
+
+RUN dpkg -x --force-overwrite ./VUG-P???-Combined-Distribution-v1.1.0@Product@u2204-gcc11-64-*.deb .
+RUN ar -x ./VUG-P???-Combined-Distribution-v1.1.0@Product@u2204-gcc11-64-*.deb
+RUN tar xf control.tar.zst
+# move the postinst script into TENA dir to make it easier to copy and run later on final container
+RUN mv ./postinst ./opt/TENA/postinst-DIST
 
 FROM ubuntu:22.04
 
-COPY --from=build /opt/TENA /opt/TENA
+RUN useradd -ms /bin/bash dt_user
+USER dt_user
+ARG USER="dt_user"
 
+WORKDIR /home/dt_user
+
+COPY --from=build /home/dt_user/opt/TENA /home/dt_user/TENA
+RUN DSTROOT=/home/dt_user ./TENA/postinst-MW
+RUN DSTROOT=/home/dt_user ./TENA/postinst-DIST
+
+ARG VERSION=dev
 LABEL version=${VERSION}
 LABEL description="Base Distributed Testing Docker image with base tena installation"
 
 SHELL ["/bin/bash", "-ec"]
 
-USER root
-ARG DEBIAN_FRONTEND="noninteractive" 
+ARG DEBIAN_FRONTEND="noninteractive"
 ARG TZ="America/New_York"
-ARG USER="root"
 
-WORKDIR /home
+RUN echo 'source /home/dt_user/TENA/6.0.9/scripts/tenaenv-u2204-gcc11-64-v6.0.9.sh' >> /home/dt_user/.bashrc
 

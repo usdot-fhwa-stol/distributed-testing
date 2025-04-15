@@ -2,59 +2,73 @@
 # BUILD COMMAND: VERSION=0.0.1 && sudo DOCKER_BUILDKIT=1 docker build --build-arg version=$VERSION -t usdotfhwastoldev/voices:P-$VERSION . --progress=plain -f P_Dockerfile
 #
 
-FROM usdotfhwastoldev/voices:base-P-0.0.2 as build
+FROM usdotfhwastoldev/voices:base-P-latest AS build
 
 SHELL ["/bin/bash", "-ec"]
 
 USER root
 ARG DEBIAN_FRONTEND="noninteractive"
 ARG TZ="America/New_York"
-ARG USER="root"
+
+USER dt_user
+ENV USER="dt_user"
+
+WORKDIR /home/$USER
+
+USER root
 
 RUN apt update && \
-    apt install -y python3-pip
+    apt install -y python3-pip rsync
 
 RUN pip3 install gdown
 
-WORKDIR /home
+USER dt_user
 
 # VUG-P???-Combined-DataCollectionDistribution-v1.1.0@Product@u2004-gcc9-64-vbe110466.deb
 RUN gdown --id 1qtT18TDb5w1BbOurSNG0HBo-8Mr5UIdl
-
-# TENA-Console-v2.0.1@Product@u2004-gcc9-64-v244836f9
-RUN gdown --id 1C04vOrIOuO3Mr2MhceBv7xQ1mGRmGnPd
 
 # TDCS-DataView-v1.5.4@Product@u2004-gcc9-64-vall
 RUN gdown --id 1WS0KFmji8DR_K2ECelfpbdu_yH-iliyr
 
 
-# RUN chmod a+x ./*.bin
-RUN chmod a+x ./*.deb
+# # RUN chmod a+x ./*.bin
+# RUN chmod a+x ./*.deb
 
 # INSTALL TENA deb
-RUN apt install -o DPkg::options::=--force-overwrite \
-    /home/TENA-Console-v2.0.1@Product@u2004-gcc9-64-*.deb \
-    /home/TDCS-DataView-v1.5.4@Product@u2004-gcc9-64-*.deb \
-    /home/VUG-P???-Combined-DataCollectionDistribution-*.deb && \
-    # Fix permissions for installed TENA apps
-    chmod -R a+rw /opt/TENA
 
-FROM usdotfhwastoldev/voices:base-P-0.0.2
+# INSTALL TENA deb
+RUN dpkg -x --force-overwrite /home/$USER/TDCS-DataView-v1.5.4@Product@u2004-gcc9-64-*.deb .
+RUN ar -x TDCS-DataView-v1.5.4@Product@u2004-gcc9-64-*.deb
+RUN tar xf control.tar.*
+# move the postinst script into TENA dir to make it easier to copy and run later on final container
+RUN mv ./postinst ./opt/TENA/postinst-DV
 
-COPY --from=build /opt/TENA /opt/TENA
+# INSTALL TENA deb
+RUN dpkg -x --force-overwrite /home/$USER/VUG-P???-Combined-DataCollectionDistribution-*.deb .
+RUN ar -x /home/$USER/VUG-P???-Combined-DataCollectionDistribution-*.deb
+RUN tar xf control.tar.*
+# move the postinst script into TENA dir to make it easier to copy and run later on final container
+RUN mv ./postinst ./opt/TENA/postinst-TDCS
 
+USER root
+RUN rsync -a /home/$USER/opt/TENA/ /home/$USER/TENA/
+USER $USER
+
+FROM usdotfhwastoldev/voices:base-P-latest
+
+ARG VERSION=dev
 LABEL version=${VERSION}
 LABEL description="Docker image for interoperability test"
 
-SHELL ["/bin/bash", "-ec"]
-
-USER root
 ARG DEBIAN_FRONTEND="noninteractive" 
 ARG TZ="America/New_York"
-ARG USER="root"
 
-WORKDIR /home
+USER dt_user
+ENV USER="dt_user"
 
+WORKDIR /home/$USER
+
+USER root
 
 # INSTALL apt packages 
 RUN apt clean && apt-get update && \
@@ -71,9 +85,9 @@ RUN apt clean && apt-get update && \
     # install pip
     python3-pip \
     # install debug tools
-    iputils-ping nano tshark git tcpdump nethogs \
+    iputils-ping nano tshark git tcpdump nethogs rsync \
     # install sumo tools
-    sumo=1.22.0-1~focal sumo-tools=1.22.0-1~focal sumo-doc=1.22.0-1~focal \
+    sumo sumo-tools sumo-doc \
     # install iproute2
     iproute2 \
     # install dumb init to enable gracefully stopping container processes
@@ -86,20 +100,31 @@ RUN apt clean && apt-get update && \
 RUN pip install numpy pygame pycrate traci lxml networkx pynput matplotlib && \
     # have to install pandas separately because it requires a specific version of numpy
     pip install pandas && \
-    rm -rf /root/.cache
+    rm -rf /home/$USER/.cache
 
-COPY ./lib/COPY /home
+USER dt_user
+
+COPY --from=build /home/$USER/TENA /home/$USER/TENA
+
+USER root
+RUN chown -R $USER:$USER /home/$USER/TENA
+USER $USER
+
+RUN DSTROOT=/home/dt_user ./TENA/postinst-DV
+RUN DSTROOT=/home/dt_user ./TENA/postinst-TDCS
+
+
+COPY ./lib/COPY /home/$USER
 
 # Make Start Scripts executable
 
-RUN chmod a+x -R /home/start_scripts/
+USER root
+RUN chmod a+x -R /home/$USER/start_scripts/
+USER dt_user
 
 # CLEANUP
 
-RUN rm -rf /home/BUILD /tmp/* && \
-    apt-get -qy autoremove
-
-RUN echo 'source /home/start_scripts/setup-docker.sh' >> /root/.bashrc
+RUN echo 'source /home/$USER/start_scripts/setup-docker.sh' >> /home/$USER/.bashrc
 
 
-CMD ["/usr/bin/dumb-init","-v","--","/bin/bash","-l","-c","/home/start_scripts/startup-apps.sh"]
+CMD ["/usr/bin/dumb-init","-v","--","/bin/bash","-l","-c","/home/$USER/start_scripts/startup-apps.sh"]

@@ -1,7 +1,7 @@
 services:
   carla-voices:
     container_name: carla-voices
-    image: usdotfhwastoldev/carla-voices:v2x-test-latest
+    image: usdotfhwastoldev/carla-voices:pilot2-event2-latest
     privileged: true
     network_mode: "host"
     environment:
@@ -27,7 +27,7 @@ services:
 
   voices:
     container_name: voices
-    image: usdotfhwastoldev/voices:v2x-test-latest
+    image: usdotfhwastoldev/voices:P-0.0.4
     tty: true 
     depends_on:
       - carla-voices
@@ -44,8 +44,8 @@ services:
       - VUG_VPN_EM_ADDRESS=${VUG_VPN_EM_ADDRESS}
     volumes:
       - /tmp/.X11-unix:/tmp/.X11-unix:rw
-      - ${VUG_LOCAL_VOICES_POC_PATH}:/home/voices-poc
-      - ${VUG_LOCAL_TENADEV_DIR}:/home/tenadev
+      - ${VUG_LOCAL_VOICES_POC_PATH}:/home/dt_user/voices-poc
+      - ${VUG_LOCAL_TENADEV_DIR}:/home/dt_user/tenadev
       - /dev/bus/usb:/dev/bus/usb
     devices:
       - /dev/input:/dev/input

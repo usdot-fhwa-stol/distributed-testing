@@ -1,4 +1,4 @@
-FROM usdotfhwastoldev/voices:base-P-0.0.3
+FROM usdotfhwastoldev/voices:base-P-0.0.4
 
 # Make sure that the docker container gets enough memory or the compiler will crash building the CppClient
 # On macos I increased the memory available from 2.0GB to 6.0GB.  I didn't try lower than this yet.
@@ -9,28 +9,23 @@ FROM usdotfhwastoldev/voices:base-P-0.0.3
 
 ARG DEBIAN_FRONTEND="noninteractive" 
 ARG TZ="America/New_York"
-LABEL version=${VERSION}
 LABEL description="Distributed Testing Docker image for building TENA adapters"
+ARG VERSION=dev
+LABEL version=${VERSION}
 
+WORKDIR /home/dt_user
 
-RUN apt-get update && apt-get install -y wget software-properties-common
+USER root
 
-# RUN wget -O - https://apt.kitware.com/keys/kitware-archive-latest.asc 2>/dev/null | gpg --dearmor - | tee /etc/apt/trusted.gpg.d/kitware.gpg >/dev/null
-# RUN apt-add-repository "deb https://apt.kitware.com/ubuntu/ $(lsb_release -cs) main"
-RUN apt update
-
-# RUN apt-get install -y \
-#     cmake=3.31.6-0kitware1ubuntu20.04.1 cmake-data=3.31.6-0kitware1ubuntu20.04.1 git build-essential libboost-all-dev clang-8 g++-7 lld-8 g++-8 ninja-build \
-#     libvulkan1 libpng-dev libtiff5-dev libjpeg-dev tzdata sed curl openssl unzip autoconf libtool rsync libxml2-dev && \
-#     update-alternatives --install /usr/bin/clang++ clang++ /usr/lib/llvm-8/bin/clang++ 180 && \
-#     update-alternatives --install /usr/bin/clang clang /usr/lib/llvm-8/bin/clang 180
-
-RUN apt-get install -y \
+RUN apt update && apt-get install -y \
     cmake cmake-data git build-essential libboost-all-dev clang g++ lld ninja-build \
     libvulkan1 libpng-dev libtiff5-dev libjpeg-dev tzdata sed curl openssl unzip autoconf libtool rsync libxml2-dev
 
 RUN --mount=type=secret,id=usdotfhwastol_token \
     USDOTFHWASTOL_TOKEN=$(cat /run/secrets/usdotfhwastol_token) && \
     git clone https://${USDOTFHWASTOL_TOKEN}@github.com/usdot-fhwa-stol/vug-cmake-package.git cmake_temp && \
-	mv cmake_temp/cmake/ /opt/TENA/lib/ && \
+    chown -R dt_user:dt_user cmake_temp && \
+	mv cmake_temp/cmake/ /home/dt_user/TENA/lib/ && \
 	rm -rf cmake_temp   
+
+USER dt_user
