@@ -1,1 +1,0 @@
-../src/start-carla-tena-adapter.sh

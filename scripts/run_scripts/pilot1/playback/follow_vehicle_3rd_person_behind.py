@@ -1,1 +1,0 @@
-../../../carla_python_scripts/follow_vehicle_3rd_person_behind.py

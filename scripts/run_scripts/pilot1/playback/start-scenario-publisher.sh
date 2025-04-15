@@ -1,1 +1,0 @@
-../src/start-scenario-publisher.sh
