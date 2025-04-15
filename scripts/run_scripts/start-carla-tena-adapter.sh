@@ -64,7 +64,7 @@ else
     exit 1
 fi
 
-localadapterPath=$VUG_LOCAL_INSTALL_PATH/$VUG_CARLA_ADAPTER_VERSION
+localadapterPath=/home/dt_user/tenadev/INSTALL/$VUG_CARLA_ADAPTER_VERSION
 
 adapterVerbosity='1'
 
