@@ -73,6 +73,10 @@
     <simulation name="CARLA-annika-1" type="CARLA">
       <WeatherState>ClearNoon</WeatherState>
     </simulation>
+
+    <simulation name="CARLA-FHWA-A" type="CARLA">
+      <WeatherState>ClearNoon</WeatherState>
+    </simulation>
     
     
 
