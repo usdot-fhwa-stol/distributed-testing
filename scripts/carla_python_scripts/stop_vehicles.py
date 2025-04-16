@@ -58,7 +58,6 @@ def main():
     client.set_timeout(10.0)
 
     try:
-        world = client.get_world()
 
         already_stopped_once = []
 
@@ -71,6 +70,8 @@ def main():
 
 
         for i in range(max_checks):
+
+            world = client.get_world()
 
             vehicles = world.get_actors().filter('vehicle.*')
 
