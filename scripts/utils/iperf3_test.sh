@@ -1,9 +1,9 @@
 #!/bin/bash
 
 # Define the server IP and ports
-SERVER_IP="173.73.28.235"
-TCP_PORT="5201"
-UDP_PORT="5201"
+SERVER_IP="1.2.3.4"
+TCP_PORT="5202"
+UDP_PORT="5202"
 SERVER_NAME="SRC"
 
 # Ensure the output directory exists
