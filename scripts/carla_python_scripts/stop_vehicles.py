@@ -112,7 +112,9 @@ def main():
                     vehicle.apply_control(veh_control)
 
             time.sleep(1)
-
+    except Exception as errMsg:
+        print(f'ERROR: {errMsg}')
+        
     finally:
 
         time.sleep(0.5)
