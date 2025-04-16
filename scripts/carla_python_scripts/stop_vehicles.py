@@ -75,6 +75,9 @@ def main():
 
             vehicles = world.get_actors().filter('vehicle.*')
 
+            print(f'Found {len(vehicles)} vehicles')
+            print(f'\t{vehicles}')
+
             stopped_vehicles = []
 
             if args.verbose: print(f"Checking for new vehicles to stop [{max_checks - i}]")
