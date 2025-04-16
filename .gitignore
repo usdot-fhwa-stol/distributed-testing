@@ -20,6 +20,8 @@ scripts/encoding_decoding_tools/encode_single_packet/*.json
 scripts/carla_python_scripts/Sumo/util/*.net.xml
 scripts/carla_python_scripts/Sumo/util/*.xodr
 
+#ignore the usdotfhwastol_token file for downloading private code
+docker/build/usdotfhwastol_token
 
 #ignore scripts working dir
 scripts/carla_python_scripts/misc

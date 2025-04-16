@@ -1,7 +1,5 @@
 #!/bin/bash
 
-docker_compose_file='docker-compose.yml'
-
 stopDocker()
 {
 
@@ -193,6 +191,14 @@ export VUG_VPN_LOCAL_ADDRESS=$vpn_local_ip_clean
 export VUG_VPN_EM_ADDRESS=$em_fqdn_address
 
 echo
+if [[ $VUG_DOCKER_START_CARLA == true ]]; then
+    echo "Using CARLA docker-compose"
+    docker_compose_file='docker-compose.yml'
+else
+    echo "Using NO CARLA docker-compose"
+    docker_compose_file='no-carla_docker-compose.yml'
+fi
+
 
 trap stopDocker SIGINT
 
