@@ -75,8 +75,8 @@ def main():
 
             vehicles = world.get_actors().filter('vehicle.*')
 
-            print(f'Found {len(vehicles)} vehicles')
-            print(f'\t{vehicles}')
+            # print(f'Found {len(vehicles)} vehicles')
+            # print(f'\t{vehicles}')
 
             stopped_vehicles = []
 

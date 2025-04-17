@@ -49,6 +49,6 @@ docker/build/lib/COPY/VUG_Adapters
 docker/build/lib/COPY/CARLA*
 docker/build/lib/MAPS
 docker/build/lib/OLD
-
+docker/build/lib/CARLA_TFHRC
 
 # ignore SUMO pycache

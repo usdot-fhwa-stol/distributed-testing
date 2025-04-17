@@ -33,7 +33,16 @@ fi
 vulkaninfo &> /dev/null
 
 echo "STARTING CARLA"
-/bin/bash /home/carla/CarlaUE4.sh $carla_graphics_api_arg $carla_graphics_quality_arg -nosound &
+
+
+if [[ $VUG_CARLA_MAP_NAME == "TFHRC" ]]; then
+   CARLA_LOCATION="/home/CARLA_TFHRC"
+else
+   CARLA_LOCATION="/home/carla"
+fi
+
+
+/bin/bash $CARLA_LOCATION/CarlaUE4.sh $carla_graphics_api_arg $carla_graphics_quality_arg -nosound &
 
 sleep 5s
 

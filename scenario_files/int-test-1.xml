@@ -18,9 +18,8 @@
             <CARLA manual="true" generate_bsms="true"></CARLA>
         </userData>
         <initialTSPI>
-            <GeodeticPosition latitudeInDegrees="42.300399" longitudeInDegrees="-83.698250" heightAboveEllipsoidInMeters="250"/>
-            <!-- x=86.123024 y=21.699108 yaw=272 -->
-            <Heading>272</Heading>
+            <GeodeticPosition latitudeInDegrees="38.955812" longitudeInDegrees="-77.151061" heightAboveEllipsoidInMeters="39"> </GeodeticPosition>
+            <Heading>38</Heading>
         </initialTSPI>
     </vehicle>
 
@@ -29,9 +28,8 @@
             <CARLA manual="true" generate_bsms="true"></CARLA>
         </userData>
         <initialTSPI>
-            <GeodeticPosition latitudeInDegrees="42.301407" longitudeInDegrees="-83.699016" heightAboveEllipsoidInMeters="250"/>
-            <!-- x=22.569023 y=-91.464149 yaw=221 -->
-            <Heading>221</Heading>
+            <GeodeticPosition latitudeInDegrees="38.955886" longitudeInDegrees="-77.151224" heightAboveEllipsoidInMeters="39"> </GeodeticPosition>
+            <Heading>38</Heading>
         </initialTSPI>
     </vehicle>
 
