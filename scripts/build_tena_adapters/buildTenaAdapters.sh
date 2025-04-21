@@ -115,7 +115,7 @@ middlewareVersion="MiddlewareSDK-v6.0.9"
 
 
 vugThreadsVersion="vug-threads-2.2.0"
-vugUdbProtocolioVersion="vug-udp-protocolio-2.2.1"
+vugUdpProtocolioVersion="vug-udp-protocolio-2.2.1"
 
 
 v2xhubGitUrl="https://github.com/usdot-fhwa-OPS/V2X-Hub.git"
@@ -133,7 +133,7 @@ vug_carla_adapter_name="vug-carla-adapter"
 echo
 echo "What application would you like to install? [#]" 
 echo 
-echo "    [1]  vug-threads"
+echo "    [1]  vug-threads-library"
 echo "    [2]  vug-udp-protocolio"
 echo "    [3]  scenario-publisher"
 echo "    [4]  $vug_carla_adapter_name"
@@ -153,7 +153,7 @@ read -p "--> " tenaAppIndex
 carlaTenaAdapterGitUrl="https://github.com/usdot-fhwa-stol/vug-carla-adapter.git"
 
 if [[ $tenaAppIndex == 1 ]]; then
-	tenaApp=vug-threads
+	tenaApp=vug-threads-library
 	gitCloneUrl="https://github.com/usdot-fhwa-stol/vug-threads-library.git"
 	dockerContainer=usdotfhwastoldev/voices:build-general-P-latest
 	remoteAppDir=/home/$tenaApp	#DO NOT CHANGE: internal docker directory mapped to localAppDir
@@ -442,16 +442,16 @@ echo "The looking for packages to be installed:"
 
 #look for VUG Threads
 # set -x
-if [ $tenaApp == "vug-threads" ] || [ -d $localInstallDir/$vugThreadsVersion ]; then
-	echo "vug-threads found..."
+if [ $tenaApp == "vug-threads-library" ] || [ -d $localInstallDir/$vugThreadsVersion ]; then
+	echo "vug-threads-library found..."
 else
-	echo "vug-threads was not found. Please install vug-threads"
+	echo "vug-threads-library was not found. Please install vug-threads-library"
 	exit
 fi
 
 #look for VUG ProtocolIO
 if $requiresProtocolio; then
-	if [ -d $localInstallDir/$vugUdbProtocolioVersion ]; then
+	if [ -d $localInstallDir/$vugUdpProtocolioVersion ]; then
 		echo "ProtocolIO found..."
 	else
 		echo "vug-udp-protocolio was not found. Please install vug-udp-protocolio"
@@ -529,11 +529,11 @@ else
 		docker pull $dockerContainer
 	
 
-	#if we are vug-threads or protocolio
-	elif [ $dockerContainer == "usdotfhwastoldev/voices:build-carla-latest" ]; then
+	#if we are the carla adapter
+	elif [ $dockerContainer == "usdotfhwastoldev/voices:build-carla-P-latest" ]; then
 		
 		if [ ! -d $VUG_LOCAL_TENADEV_DIR/$vug_carla_adapter_name ]; then
-			echo "This application uses the usdotfhwastoldev/voices:build-carla-latest build container from the $vug_carla_adapter_name. Cloning $vug_carla_adapter_name repository to use dockerfile"
+			echo "This application uses the usdotfhwastoldev/voices:build-carla-P-latest build container from the $vug_carla_adapter_name. Cloning $vug_carla_adapter_name repository to use dockerfile"
 		
 			git clone $carlaTenaAdapterGitUrl -b develop $VUG_LOCAL_TENADEV_DIR/$vug_carla_adapter_name || exit
 
@@ -578,7 +578,7 @@ fi
 
 
 #-- Cmake example
-#sudo docker run --rm -v /home/ejslattery/dev/carlaadapter:/home/CarlaAdapter -v /home/ejslattery/dev/tenadev/u1804-gcc75-64/TENA:/home/TENA usdotfhwastoldev/voices:build-carla-latest bash -c "cd /home/CarlaAdapter/build; export TENA_PLATFORM=u1804-gcc75-64; export TENA_HOME=/home/TENA; export TENA_VERSION=6.0.7; export CARLA_HOME=/home/carla; cmake -D CMAKE_EXPORT_COMPILE_COMMANDS=ON -D CMAKE_PREFIX_PATH=/home/TENA/lib/cmake -D BOOST_INCLUDEDIR=/home/TENA/TENA_boost_1.70.0.2_Library/u1804-gcc75-64/include -D VUG_INSTALL_DIR=/home/CarlaAdapter/INSTALL ../"
+#sudo docker run --rm -v /home/ejslattery/dev/carlaadapter:/home/CarlaAdapter -v /home/ejslattery/dev/tenadev/u1804-gcc75-64/TENA:/home/TENA usdotfhwastoldev/voices:build-carla-P-latest bash -c "cd /home/CarlaAdapter/build; export TENA_PLATFORM=u1804-gcc75-64; export TENA_HOME=/home/TENA; export TENA_VERSION=6.0.7; export CARLA_HOME=/home/carla; cmake -D CMAKE_EXPORT_COMPILE_COMMANDS=ON -D CMAKE_PREFIX_PATH=/home/TENA/lib/cmake -D BOOST_INCLUDEDIR=/home/TENA/TENA_boost_1.70.0.2_Library/u1804-gcc75-64/include -D VUG_INSTALL_DIR=/home/CarlaAdapter/INSTALL ../"
 #-- Cmake
 
 if [[ ! -d $localAppDir/build ]]; then
@@ -614,7 +614,7 @@ echo
 echo "#### CMAKE Complete ####"
 
 #--Make example
-#sudo docker run --rm -v /home/ejslattery/dev/carlaadapter:/home/CarlaAdapter -v /home/ejslattery/dev/tenadev/u1804-gcc75-64/TENA:/home/TENA usdotfhwastoldev/voices:build-carla-latest bash -c "cd /home/CarlaAdapter/build; export TENA_PLATFORM=u1804-gcc75-64; export TENA_HOME=/home/TENA; export TENA_VERSION=6.0.7; export CARLA_HOME=/home/carla; make VERBOSE=1"
+#sudo docker run --rm -v /home/ejslattery/dev/carlaadapter:/home/CarlaAdapter -v /home/ejslattery/dev/tenadev/u1804-gcc75-64/TENA:/home/TENA usdotfhwastoldev/voices:build-carla-P-latest bash -c "cd /home/CarlaAdapter/build; export TENA_PLATFORM=u1804-gcc75-64; export TENA_HOME=/home/TENA; export TENA_VERSION=6.0.7; export CARLA_HOME=/home/carla; make VERBOSE=1"
 
 #-- make
 if [[ "$skipMake" == true ]]
