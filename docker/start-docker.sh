@@ -9,6 +9,13 @@ $docker_compose_cmd -f $docker_compose_file down
 source $VUG_LOCAL_VOICES_POC_PATH/scripts/utils/stop_current_vpn_connection.sh
 }
 
+# Get the directory of the script, no matter where it's called from
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+cd $SCRIPT_DIR
+
+# Capture all extra arguments
+EXTRA_ARGS=("$@")
+
 voices_site_config=$HOME/.voices_site_config
 voices_scenario_config=$HOME/.voices_scenario_config
 
@@ -204,4 +211,4 @@ trap stopDocker SIGINT
 
 $docker_compose_cmd -f $docker_compose_file pull
 
-$docker_compose_cmd -f $docker_compose_file up
+$docker_compose_cmd -f $docker_compose_file up "${EXTRA_ARGS[@]}"
