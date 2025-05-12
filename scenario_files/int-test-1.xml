@@ -4,12 +4,10 @@
     <name>Integration Test 1</name>
   </identifier>
   <OpenDrive>
-    <MapFileName name="mcity_map_v2.xodr">
-      <MapOrigin latitudeInDegrees="42.30059341574939" longitudeInDegrees="-83.69928318881136" heightAboveEllipsoidInMeters="0"> </MapOrigin>
+    <MapFileName name="TFHRC.xodr">
+      <MapOrigin latitudeInDegrees="38.9511644208721" longitudeInDegrees="-77.14905380821106" heightAboveEllipsoidInMeters="0"> </MapOrigin>
     </MapFileName>
   </OpenDrive>
-
-
 
   <vehicles>
 
@@ -23,7 +21,8 @@
         </initialTSPI>
     </vehicle>
 
-    <vehicle name="FHWA-M-A" bsmid="f03ad620" type="vehicle.mustang.mustang" owner="CARLA-FHWA-A" material="Aluminum" lvcIndicator="Live">
+    <!-- <vehicle name="FHWA-M-A" bsmid="f03ad620" type="vehicle.mustang.mustang" owner="CARLA-FHWA-A" material="Aluminum" lvcIndicator="Live"> -->
+    <vehicle name="FHWA-M-3" bsmid="f03ad620" type="vehicle.mustang.mustang" owner="CARLA-FHWA-3" material="Aluminum" lvcIndicator="Live">
         <userData>
             <CARLA manual="true" generate_bsms="true"></CARLA>
         </userData>
@@ -34,37 +33,6 @@
     </vehicle>
 
   </vehicles>
-
-  <intersectionSignalControllers>
-    <intersectionSignalController name="tsc_mcity_state_and_liberty" adapterType="spat-adapter" adapterName="SPAT-1" lvcIndicator="Live">
-      <userData>
-        <CARLA>
-          <controllers>
-            <controller name="ctrl549" id="549"/>
-          </controllers>
-        </CARLA>
-      </userData>
-    </intersectionSignalController>
-  </intersectionSignalControllers>
-  <phaseSignalMappings>
-        <configuration name="MCity Wolverine and Liberty Configuration - Replay" intersectionName="tsc_mcity_state_and_liberty">
-      <controller name="ctrl549-502A" id="549">
-        <control signalId="658" type="">
-          <userData><phase>4</phase></userData>
-        </control>
-      </controller>
-      <controller name="ctrl549-497A" id="549">
-        <control signalId="663" type="">
-          <userData><phase>2</phase></userData>
-        </control>
-      </controller>
-      <controller name="ctrl549-504A" id="549">
-        <control signalId="656" type="">
-          <userData><phase>6</phase></userData>
-        </control>
-      </controller>
-    </configuration>
-  </phaseSignalMappings>
 
   <simulations>
 
