@@ -57,7 +57,7 @@ __get_image_from_config() {
     # Check if carma-config is set. If so, use what was in the carma config
     if docker container inspect carma-config > /dev/null 2>&1; then
 
-        # NOTE: Before and including carma-system-4.5.0, image can be directly grabbed from config docker-compose using sed
+        # NOTE: Before and including carma-system-4.5.0, image can be directly grabbed from config docker compose using sed
         # This approach needs to be used for versions for and before carma-system-4.5.0 because the /opt/carma/vehicle/config/.env file is not defined
         # sed command finds the first instance of an image which is part of the set defined in SUPPORTED_ORGANIZATIONS and SUPPORTED_IMAGES.
         # then returns the name of the image.
@@ -288,7 +288,9 @@ dt-config__create() {
                 echo "Invalid input. Use 'true' or 'false'."
             fi
         done
-
+        
+        # replace /home/<username> with $HOME to keep the config tidy
+        sed -i "s|^export VUG_LOCAL_VOICES_POC_PATH=.*|export VUG_LOCAL_VOICES_POC_PATH=${VUG_LOCAL_VOICES_POC_PATH/#$HOME/\$HOME}|" "$new_config_path"
         sed -i "s|^export VUG_LOCAL_ADDRESS=.*|export VUG_LOCAL_ADDRESS='$VUG_LOCAL_ADDRESS'|" "$new_config_path"
         sed -i "s|^export VUG_SHORT_IDENTIFIER=.*|export VUG_SHORT_IDENTIFIER='$VUG_SHORT_IDENTIFIER'|" "$new_config_path"
         sed -i "s|^export VUG_DOCKER_START_CARLA=.*|export VUG_DOCKER_START_CARLA=$VUG_DOCKER_START_CARLA|" "$new_config_path"
@@ -376,6 +378,9 @@ dt__init() {
 }
 
 dt__download() {
+    # Capture all extra arguments
+    EXTRA_ARGS=("$@")
+    
     # Check that the env variable is set and compose file exists
     if [[ -z "$VUG_LOCAL_VOICES_POC_PATH" ]]; then
         echo "Error: VUG_LOCAL_VOICES_POC_PATH is not set."
@@ -391,14 +396,15 @@ dt__download() {
 
     echo "Stopping DT Containers:"
     echo ""
-     script -q -c "docker compose -f \"$COMPOSE_FILE\" pull" /dev/null | grep -v 'variable is not set. Defaulting to a blank string'
+    # run the docker compose pull, pass any extra args
+    # using script to simulate a TTY to get the proper formatting
+    # grep -v out the warning lines for env vars not set, we dont care on shutdown
+    script -q -c "docker compose -f \"$COMPOSE_FILE\" pull ${EXTRA_ARGS[@]}" /dev/null | grep -v 'variable is not set. Defaulting to a blank string'
 }
 
 dt__start() {
     # Capture all extra arguments
     EXTRA_ARGS=("$@")
-
-    echo "${EXTRA_ARGS[@]}"
 
     echo "Starting DT..."
     $VUG_LOCAL_VOICES_POC_PATH/docker/start-docker.sh "${EXTRA_ARGS[@]}"
@@ -406,6 +412,10 @@ dt__start() {
 }
 
 dt__stop() {
+
+    # Capture all extra arguments
+    EXTRA_ARGS=("$@")
+
     # Check that the env variable is set and compose file exists
     if [[ -z "$VUG_LOCAL_VOICES_POC_PATH" ]]; then
         echo "Error: VUG_LOCAL_VOICES_POC_PATH is not set."
@@ -421,10 +431,17 @@ dt__stop() {
 
     echo "Stopping DT Containers:"
     echo ""
-     script -q -c "docker compose -f \"$COMPOSE_FILE\" down" /dev/null | grep -v 'variable is not set. Defaulting to a blank string'
+    # run the docker compose down, pass any extra args
+    # using script to simulate a TTY to get the proper formatting
+    # grep -v out the warning lines for env vars not set, we dont care on shutdown
+    script -q -c "docker compose -f \"$COMPOSE_FILE\" down ${EXTRA_ARGS[@]}" /dev/null | grep -v 'variable is not set. Defaulting to a blank string'
 }
 
 dt__ps() {
+
+    # Capture all extra arguments
+    EXTRA_ARGS=("$@")
+
     # Check that the env variable is set and compose file exists
     if [[ -z "$VUG_LOCAL_VOICES_POC_PATH" ]]; then
         echo "Error: VUG_LOCAL_VOICES_POC_PATH is not set."
@@ -440,27 +457,49 @@ dt__ps() {
 
     echo "Runinng DT Containers:"
     echo ""
-     script -q -c "docker compose -f \"$COMPOSE_FILE\" ps" /dev/null | grep -v 'variable is not set. Defaulting to a blank string'
+    # run the docker compose ps, pass any extra args
+    # using script to simulate a TTY to get the proper formatting
+    # grep -v out the warning lines for env vars not set, we dont care on shutdown
+    script -q -c "docker compose -f \"$COMPOSE_FILE\" ps ${EXTRA_ARGS[@]}" /dev/null | grep -v 'variable is not set. Defaulting to a blank string'
 }
 
 dt__exec() {
     local container="voices"
+    local command="bash"
+    local exec_args=()
 
-    # If the user provided an argument, use it as the container name
-    if [[ -n "$1" ]]; then
-        container="$1"
-    fi
+    # Parse arguments
+    while [[ $# -gt 0 ]]; do
+        case "$1" in
+            --container)
+                container="$2"
+                shift 2
+                ;;
+            --command)
+                command="$2"
+                shift 2
+                ;;
+            *)
+                exec_args+=("$1")
+                shift
+                ;;
+        esac
+    done
 
-    # Validate container name
+    # Validate container
     if [[ "$container" != "voices" && "$container" != "carla-voices" ]]; then
         echo "Error: Unknown container '$container'"
         echo "Valid options are: voices or carla-voices"
-        exit 1
+        return 1
     fi
 
-    # Run docker exec
-    echo "Attaching to container '$container'..."
-    docker exec -it "$container" bash
+    # Set default exec args if none provided
+    if [[ ${#exec_args[@]} -eq 0 ]]; then
+        exec_args=(-it)
+    fi
+
+    echo "Attaching to container '$container' with args: ${exec_args[*]} and command: $command"
+    docker exec "${exec_args[@]}" "$container" $command
 }
 
 dt__help() {
@@ -470,14 +509,14 @@ dt__help() {
 -------------------------------------------------------------------------------
 
 Please enter one of the following commands:
-    init [<voices-poc path>]
+    init <voices-poc path>
         - initialize the dt system, prompting the user to create a site config, 
           create a scenario config, and set their config. 
+        - voices-poc path is the location which the voices-poc GitHub repository is downloaded
 
     config
         print 
             - print the current scenario and site configuration file contents
-
         set [--site <site config name>] [--scenario <scenario config name>]
             - sets the users site and scenario config. Can be set directly using the --site
               and --scenario args, prompts the user if no arguments are given. 
@@ -486,24 +525,30 @@ Please enter one of the following commands:
               argument. This will prompt them to enter critial configuration but it is highly 
               reccommended to review and adjust your configuration after creation
 
-    start [docker-compose down args]
-        - Start the distributed testing docker stack
+    start [docker compose up args]
+        - Start the distributed testing platform
         - Adapters and TENA applications will be started and configured based on your site config
-        - Accepts the same flags as "docker-compose up"
-    stop (all (docker-compose down args))
-        - Stop the CARMA platform's foreground processes. If all, stop
-          everything.
-        - Accepts the same flags as "docker-compose down"
-        - NOTE: Uses COMPOSE_ENV_FILES under the hood for env files.
-          Precedence from lowest to highest: .env in carma-config, local .env, existing COMPOSE_ENV_FILES in shell.
-        - fix_bag
-            - After stopping carma, checks if the last run's rosbag has been correctly saved. If not, fixes it to be replayable.
-    exec <optional bash command>
-        - Opens a new container with GUI support from the carma-platform or carma-messenger image with the version specified in docker compose. If no version is found it will use latest.
+        - Accepts the same flags as "docker compose up"
+    
+    stop [docker compose down args]
+        - Stop the distributed testing platform.
+        - Accepts the same flags as "docker compose down"
+    
+    exec [docker exec args] [--container <container name>] [--command <command to execute>]
+        - Opens a terminal inside the specified container with the specified args and commands
+        - Default container is voices, alternatively carla-voices
+        - Default docker exec args are -it
+        - Default command is bash
+    
+    download [docker pull args]
+        - Pulls the docker containers from the docker compose
+        - Containers can be downloaded individually by specifying the container name in the 
+          docker pull args
+
     ps
         - List all running CARMA docker containers
-    attach
-        - View STDOUT from all running CARMA foreground processes
+        - Accepts the same flags as "docker ps"
+    
     help
         - Display this information"
 HELP
@@ -586,11 +631,7 @@ dt__config() {
 
 dt() {
     local cmdname=$1; shift
-    if type "dt__$cmdname" >/dev/null 2>&1; then
-        if [[ "$cmdname" != "init" ]]; then
-            check_config
-        fi
-        
+    if type "dt__$cmdname" >/dev/null 2>&1; then     
         "dt__$cmdname" "$@"
     else
         dt__help

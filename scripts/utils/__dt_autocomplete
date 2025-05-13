@@ -12,48 +12,17 @@
 #  License for the specific language governing permissions and limitations under
 #  the License.
 
-# __list_docker_images()
-# {
-#   if [ -z "$1" ]; then 
-#     docker image ls --format "{{.Repository}}:{{.Tag}}" "usdotfhwastol/carma-config" | grep -v "<none>$"
-#   else
-#     docker image ls --format "{{.Repository}}:{{.Tag}}" | grep -v "<none>$"
-#   fi
-# }
-
-# __list_remote_images()
-# {
-#     wget -q https://registry.hub.docker.com/v1/repositories/usdotfhwastol/carma-config/tags -O -  | \
-#     sed -e 's/[][]//g' -e 's/"//g' -e 's/ //g' | tr '}' '\n'  | \
-#     awk -F: '{print "usdotfhwastol/carma-config:"$3}'
-# }
-
 __dt()
 {
-  local cur prev subcmds config_subcmds stop_subcmds
+  local cur prev subcmds config_subcmds
   COMPREPLY=()
   _get_comp_words_by_ref -n : cur prev
-  subcmds="config start stop ps help attach"
-  config_subcmds=" status list_local list_remote install set edit inspect reset"
-  stop_subcmds=" all fix_bag"
+  subcmds="init config start stop ps help exec download"
+  config_subcmds=" print status create"
 
   case ${prev} in
     "config")
       COMPREPLY=( $(compgen -W "${config_subcmds}" -- ${cur}) )
-      ;;
-    "set")
-      COMPREPLY=( $(compgen -W "$(__list_docker_images $cur)" -- "${cur}") )
-      __ltrim_colon_completions "$cur"
-      ;;
-    "install")
-      COMPREPLY=( $(compgen -W "$(__list_remote_images)" -- "${cur}") )
-      __ltrim_colon_completions "$cur"
-      ;;
-    "stop")
-      COMPREPLY=( $(compgen -W "${stop_subcmds}" -- "${cur}") )
-      ;;
-    "start")
-      COMPREPLY=( $(compgen -W "all" -- "${cur}") )
       ;;
     "dt")
       COMPREPLY=( $(compgen -W "${subcmds}" -- ${cur}) )
