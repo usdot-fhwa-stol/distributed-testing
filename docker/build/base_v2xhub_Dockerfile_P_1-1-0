@@ -46,7 +46,7 @@ ARG USER="dt_user"
 
 WORKDIR /home/dt_user
 
-COPY --from=build /home/dt_user/opt/TENA /home/dt_user/TENA
+COPY --chown=dt_user:dt_user --from=build /home/dt_user/opt/TENA /home/dt_user/TENA
 RUN DSTROOT=/home/dt_user ./TENA/postinst-MW
 RUN DSTROOT=/home/dt_user ./TENA/postinst-DIST
 
@@ -58,10 +58,10 @@ RUN apt update && apt-get install -y \
     cmake cmake-data git build-essential libboost-all-dev clang g++ lld ninja-build \
     libvulkan1 libpng-dev libtiff5-dev libjpeg-dev tzdata sed curl openssl unzip autoconf libtool rsync libxml2-dev
 
-COPY ./lib/COPY/vug-cmake-package cmake_temp
-# RUN --mount=type=secret,id=usdotfhwastol_token \
-#     USDOTFHWASTOL_TOKEN=$(cat /run/secrets/usdotfhwastol_token) && \
-#     git clone https://${USDOTFHWASTOL_TOKEN}@github.com/usdot-fhwa-stol/vug-cmake-package.git cmake_temp && \
+# COPY ./lib/COPY/vug-cmake-package cmake_temp
+RUN --mount=type=secret,id=usdotfhwastol_token \
+    USDOTFHWASTOL_TOKEN=$(cat /run/secrets/usdotfhwastol_token) && \
+    git clone https://${USDOTFHWASTOL_TOKEN}@github.com/usdot-fhwa-stol/vug-cmake-package.git cmake_temp && \
 RUN chown -R dt_user:dt_user cmake_temp && \
 	mv cmake_temp/cmake/ /home/dt_user/TENA/lib/ && \
 	rm -rf cmake_temp   
@@ -70,13 +70,15 @@ ARG VERSION=dev
 LABEL version=${VERSION}
 LABEL description="V2XHub Distributed Testing Docker Image"
 
-SHELL ["/bin/bash", "-ec"]
+# SHELL ["/bin/bash", "-ec"]
 
-ARG DEBIAN_FRONTEND="noninteractive"
-ARG TZ="America/New_York"
+# ARG DEBIAN_FRONTEND="noninteractive"
+# ARG TZ="America/New_York"
 
 # COPY vug-build/TenaBsmPlugin.zip /usr/local/plugins/TenaBsmPlugin.zip
 # COPY vug-build/TenaSpatPlugin.zip /usr/local/plugins/TenaSpatPlugin.zip
 RUN echo 'source /home/dt_user/TENA/6.0.9/scripts/tenaenv-u2204-gcc11-64-v6.0.9.sh' >> /home/dt_user/.bashrc
-# WORKDIR /var/log/tmx  
-# ENTRYPOINT ["/usr/local/bin/service.sh"]  
+
+WORKDIR /var/log/tmx 
+
+ENTRYPOINT ["/usr/local/bin/service.sh"]

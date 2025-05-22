@@ -33,7 +33,7 @@ RUN gdown 1xuLT9aZ4GFpiVsrtc3RUBUO-ziDxv_yZ
 WORKDIR /home/$USER/INSTALL/DV
 RUN gdown 1UojRtJBZHgS9U17hwq653sH2VjqRbOzq
 
-# INSTALL TENA Data Collection System
+# INSTALL TENA DataView
 WORKDIR /home/$USER/INSTALL/DV
 RUN dpkg -x --force-overwrite ./TDCS-DataView-v1.5.4@Product@u2204-gcc11-64-*.deb .
 RUN ar -x ./TDCS-DataView-v1.5.4@Product@u2204-gcc11-64-*.deb
@@ -41,7 +41,7 @@ RUN tar xf control.tar.*
 # move the postinst script into TENA dir to make it easier to copy and run later on final container
 RUN mv ./postinst ./opt/TENA/postinst-DV
 
-# INSTALL TENA DataView
+# INSTALL TENA Data Collection System
 WORKDIR /home/$USER/INSTALL/TDCS
 RUN dpkg -x --force-overwrite ./VUG-P???-Combined-DataCollectionDistribution-*.deb .
 RUN ar -x ./VUG-P???-Combined-DataCollectionDistribution-*.deb
