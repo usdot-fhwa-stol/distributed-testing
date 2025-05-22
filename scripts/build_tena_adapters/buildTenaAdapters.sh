@@ -143,10 +143,11 @@ echo "    [7]  tena-v2x-adapter"
 echo "    [8]  tena-entity-generator"
 echo "    [9]  tena-traffic-light-entity-generator"
 echo "    [10] carma-platform-tena-adapter"
-echo "    [11] v2xhub-tena-bsm-plugin"
-echo "    [12] v2xhub-tena-spat-plugin"
-echo "    [13] v2xhub-tena-mobility-plugin"
-echo "    [14] v2xhub-tena-traffic-control-plugin"
+echo "    [11] v2xhub-tena-v2x-plugin"
+echo "    [12] v2xhub-tena-bsm-plugin"
+echo "    [13] v2xhub-tena-spat-plugin"
+echo "    [14] v2xhub-tena-mobility-plugin"
+echo "    [15] v2xhub-tena-traffic-control-plugin"
 echo
 read -p "--> " tenaAppIndex
 
@@ -254,9 +255,9 @@ elif [[ $tenaAppIndex == 10 ]]; then
 	noBuildVersion=false
 
 elif [[ $tenaAppIndex == 11 ]]; then
-	tenaApp=vug-v2xhub-bsm-plugin
+	tenaApp=vug-v2xhub-v2x-plugin
 	gitCloneUrl="https://github.com/usdot-fhwa-stol/vug-v2xhub-bsm-plugin.git"
-	dockerContainer=usdotfhwaops/v2xhubamd:voices-pilot2-latest
+	dockerContainer=usdotfhwaops/v2xhubamd:voices-P-1.1.0
 	remoteAppDir=/home/V2X-Hub/src/$tenaApp	#DO NOT CHANGE: internal docker directory mapped to localAppDir
 	isV2xhubPlugin=true
 	requiresProtocolio=false
@@ -264,6 +265,16 @@ elif [[ $tenaAppIndex == 11 ]]; then
 	noBuildVersion=false
 
 elif [[ $tenaAppIndex == 12 ]]; then
+	tenaApp=vug-v2xhub-bsm-plugin
+	gitCloneUrl="https://github.com/usdot-fhwa-stol/vug-v2xhub-bsm-plugin.git"
+	dockerContainer=usdotfhwaops/v2xhubamd:voices-P-1.1.0
+	remoteAppDir=/home/V2X-Hub/src/$tenaApp	#DO NOT CHANGE: internal docker directory mapped to localAppDir
+	isV2xhubPlugin=true
+	requiresProtocolio=false
+	useMasterDefaultBranch=false
+	noBuildVersion=false
+
+elif [[ $tenaAppIndex == 13 ]]; then
 	tenaApp=vug-v2xhub-spat-plugin
 	gitCloneUrl="https://github.com/usdot-fhwa-stol/vug-v2xhub-spat-plugin.git"
 	dockerContainer=usdotfhwaops/v2xhubamd:voices-pilot2-latest
@@ -273,7 +284,7 @@ elif [[ $tenaAppIndex == 12 ]]; then
 	useMasterDefaultBranch=false
 	noBuildVersion=false
 	
-elif [[ $tenaAppIndex == 13 ]]; then
+elif [[ $tenaAppIndex == 14 ]]; then
 	tenaApp=vug-v2xhub-mobility-plugin
 	gitCloneUrl="https://github.com/usdot-fhwa-stol/vug-v2xhub-mobility-plugin.git"
 	dockerContainer=usdotfhwaops/v2xhubamd:voices-pilot2-latest
@@ -283,7 +294,7 @@ elif [[ $tenaAppIndex == 13 ]]; then
 	useMasterDefaultBranch=false
 	noBuildVersion=false
 	
-elif [[ $tenaAppIndex == 14 ]]; then
+elif [[ $tenaAppIndex == 15 ]]; then
 	tenaApp=vug-v2xhub-traffic-control-plugin
 	gitCloneUrl="https://github.com/usdot-fhwa-stol/vug-v2xhub-traffic-control-plugin.git"
 	dockerContainer=usdotfhwaops/v2xhubamd:voices-pilot2-latest
@@ -604,7 +615,7 @@ echo "#### Running CMAKE ####"
 
 echo
 
-if ! ( set -x ; sudo docker run --entrypoint /bin/bash --rm -v $localAppDir:$remoteAppDir  -v $localInstallDir:$remoteInstallDir $dockerContainer -c "cd $remoteAppDir/build; export TENA_PLATFORM=$tenaBuildVersion; export TENA_HOME=$remoteTenaDir; export TENA_VERSION=6.0.9; export CARLA_HOME=$remoteCarlaDir; cmake -D CMAKE_EXPORT_COMPILE_COMMANDS=ON $buildVersionDirArg $buildVersionCmakeArg -D CMAKE_PREFIX_PATH='$remoteTenaDir/lib/cmake;$remoteInstallDir;/opt/carma/cmake' -D VUG_INSTALL_DIR=$remoteInstallDir -D tmx-plugin_DIR=/usr/local/share/tmx/ ../" ); then
+if ! ( set -x ; sudo docker run --entrypoint /bin/bash --rm -v $localAppDir:$remoteAppDir  -v $localInstallDir:$remoteInstallDir $dockerContainer -c "cd $remoteAppDir/build; export TENA_PLATFORM=$tenaBuildVersion; export TENA_HOME=$remoteTenaDir; export TENA_VERSION=6.0.9; export CARLA_HOME=$remoteCarlaDir; cmake -D CMAKE_EXPORT_COMPILE_COMMANDS=ON $buildVersionDirArg $buildVersionCmakeArg -D CMAKE_PREFIX_PATH='$remoteTenaDir/lib/cmake;$remoteInstallDir;/opt/carma/cmake;/opt/carma/lib' -D CMAKE_MODULE_PATH='/opt/carma/cmake' -D VUG_INSTALL_DIR=$remoteInstallDir -D tmx-plugin_DIR=/usr/local/share/tmx/ ../" ); then
 	echo
 	echo "[!!!] CMAKE FAILED"
 	exit
