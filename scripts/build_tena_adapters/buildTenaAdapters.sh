@@ -257,7 +257,8 @@ elif [[ $tenaAppIndex == 10 ]]; then
 elif [[ $tenaAppIndex == 11 ]]; then
 	tenaApp=vug-v2xhub-v2x-plugin
 	gitCloneUrl="https://github.com/usdot-fhwa-stol/vug-v2xhub-bsm-plugin.git"
-	dockerContainer=usdotfhwaops/v2xhubamd:voices-P-1.1.0
+	# dockerContainer=usdotfhwaops/v2xhubamd:voices-P-1.1.0
+	dockerContainer=usdotfhwaops/v2xhub:voices-P-0.0.1
 	remoteAppDir=/home/V2X-Hub/src/$tenaApp	#DO NOT CHANGE: internal docker directory mapped to localAppDir
 	isV2xhubPlugin=true
 	requiresProtocolio=false

@@ -4,20 +4,12 @@
 
 FROM usdotfhwaops/v2xhub:7.8.1 AS build
 
-RUN useradd -ms /bin/bash dt_user
-WORKDIR /home/dt_user
-USER dt_user
-
-USER root
-
 RUN apt update && \
     apt install -y python3-pip \
     # add some build packages
     zstd 
 
 RUN pip3 install gdown
-
-USER dt_user
 
 # TENA-MiddlewareSDK-v6.0.9.A@Product@u2204-gcc11-64-va3bc16dc.deb
 RUN gdown 1WrMDiZ1YkaK0MpHlOVrkHC2vMWN8COBQ
@@ -40,19 +32,11 @@ RUN mv ./postinst ./opt/TENA/postinst-DIST
 
 FROM usdotfhwaops/v2xhub:7.8.1
 
-RUN useradd -ms /bin/bash dt_user
-USER dt_user
-ARG USER="dt_user"
+WORKDIR /root
 
-WORKDIR /home/dt_user
-
-COPY --chown=dt_user:dt_user --from=build /home/dt_user/opt/TENA /home/dt_user/TENA
-RUN DSTROOT=/home/dt_user ./TENA/postinst-MW
-RUN DSTROOT=/home/dt_user ./TENA/postinst-DIST
-
-WORKDIR /home/dt_user
-
-USER root
+COPY --from=build /root/opt/TENA /root/TENA
+RUN DSTROOT=/root ./TENA/postinst-MW
+RUN DSTROOT=/root ./TENA/postinst-DIST
 
 RUN apt update && apt-get install -y \
     cmake cmake-data git build-essential libboost-all-dev clang g++ lld ninja-build \
@@ -62,8 +46,7 @@ RUN apt update && apt-get install -y \
 RUN --mount=type=secret,id=usdotfhwastol_token \
     USDOTFHWASTOL_TOKEN=$(cat /run/secrets/usdotfhwastol_token) && \
     git clone https://${USDOTFHWASTOL_TOKEN}@github.com/usdot-fhwa-stol/vug-cmake-package.git cmake_temp && \
-    chown -R dt_user:dt_user cmake_temp && \
-	mv cmake_temp/cmake/ /home/dt_user/TENA/lib/ && \
+    mv cmake_temp/cmake/ /root/TENA/lib/ && \
 	rm -rf cmake_temp   
 
 ARG VERSION=dev
@@ -77,7 +60,7 @@ LABEL description="V2XHub Distributed Testing Docker Image"
 
 # COPY vug-build/TenaBsmPlugin.zip /usr/local/plugins/TenaBsmPlugin.zip
 # COPY vug-build/TenaSpatPlugin.zip /usr/local/plugins/TenaSpatPlugin.zip
-RUN echo 'source /home/dt_user/TENA/6.0.9/scripts/tenaenv-u2204-gcc11-64-v6.0.9.sh' >> /home/dt_user/.bashrc
+RUN echo 'source /root/TENA/6.0.9/scripts/tenaenv-u2204-gcc11-64-v6.0.9.sh' >> /root/.bashrc
 
 WORKDIR /var/log/tmx 
 
