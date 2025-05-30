@@ -114,16 +114,9 @@ if [[ $VUG_DOCKER_START_TENA_CARLA_ADAPTER == true ]]; then
    sleep 5s
 fi
 
-if [[ $VUG_DOCKER_START_TJ2735_ADAPTER == true ]]; then
-   echo "STARTING TENA J2735 ADAPTER"
-   $HOME/voices-poc/scripts/run_scripts/start-tj2735-message-adapter.sh &
-
-   sleep 5s
-fi
-
-if [[ $VUG_DOCKER_START_TJ3224_ADAPTER == true ]]; then
-   echo "STARTING TENA J3224 ADAPTER"
-   $HOME/voices-poc/scripts/run_scripts/start-tj3224-adapter.sh &
+if [[ $VUG_DOCKER_START_V2X_ADAPTER == true ]]; then
+   echo "STARTING TENA V2X ADAPTER"
+   $HOME/voices-poc/scripts/run_scripts/start-tv2x-adapter.sh &
 
    sleep 5s
 fi
