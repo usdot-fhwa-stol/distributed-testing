@@ -88,8 +88,8 @@ def display_vehicle_rolenames():
                 cleaned_veh_name = "MCITY-TERASIM-02"
             elif cleaned_veh_name == "MCITY-TERASIM-02":
                 cleaned_veh_name = "MCITY-TERASIM-01"
-            else:
-                cleaned_veh_name = cleaned_veh_name.split('-', 1)[0]
+            # else:
+            #     cleaned_veh_name = cleaned_veh_name.split('-', 1)[0]
 
             if args.verbose:
                 print("    " + str(vehicle.attributes))

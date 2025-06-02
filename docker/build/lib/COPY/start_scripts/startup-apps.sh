@@ -16,6 +16,10 @@ trap 'cleanup' SIGINT SIGTERM ERR EXIT
 
 source $HOME/start_scripts/setup-docker.sh
 
+if [[ $VUG_DEV_MODE == true ]]; then
+   echo "DEV MODE ENABLED, PLEASE RUN START SCRIPT MANUALLY"
+   exit 0
+fi
 
 sleep 5s
 
