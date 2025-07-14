@@ -89,5 +89,5 @@ BASH_XTRACEFD=4
 
 set -x
 
-$localadapterPath/bin/tena-entity-generator $useBestEffort -emEndpoints $VUG_EM_ADDRESS:$VUG_EM_PORT -listenEndpoints $VUG_LOCAL_ADDRESS -verbosity $adapterVerbosity | tee -a $adapterLogFile
+$localadapterPath/bin/tena-entity-generator $useBestEffort -emEndpoints $VUG_EM_ADDRESS:$VUG_EM_PORT -listenEndpoints $VUG_LOCAL_ADDRESS -verbosity $adapterVerbosity | awk -v adapter="[$VUG_ENTITY_GENERATOR_VERSION]" '{ print adapter, $0; fflush(); }'| tee -a $adapterLogFile
 

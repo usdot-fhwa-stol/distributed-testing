@@ -89,4 +89,4 @@ BASH_XTRACEFD=4
 
 set -x
 
-$localadapterPath/bin/scenario-publisher $useBestEffort -emEndpoints $VUG_EM_ADDRESS:$VUG_EM_PORT -listenEndpoints $VUG_LOCAL_ADDRESS -verbosity $adapterVerbosity -scenarioFile $HOME/voices-poc/scenario_files/$VUG_SCENARIO_FILE | tee -a $adapterLogFile
+$localadapterPath/bin/scenario-publisher $useBestEffort -emEndpoints $VUG_EM_ADDRESS:$VUG_EM_PORT -listenEndpoints $VUG_LOCAL_ADDRESS -verbosity $adapterVerbosity -scenarioFile $HOME/voices-poc/scenario_files/$VUG_SCENARIO_FILE | awk -v adapter="[$VUG_SCENARIO_PUBLISHER_VERSION]" '{ print adapter, $0; fflush(); }' | tee -a $adapterLogFile

@@ -357,6 +357,13 @@ dt__init() {
 
     export VUG_LOCAL_VOICES_POC_PATH="$1"
 
+    if ! command -v ifconfig >/dev/null 2>&1; then
+        echo "net-tools not found. Installing..."
+        sudo apt-get update && sudo apt-get install -y net-tools
+    else
+        echo "net-tools already installed."
+    fi
+
     echo ""
     read -p "Would you like to create a new site config? [Y/n] " confirm
     if [[ ! "$confirm" =~ ^[Nn]$ ]]; then

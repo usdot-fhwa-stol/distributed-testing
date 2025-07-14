@@ -17,7 +17,7 @@
         </userData>
         <initialTSPI>
             <GeodeticPosition latitudeInDegrees="38.955812" longitudeInDegrees="-77.151061" heightAboveEllipsoidInMeters="39"> </GeodeticPosition>
-            <Heading>38</Heading>
+            <Heading>38</Heading> 
         </initialTSPI>
     </vehicle>
 

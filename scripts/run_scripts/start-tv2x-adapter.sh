@@ -87,4 +87,4 @@ exec 4>> $adapterLogFile
 # redirect trace logs to fd 4
 BASH_XTRACEFD=4
 
-$localadapterPath/bin/tena-v2x-adapter $useBestEffort -emEndpoints $VUG_EM_ADDRESS:$VUG_EM_PORT -listenEndpoints $VUG_LOCAL_ADDRESS -adapterSendEndpoint $VUG_V2X_ADAPTER_SEND_ADDRESS:$VUG_V2X_ADAPTER_SEND_PORT -adapterReceiveEndpoint $VUG_V2X_ADAPTER_RECEIVE_ADDRESS:$VUG_V2X_ADAPTER_RECEIVE_PORT -verbosity $adapterVerbosity | tee -a $adapterLogFile
+$localadapterPath/bin/tena-v2x-adapter $useBestEffort -emEndpoints $VUG_EM_ADDRESS:$VUG_EM_PORT -listenEndpoints $VUG_LOCAL_ADDRESS -adapterSendEndpoint $VUG_V2X_ADAPTER_SEND_ADDRESS:$VUG_V2X_ADAPTER_SEND_PORT -adapterReceiveEndpoint $VUG_V2X_ADAPTER_RECEIVE_ADDRESS:$VUG_V2X_ADAPTER_RECEIVE_PORT -verbosity $adapterVerbosity  | awk -v adapter="[$VUG_V2X_ADAPTER_VERSION]" '{ print adapter, $0; fflush(); }' | tee -a $adapterLogFile

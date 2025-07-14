@@ -92,4 +92,4 @@ BASH_XTRACEFD=4
 
 set -x
 
-$localadapterPath/bin/CARLAtenaAdapter $useBestEffort -emEndpoints $VUG_EM_ADDRESS:$VUG_EM_PORT -listenEndpoints $VUG_LOCAL_ADDRESS -carlaHost $VUG_CARLA_ADDRESS -simId $VUG_SIM_ID -verbosity $adapterVerbosity -vehiclePublishRate 10 2>&1 | tee -a $adapterLogFile
+$localadapterPath/bin/CARLAtenaAdapter $useBestEffort -emEndpoints $VUG_EM_ADDRESS:$VUG_EM_PORT -listenEndpoints $VUG_LOCAL_ADDRESS -carlaHost $VUG_CARLA_ADDRESS -simId $VUG_SIM_ID -verbosity $adapterVerbosity -vehiclePublishRate 10 2>&1 | awk -v adapter="[$VUG_CARLA_ADAPTER_VERSION]" '{ print adapter, $0; fflush(); }' | tee -a $adapterLogFile

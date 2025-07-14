@@ -157,7 +157,7 @@ if [[ $tenaAppIndex == 1 ]]; then
 	tenaApp=vug-threads-library
 	gitCloneUrl="https://github.com/usdot-fhwa-stol/vug-threads-library.git"
 	dockerContainer=usdotfhwastoldev/voices:build-general-P-latest
-	remoteAppDir=/home/$tenaApp	#DO NOT CHANGE: internal docker directory mapped to localAppDir
+	remoteAppDir=/home/dt_user/$tenaApp	#DO NOT CHANGE: internal docker directory mapped to localAppDir
 	isV2xhubPlugin=false
 	requiresProtocolio=false
 	useMasterDefaultBranch=false
@@ -167,7 +167,7 @@ elif [[ $tenaAppIndex == 2 ]]; then
 	tenaApp=vug-udp-protocolio
 	gitCloneUrl="https://github.com/usdot-fhwa-stol/vug-udp-protocolio.git"
 	dockerContainer=usdotfhwastoldev/voices:build-general-P-latest
-	remoteAppDir=/home/$tenaApp	#DO NOT CHANGE: internal docker directory mapped to localAppDir
+	remoteAppDir=/home/dt_user/$tenaApp	#DO NOT CHANGE: internal docker directory mapped to localAppDir
 	isV2xhubPlugin=false
 	requiresProtocolio=false
 	useMasterDefaultBranch=false
@@ -177,7 +177,7 @@ elif [[ $tenaAppIndex == 3 ]]; then
 	tenaApp=vug-scenario-publisher
 	gitCloneUrl="https://github.com/usdot-fhwa-stol/vug-scenario-publisher.git"
 	dockerContainer=usdotfhwastoldev/voices:build-general-P-latest
-	remoteAppDir=/home/$tenaApp	#DO NOT CHANGE: internal docker directory mapped to localAppDir
+	remoteAppDir=/home/dt_user/$tenaApp	#DO NOT CHANGE: internal docker directory mapped to localAppDir
 	isV2xhubPlugin=false
 	requiresProtocolio=false
 	useMasterDefaultBranch=false
@@ -187,7 +187,7 @@ elif [[ $tenaAppIndex == 4 ]]; then
 	tenaApp=$vug_carla_adapter_name
 	gitCloneUrl=$carlaTenaAdapterGitUrl
 	dockerContainer=usdotfhwastoldev/voices:build-carla-P-latest
-	remoteAppDir=/home/$tenaApp 			#DO NOT CHANGE: internal docker directory mapped to localAppDir
+	remoteAppDir=/home/dt_user/$tenaApp 			#DO NOT CHANGE: internal docker directory mapped to localAppDir
 	isV2xhubPlugin=false
 	requiresProtocolio=false
 	useMasterDefaultBranch=false
@@ -198,7 +198,7 @@ elif [[ $tenaAppIndex == 5 ]]; then
 	tenaApp=vug-j2735-adapter
 	gitCloneUrl="https://github.com/usdot-fhwa-stol/vug-j2735-adapter.git"
 	dockerContainer=usdotfhwastoldev/voices:build-general-P-latest
-	remoteAppDir=/home/$tenaApp 			#DO NOT CHANGE: internal docker directory mapped to localAppDir
+	remoteAppDir=/home/dt_user/$tenaApp 			#DO NOT CHANGE: internal docker directory mapped to localAppDir
 	isV2xhubPlugin=false
 	requiresProtocolio=false
 	useMasterDefaultBranch=false
@@ -208,7 +208,7 @@ elif [[ $tenaAppIndex == 6 ]]; then
 	tenaApp=vug-j3224-adapter
 	gitCloneUrl="https://github.com/usdot-fhwa-stol/vug-J3224-adapter.git"
 	dockerContainer=usdotfhwastoldev/voices:build-general-P-latest
-	remoteAppDir=/home/$tenaApp 			#DO NOT CHANGE: internal docker directory mapped to localAppDir
+	remoteAppDir=/home/dt_user/$tenaApp 			#DO NOT CHANGE: internal docker directory mapped to localAppDir
 	isV2xhubPlugin=false
 	requiresProtocolio=false
 	useMasterDefaultBranch=false
@@ -218,7 +218,7 @@ elif [[ $tenaAppIndex == 7 ]]; then
 	tenaApp=vug-v2x-adapter
 	gitCloneUrl="https://github.com/usdot-fhwa-stol/vug-v2x-adapter.git"
 	dockerContainer=usdotfhwastoldev/voices:build-general-P-latest
-	remoteAppDir=/home/$tenaApp 			#DO NOT CHANGE: internal docker directory mapped to localAppDir
+	remoteAppDir=/home/dt_user/$tenaApp 			#DO NOT CHANGE: internal docker directory mapped to localAppDir
 	isV2xhubPlugin=false
 	requiresProtocolio=false
 	useMasterDefaultBranch=false
@@ -228,7 +228,7 @@ elif [[ $tenaAppIndex == 8 ]]; then
 	tenaApp=vug-entity-generator
 	gitCloneUrl="https://github.com/usdot-fhwa-stol/vug-entity-generator.git"
 	dockerContainer=usdotfhwastoldev/voices:build-general-P-latest
-	remoteAppDir=/home/$tenaApp	#DO NOT CHANGE: internal docker directory mapped to localAppDir
+	remoteAppDir=/home/dt_user/$tenaApp	#DO NOT CHANGE: internal docker directory mapped to localAppDir
 	isV2xhubPlugin=false
 	requiresProtocolio=false
 	useMasterDefaultBranch=false
@@ -238,7 +238,7 @@ elif [[ $tenaAppIndex == 9 ]]; then
 	tenaApp=vug-traffic-light-entity-generator
 	gitCloneUrl="https://github.com/usdot-fhwa-stol/vug-traffic-light-entity-generator.git"
 	dockerContainer=usdotfhwastoldev/voices:build-general-P-latest
-	remoteAppDir=/home/$tenaApp 			#DO NOT CHANGE: internal docker directory mapped to localAppDir
+	remoteAppDir=/home/dt_user/$tenaApp 			#DO NOT CHANGE: internal docker directory mapped to localAppDir
 	isV2xhubPlugin=false
 	requiresProtocolio=false
 	useMasterDefaultBranch=false
@@ -248,7 +248,7 @@ elif [[ $tenaAppIndex == 10 ]]; then
 	tenaApp=vug-carma-platform-adapter
 	gitCloneUrl="https://github.com/usdot-fhwa-stol/vug-carma-platform-adapter.git"
 	dockerContainer=usdotfhwastoldev/voices:build-general-P-latest
-	remoteAppDir=/home/$tenaApp	#DO NOT CHANGE: internal docker directory mapped to localAppDir
+	remoteAppDir=/home/dt_user/$tenaApp	#DO NOT CHANGE: internal docker directory mapped to localAppDir
 	isV2xhubPlugin=false
 	requiresProtocolio=true
 	useMasterDefaultBranch=false
@@ -673,7 +673,7 @@ if [[ "$skipMake" == true ]]
 				
 				echo
 				echo "MAKE INSTALL COMMAND: "
-				if ! ( set -x ; sudo docker run --entrypoint /bin/bash --rm -v $localAppDir:$remoteAppDir -v $localInstallDir:$remoteInstallDir $dockerContainer -c "cd $remoteAppDir/build/$buildVersion; export TENA_PLATFORM=$tenaBuildVersion; export TENA_HOME=$remoteTenaDir; export TENA_VERSION=6.0.9; export CARLA_HOME=/home/carla; make install VERBOSE=1" ); then
+				if ! ( set -x ; sudo docker run --entrypoint /bin/bash --rm -v $localAppDir:$remoteAppDir -v $localInstallDir:$remoteInstallDir $dockerContainer -c "cd $remoteAppDir/build/$buildVersion; export TENA_PLATFORM=$tenaBuildVersion; export TENA_HOME=$remoteTenaDir; export TENA_VERSION=6.0.9; export CARLA_HOME=$remoteCarlaDir; make install VERBOSE=1" ); then
 					echo
 					echo "[!!!] MAKE INSTALL FAILED"
 					exit
