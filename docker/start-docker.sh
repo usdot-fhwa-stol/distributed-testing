@@ -102,7 +102,7 @@ final_vpn_em_address=""
 
 vpn_check=$(openvpn3 sessions-list | grep -oE tun[0-9])
 
-interfaces=($(ifconfig -a | grep -o '^[^ ]\+'))
+interfaces=($(ip -o link show | awk -F': ' '{print $2}'))
 tun_interfaces=()
 tun_ip_addresses=()
 for i in $(seq 1 ${#interfaces[@]}); do
