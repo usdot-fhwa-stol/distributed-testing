@@ -74,6 +74,9 @@ if [[ $VUG_USE_BEST_EFFORT == true ]]; then
     useBestEffort='-bestEffort'
 fi
 
+siteID=$(( $(printf '%s' "$VUG_SHORT_IDENTIFIER" | cksum | awk '{print $1}') & 0xFFFF ))
+applicationID=$(( $(printf '%s' "$VUG_ENTITY_GENERATOR_VERSION" | cksum | awk '{print $1}') & 0xFFFF ))
+
 mkdir -p $VUG_ADAPTER_LOG_PATH
 
 adapterLogFile=$VUG_ADAPTER_LOG_PATH/entity_generator_terminal_out.log
@@ -89,5 +92,5 @@ BASH_XTRACEFD=4
 
 set -x
 
-$localadapterPath/bin/tena-entity-generator $useBestEffort -emEndpoints $VUG_EM_ADDRESS:$VUG_EM_PORT -listenEndpoints $VUG_LOCAL_ADDRESS -verbosity $adapterVerbosity | awk -v adapter="[$VUG_ENTITY_GENERATOR_VERSION]" '{ print adapter, $0; fflush(); }'| tee -a $adapterLogFile
+$localadapterPath/bin/tena-entity-generator $useBestEffort -emEndpoints $VUG_EM_ADDRESS:$VUG_EM_PORT -listenEndpoints $VUG_LOCAL_ADDRESS -siteID $siteID -applicationID $applicationID -verbosity $adapterVerbosity | awk -v adapter="[$VUG_ENTITY_GENERATOR_VERSION]" '{ print adapter, $0; fflush(); }'| tee -a $adapterLogFile
 

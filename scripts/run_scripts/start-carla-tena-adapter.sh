@@ -73,6 +73,9 @@ if [[ $VUG_USE_BEST_EFFORT == true ]]; then
     useBestEffort='-bestEffort'
 fi
 
+siteID=$(( $(printf '%s' "$VUG_SHORT_IDENTIFIER" | cksum | awk '{print $1}') & 0xFFFF ))
+applicationID=$(( $(printf '%s' "$VUG_CARLA_ADAPTER_VERSION" | cksum | awk '{print $1}') & 0xFFFF ))
+
 echo "----- STARTING VEHICLE E-BRAKE SCRIPT -----"
 
 python3 $VUG_LOCAL_VOICES_POC_PATH/scripts/carla_python_scripts/stop_vehicles.py &
@@ -92,4 +95,4 @@ BASH_XTRACEFD=4
 
 set -x
 
-$localadapterPath/bin/CARLAtenaAdapter $useBestEffort -emEndpoints $VUG_EM_ADDRESS:$VUG_EM_PORT -listenEndpoints $VUG_LOCAL_ADDRESS -carlaHost $VUG_CARLA_ADDRESS -simId $VUG_SIM_ID -verbosity $adapterVerbosity -vehiclePublishRate 10 2>&1 | awk -v adapter="[$VUG_CARLA_ADAPTER_VERSION]" '{ print adapter, $0; fflush(); }' | tee -a $adapterLogFile
+$localadapterPath/bin/CARLAtenaAdapter $useBestEffort -emEndpoints $VUG_EM_ADDRESS:$VUG_EM_PORT -listenEndpoints $VUG_LOCAL_ADDRESS -carlaHost $VUG_CARLA_ADDRESS -simId $VUG_SIM_ID -verbosity $adapterVerbosity -siteID $siteID -applicationID $applicationID -vehiclePublishRate 10 2>&1 | awk -v adapter="[$VUG_CARLA_ADAPTER_VERSION]" '{ print adapter, $0; fflush(); }' | tee -a $adapterLogFile
