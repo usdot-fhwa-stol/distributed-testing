@@ -144,7 +144,7 @@ final_vpn_local_address=""
 final_vpn_em_address=""
 
 # confirms we have openvpn3 session, if we do, prune_vpn_connections.sh ensures its the right one
-vpn_check=$(openvpn3 sessions-list | grep -oE tun[0-9])
+vpn_check=$(sudo openvpn3 sessions-list | grep -oE tun[0-9])
 
 # if we have an openvpn3 connection active, we want to be connecting to the portal
 # go through some checks to automate and ensure IP information is correct

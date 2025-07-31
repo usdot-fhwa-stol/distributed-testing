@@ -21,7 +21,7 @@ fi
 # Get output from openvpn3 sessions-list
 echo
 echo "Checking for stale VPN connections..."
-openvpn_sessions="$(openvpn3 sessions-list)"
+openvpn_sessions="$(sudo openvpn3 sessions-list)"
 vpn_paths=()
 path_regex='Path: (.*)'
 vpn_statuses=()
@@ -67,7 +67,7 @@ then
                         then
                             echo
                             echo "Removing "${vpn_paths[i-1]}
-                            openvpn3 session-manage --session-path ${vpn_paths[i-1]} --disconnect
+                            sudo openvpn3 session-manage --session-path ${vpn_paths[i-1]} --disconnect
                         fi
                     done; break;;
             [Nn]* ) echo; break;;
@@ -98,7 +98,7 @@ then
                         then
                             echo
                             echo "Removing "${vpn_paths[i-1]}
-                            openvpn3 session-manage --session-path ${vpn_paths[i-1]} --disconnect
+                            sudo openvpn3 session-manage --session-path ${vpn_paths[i-1]} --disconnect
                         fi
                     done; break;;
             [Nn]* | "") echo; break;;
@@ -124,7 +124,7 @@ then
                             then
                                 echo
                                 echo "Removing "${vpn_paths[i-1]}
-                                openvpn3 session-manage --session-path ${vpn_paths[i-1]} --disconnect
+                                sudo openvpn3 session-manage --session-path ${vpn_paths[i-1]} --disconnect
                             fi
                         done; break;;
                 [Nn]* | "") echo; break;;
