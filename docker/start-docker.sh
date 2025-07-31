@@ -231,38 +231,38 @@ if [[ ! -z $vpn_check ]]; then
             exit
         fi
     fi
+fi
 
-    # check the configured EM address to see if it is not in IP format
-    # if it is not in IP format, assume its a hostname and try to get IP from that
-    if [[ ! "$VUG_EM_ADDRESS" =~ ^(([1-9]?[0-9]|1[0-9][0-9]|2([0-4][0-9]|5[0-5]))\.){3}([1-9]?[0-9]|1[0-9][0-9]|2([0-4][0-9]|5[0-5]))$ ]]; then
+# check the configured EM address to see if it is not in IP format
+# if it is not in IP format, assume its a hostname and try to get IP from that
+if [[ ! "$VUG_EM_ADDRESS" =~ ^(([1-9]?[0-9]|1[0-9][0-9]|2([0-4][0-9]|5[0-5]))\.){3}([1-9]?[0-9]|1[0-9][0-9]|2([0-4][0-9]|5[0-5]))$ ]]; then
 
-        # get the IP of the entered EM hostname
-        em_fqdn_address=$(getent hosts $VUG_EM_ADDRESS | awk '{print $1}')
-        
-        
-        # if the retrieved EM IP is valid, use it
-        if [[ "$em_fqdn_address" =~ ^(([1-9]?[0-9]|1[0-9][0-9]|2([0-4][0-9]|5[0-5]))\.){3}([1-9]?[0-9]|1[0-9][0-9]|2([0-4][0-9]|5[0-5]))$ ]]; then
+    # get the IP of the entered EM hostname
+    em_fqdn_address=$(getent hosts $VUG_EM_ADDRESS | awk '{print $1}')
+    
+    
+    # if the retrieved EM IP is valid, use it
+    if [[ "$em_fqdn_address" =~ ^(([1-9]?[0-9]|1[0-9][0-9]|2([0-4][0-9]|5[0-5]))\.){3}([1-9]?[0-9]|1[0-9][0-9]|2([0-4][0-9]|5[0-5]))$ ]]; then
 
-            echo
-            echo "Automatically detected EM from hostname $VUG_EM_ADDRES: $em_fqdn_address"
+        echo
+        echo "Automatically detected EM from hostname $VUG_EM_ADDRES: $em_fqdn_address"
 
-        # if the retrieved EM IP is not valid, prompt to enter manually
+    # if the retrieved EM IP is not valid, prompt to enter manually
+    else
+    
+        echo
+        echo "Unable to automatically get EM address"
+        read -p "Please enter the VPN EM Address (found in the VOICES Portal under Connection Information) [###.###.###.###]: " manual_vpn_em_address
+
+        # if the entered EM IP is valid, use it, otherwise exit
+        if [[ "$manual_vpn_em_address" =~ ^(([1-9]?[0-9]|1[0-9][0-9]|2([0-4][0-9]|5[0-5]))\.){3}([1-9]?[0-9]|1[0-9][0-9]|2([0-4][0-9]|5[0-5]))$ ]]; then
+            echo "    IP $manual_vpn_em_address is a valid IP"
+            em_fqdn_address=$manual_vpn_em_address
         else
-        
             echo
-            echo "Unable to automatically get EM address"
-            read -p "Please enter the VPN EM Address (found in the VOICES Portal under Connection Information) [###.###.###.###]: " manual_vpn_em_address
-
-            # if the entered EM IP is valid, use it, otherwise exit
-            if [[ "$manual_vpn_em_address" =~ ^(([1-9]?[0-9]|1[0-9][0-9]|2([0-4][0-9]|5[0-5]))\.){3}([1-9]?[0-9]|1[0-9][0-9]|2([0-4][0-9]|5[0-5]))$ ]]; then
-                echo "    IP $manual_vpn_em_address is a valid IP"
-                em_fqdn_address=$manual_vpn_em_address
-            else
-                echo
-                echo "    IP $manual_vpn_em_address is NOT valid, please find your VPN address and try again"
-                em_fqdn_address=""
-                exit
-            fi
+            echo "    IP $manual_vpn_em_address is NOT valid, please find your VPN address and try again"
+            em_fqdn_address=""
+            exit
         fi
     fi
 fi

@@ -136,7 +136,13 @@ else
     if [ $VUG_FORMAL_EVENT = true ]
     then
         echo
-        echo "No active VPN connections found. Please connect to an openvpn3 session or set VUG_FORMAL_EVENT=false in your scenario config to continue."
-        exit 1
+        # echo "No active VPN connections found. Please connect to an openvpn3 session or set VUG_FORMAL_EVENT=false in your scenario config to continue."
+        read -p "You have an no active VPN session but have set VUG_FORMAL_EVENT=true. Would you like to continue the session? [y/N] " yn
+            case $yn in
+                [Yy]*)  echo;;
+                [Nn]* | "") exit 1;;
+                * );;
+            esac
+    
     fi
 fi
