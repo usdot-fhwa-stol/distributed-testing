@@ -1,7 +1,7 @@
 #!/usr/bin/bash
 
 # Get output from openvpn3 sessions-list
-text="$(sudo openvpn3 sessions-list)"
+text="$(openvpn3 sessions-list)"
 vpn_paths=()
 path_regex='Path: (.*)'
 vpn_statuses=()
@@ -39,7 +39,7 @@ if [ $has_multiple_active_vpn_connections = false ] && [ $has_active_vpn_connect
                         if [ ${vpn_statuses[i-1]} = 1 ]
                         then
                             echo "Removing "${vpn_paths[i-1]}
-                            sudo openvpn3 session-manage --session-path ${vpn_paths[i-1]} --disconnect
+                            openvpn3 session-manage --session-path ${vpn_paths[i-1]} --disconnect
                         fi
                     done; break;;
             [Nn]* | "") echo ''; break;;

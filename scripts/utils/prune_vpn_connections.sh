@@ -19,8 +19,9 @@ fi
 #       when you are not testing with a VPN. 
 #       --> potentially find a way to not need sudo 
 # Get output from openvpn3 sessions-list
+echo
 echo "Checking for stale VPN connections..."
-openvpn_sessions="$(sudo openvpn3 sessions-list)"
+openvpn_sessions="$(openvpn3 sessions-list)"
 vpn_paths=()
 path_regex='Path: (.*)'
 vpn_statuses=()
@@ -66,7 +67,7 @@ then
                         then
                             echo
                             echo "Removing "${vpn_paths[i-1]}
-                            sudo openvpn3 session-manage --session-path ${vpn_paths[i-1]} --disconnect
+                            openvpn3 session-manage --session-path ${vpn_paths[i-1]} --disconnect
                         fi
                     done; break;;
             [Nn]* ) echo; break;;
@@ -97,7 +98,7 @@ then
                         then
                             echo
                             echo "Removing "${vpn_paths[i-1]}
-                            sudo openvpn3 session-manage --session-path ${vpn_paths[i-1]} --disconnect
+                            openvpn3 session-manage --session-path ${vpn_paths[i-1]} --disconnect
                         fi
                     done; break;;
             [Nn]* | "") echo; break;;
@@ -123,7 +124,7 @@ then
                             then
                                 echo
                                 echo "Removing "${vpn_paths[i-1]}
-                                sudo openvpn3 session-manage --session-path ${vpn_paths[i-1]} --disconnect
+                                openvpn3 session-manage --session-path ${vpn_paths[i-1]} --disconnect
                             fi
                         done; break;;
                 [Nn]* | "") echo; break;;

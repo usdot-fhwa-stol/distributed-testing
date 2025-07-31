@@ -37,7 +37,7 @@ if [ -L ${voices_site_config} ] && [ -L ${voices_scenario_config} ]; then
 			echo "      Site Config: $site_link_base_name"
 			echo "      Scenario Config:$scenario_link_base_name"
 			echo
-			read -p "Would you like to continue? [Y/n] " yn
+			read -p "Are these the configurations you would like to use? [Y/n] " yn
 			case $yn in
 				[Yy]* | "") break;;
 				[Nn]*) exit 1;;
@@ -99,7 +99,7 @@ fi
 # Check if chronyc sources are present
 if [ $VUG_FORMAL_EVENT = true ]
 then
-    chronyc_sources="$(sudo chronyc sources)"
+    chronyc_sources="$(chronyc sources)"
     valid_source=false
     while read -ra line; do
         if [[ ${line[4]} =~ ^-?[0-9]+$ ]] && [ ${line[4]} != 0 ]
@@ -144,7 +144,7 @@ final_vpn_local_address=""
 final_vpn_em_address=""
 
 # confirms we have openvpn3 session, if we do, prune_vpn_connections.sh ensures its the right one
-vpn_check=$(sudo openvpn3 sessions-list | grep -oE tun[0-9])
+vpn_check=$(openvpn3 sessions-list | grep -oE tun[0-9])
 
 # if we have an openvpn3 connection active, we want to be connecting to the portal
 # go through some checks to automate and ensure IP information is correct

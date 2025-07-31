@@ -17,7 +17,7 @@ __dt()
   local cur prev subcmds config_subcmds
   COMPREPLY=()
   _get_comp_words_by_ref -n : cur prev
-  subcmds="init config start stop ps help exec download"
+  subcmds="init config start stop ps help exec download connect"
   config_subcmds=" print status create"
 
   case ${prev} in
