@@ -71,9 +71,21 @@ dt__connect() {
     fi
 
     echo "Starting OpenVPN session with config: $cfg"
-    openvpn3 session-start --config "$cfg"
+    sudo openvpn3 session-start --config "$cfg"
 }
 
+dt__disconnect() {
+
+    # Basic checks
+    if ! command -v openvpn3 >/dev/null 2>&1; then
+        echo "Error: openvpn3 not found on PATH. Please install openvpn3."
+        return 1
+    fi
+
+    echo "Disconnecting from VPN"
+
+    "$VUG_LOCAL_VOICES_POC_PATH/scripts/utils/stop_current_vpn_connection.sh"
+}
 
 dt-config__set() {
     local args=()
