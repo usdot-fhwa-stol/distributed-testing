@@ -144,13 +144,21 @@ if [[ $VUG_DOCKER_START_MANUAL_CARLA_VEHICLE == true ]]; then
 
    # if we are starting the carla adapter and a manual vehicle, we almost certainly are trying to use a vehicle from the scenario which should already be spawined
    if [[ $VUG_DOCKER_MANUAL_CARLA_VEHICLE_IS_NEW == true ]]; then
-      echo "   SPAWNING NEW MANUAL VEHICLE"
-      python3 $HOME/voices-poc/scripts/carla_python_scripts/manual_control_keyboard.py --rolename $VUG_MANUAL_VEHICLE_ID --host $VUG_CARLA_ADDRESS --speed_limit $VUG_MANUAL_VEHICLE_SPEED_LIMIT &
-
+      if [[ $VUG_DOCKER_MANUAL_CARLA_VEHICLE_USE_STEERING_WHEEL == true ]]; then
+         echo "   SPAWNING NEW MANUAL VEHICLE"
+         python3 $HOME/voices-poc/scripts/carla_python_scripts/manual_control_steeringwheel_ff.py --follow_vehicle $VUG_MANUAL_VEHICLE_ID &
+      else
+         echo "   SPAWNING NEW MANUAL VEHICLE"
+         python3 $HOME/voices-poc/scripts/carla_python_scripts/manual_control_keyboard.py --rolename $VUG_MANUAL_VEHICLE_ID --host $VUG_CARLA_ADDRESS --speed_limit $VUG_MANUAL_VEHICLE_SPEED_LIMIT &
+      fi
    else
-      echo "   CONNECTING TO SCENARIO MANUAL VEHICLE"
-      python3 $HOME/voices-poc/scripts/carla_python_scripts/manual_control_keyboard_virtual.py --follow_vehicle $VUG_MANUAL_VEHICLE_ID --host $VUG_CARLA_ADDRESS --speed_limit $VUG_MANUAL_VEHICLE_SPEED_LIMIT &
-
+      if [[ $VUG_DOCKER_MANUAL_CARLA_VEHICLE_USE_STEERING_WHEEL == true ]]; then
+         echo "   CONNECTING TO SCENARIO MANUAL VEHICLE"
+         python3 $HOME/voices-poc/scripts/carla_python_scripts/manual_control_steeringwheel_ff_virtual.py --follow_vehicle $VUG_MANUAL_VEHICLE_ID &
+      else
+         echo "   CONNECTING TO SCENARIO MANUAL VEHICLE"
+         python3 $HOME/voices-poc/scripts/carla_python_scripts/manual_control_keyboard_virtual.py --follow_vehicle $VUG_MANUAL_VEHICLE_ID --host $VUG_CARLA_ADDRESS --speed_limit $VUG_MANUAL_VEHICLE_SPEED_LIMIT &
+      fi
    fi
 
    sleep 5s

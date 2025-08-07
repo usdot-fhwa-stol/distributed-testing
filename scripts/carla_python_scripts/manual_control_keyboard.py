@@ -454,14 +454,28 @@ class KeyboardControl(object):
         v = world.player.get_velocity()
         speed = (3.6 * math.sqrt(v.x ** 2 + v.y ** 2 + v.z ** 2))
     
-        if keys[K_UP] or keys[K_w]:
-            if speed > args.speed_limit:
-                self._control.throttle = 0.0
-            else:
-                self._control.throttle = min(self._control.throttle + 0.01, 1)
+        max_throttle = 1.0
+        min_throttle = 0.0
+        max_acceleration_rate = 0.02
+        max_deceleration_rate = 0.03
 
+        if keys[K_UP] or keys[K_w]:
+            if speed < args.speed_limit:
+                throttle_increase = max_acceleration_rate * (1-speed/args.speed_limit)
+                self._control.throttle = min(self._control.throttle + throttle_increase, max_throttle)
+            else:
+                self._control.throttle = max(self._control.throttle - max_deceleration_rate, min_throttle)
         else:
-            self._control.throttle = 0.0
+            self._control.throttle = max(self._control.throttle - max_deceleration_rate, min_throttle)
+
+        # if keys[K_UP] or keys[K_w]:
+        #     if speed > args.speed_limit:
+        #         self._control.throttle = 0.0
+        #     else:
+        #         self._control.throttle = min(self._control.throttle + 0.01, 1)
+
+        # else:
+        #     self._control.throttle = 0.0
 
         if keys[K_DOWN] or keys[K_s]:
             self._control.brake = min(self._control.brake + 0.2, 1)

@@ -11,7 +11,7 @@
 
   <vehicles>
 
-    <vehicle name="ITSWC-M-1" bsmid="f03ad618" type="vehicle.audi.etron" owner="CARLA-FHWA-3" material="Aluminum" lvcIndicator="Virtual">
+    <vehicle name="ITSWC-M-1" bsmid="f03ad618" type="vehicle.audi.etron" owner="CARLA-ITSWC-1" material="Aluminum" lvcIndicator="Virtual">
         <userData>
             <CARLA manual="true" generate_bsms="true"></CARLA>
         </userData>
@@ -21,7 +21,7 @@
         </initialTSPI>
     </vehicle>
 
-    <vehicle name="ITSWC-M-2" bsmid="f03ad619" type="vehicle.audi.etron" owner="CARLA-FHWA-3" material="Aluminum" lvcIndicator="Virtual">
+    <vehicle name="ITSWC-M-2" bsmid="f03ad619" type="vehicle.audi.etron" owner="CARLA-ITSWC-2" material="Aluminum" lvcIndicator="Virtual">
         <userData>
             <CARLA manual="true" generate_bsms="true"></CARLA>
         </userData>
