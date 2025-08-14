@@ -25,9 +25,12 @@ services:
               count: 1
               capabilities: [gpu]
 
+
+    
+
   voices:
     container_name: voices
-    image: usdotfhwastoldev/voices:P-latest
+    image: usdotfhwastoldev/voices:ITSWC-latest
     tty: true 
     depends_on:
       - carla-voices
@@ -49,6 +52,7 @@ services:
       - /dev/bus/usb:/dev/bus/usb
     devices:
       - /dev/input:/dev/input
+      - /dev/input/js1:/dev/input/js1
     stop_grace_period: 30s
     deploy:
       resources:
@@ -57,3 +61,6 @@ services:
             - driver: nvidia
               count: 1
               capabilities: [gpu]
+    group_add:
+      - rdma
+      

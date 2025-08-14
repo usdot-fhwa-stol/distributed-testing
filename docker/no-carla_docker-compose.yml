@@ -1,7 +1,7 @@
 services:
   voices:
     container_name: voices
-    image: usdotfhwastoldev/voices:P-latest
+    image: usdotfhwastoldev/voices:ITSWC-latest
     tty: true
     ipc: "host"
     network_mode: "host"

@@ -312,6 +312,8 @@ class DualControl(object):
         # initialize steering wheel
         pygame.joystick.init()
 
+        print("Joystick Count:", pygame.joystick.get_count())
+
         try:
             self._joystick = pygame.joystick.Joystick(1)
         except:
