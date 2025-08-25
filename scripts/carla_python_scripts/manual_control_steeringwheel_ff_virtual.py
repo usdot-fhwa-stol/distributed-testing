@@ -414,22 +414,22 @@ class DualControl(object):
                     self._control.gear = 1 if self._control.reverse else -1
                 elif event.button == self._handbrake_idx:
                     self._control.hand_brake
-                elif event.button == self._nextVehicle_idx:
-                    world.nextVehicle()
-                elif event.button == self._prevVehicle_idx:
-                    world.prevVehicle()
-                elif event.button == self._shiftUp_idx:
-                    self._control.gear = self._control.gear + 1
-                elif event.button == self._shiftDown_idx:
-                    self._control.gear = max(-1, self._control.gear - 1)
-                elif event.button == self._manualAutoToggle_idx:
-                    self._control.manual_gear_shift = not self._control.manual_gear_shift
-                    self._control.gear = world.player.get_control().gear
-                    world.hud.notification('%s Transmission' % ('Manual' if self._control.manual_gear_shift else 'Automatic'))
-                elif event.button == self._nextWeather_idx:
-                    world.next_weather()
-                elif event.button == self._prevWeather_idx:
-                    world.next_weather(reverse=True)
+                # elif event.button == self._nextVehicle_idx:
+                #     world.nextVehicle()
+                # elif event.button == self._prevVehicle_idx:
+                #     world.prevVehicle()
+                # elif event.button == self._shiftUp_idx:
+                #     self._control.gear = self._control.gear + 1
+                # elif event.button == self._shiftDown_idx:
+                #     self._control.gear = max(-1, self._control.gear - 1)
+                # elif event.button == self._manualAutoToggle_idx:
+                #     self._control.manual_gear_shift = not self._control.manual_gear_shift
+                #     self._control.gear = world.player.get_control().gear
+                #     world.hud.notification('%s Transmission' % ('Manual' if self._control.manual_gear_shift else 'Automatic'))
+                # elif event.button == self._nextWeather_idx:
+                #     world.next_weather()
+                # elif event.button == self._prevWeather_idx:
+                #     world.next_weather(reverse=True)
                 elif event.button == self._hudToggle_idx:
                     world.hud.toggle_info()
                 # elif event.button == 23:
