@@ -21,7 +21,7 @@
         </initialTSPI>
     </vehicle>
 
-    <vehicle name="ITSWC-M-2" bsmid="f03ad619" type="vehicle.audi.etron" owner="CARLA-ITSWC-2" material="Aluminum" lvcIndicator="Virtual">
+    <vehicle name="ITSWC-M-2" bsmid="f03ad619" type="vehicle.mustang.mustang" owner="CARLA-ITSWC-2" material="Aluminum" lvcIndicator="Virtual">
         <userData>
             <CARLA manual="true" generate_bsms="true"></CARLA>
         </userData>

@@ -255,13 +255,30 @@ class World(object):
         #    print("No recommended values for 'speed' attribute")
         # Spawn the player.
         if self.player is not None:
+            currentAttributes = vehicle.attributes
             spawn_point = self.player.get_transform()
-            spawn_point.location.z += 2.0
-            spawn_point.rotation.roll = 0.0
-            spawn_point.rotation.pitch = 0.0
+            print(f'rolename: {currentAttributes["role_name"]}')
+            if currentAttributes["role_name"] == "ITSWC-M-1":
+                spawn_point.location.x = -123.011284
+                spawn_point.location.y = -492.111664
+                spawn_point.location.z = 37
+                spawn_point.rotation.roll = 0.0
+                spawn_point.rotation.pitch = 0.0
+                spawn_point.rotation.yaw = 56.129841
+            elif currentAttributes["role_name"] == "ITSWC-M-2":
+                spawn_point.location.x = 122.341202
+                spawn_point.location.y = -424.338196
+                spawn_point.location.z = 39
+                spawn_point.rotation.roll = 0.0
+                spawn_point.rotation.pitch = 0.0
+                spawn_point.rotation.yaw = 167.013382
+            else:
+                spawn_point.location.z += 2.0
+                spawn_point.rotation.roll = 0.0
+                spawn_point.rotation.pitch = 0.0
             carlaVehicles = self.world.get_actors().filter('vehicle.*')
             for vehicle in carlaVehicles:
-                currentAttributes = vehicle.attributes
+                
                 if currentAttributes["role_name"] == "CARLA-MANUAL-1":
                     self.player = vehicle
         while self.player is None:
@@ -373,9 +390,25 @@ class DualControl(object):
                 if event.button == self._respawn_idx:
                     if world.player is not None:
                         transform = world.player.get_transform()
-                        transform.location.z += 2
-                        transform.rotation.roll = 0
-                        transform.rotation.pitch = 0
+                        currentAttributes = world.player.attributes
+                        if currentAttributes["role_name"] == "ITSWC-M-1":
+                            transform.location.x = -123.011284
+                            transform.location.y = -492.111664
+                            transform.location.z = 37
+                            transform.rotation.roll = 0.0
+                            transform.rotation.pitch = 0.0
+                            transform.rotation.yaw = 56.129841
+                        elif currentAttributes["role_name"] == "ITSWC-M-2":
+                            transform.location.x = 122.341202
+                            transform.location.y = -424.338196
+                            transform.location.z = 39
+                            transform.rotation.roll = 0.0
+                            transform.rotation.pitch = 0.0
+                            transform.rotation.yaw = 167.013382
+                        else:
+                            transform.location.z += 2
+                            transform.rotation.roll = 0
+                            transform.rotation.pitch = 0
                         world.player.set_transform(transform)
                 elif event.button == self._reverse_idx:
                     self._control.gear = 1 if self._control.reverse else -1
