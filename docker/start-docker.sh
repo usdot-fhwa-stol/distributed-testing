@@ -6,7 +6,9 @@ stopDocker()
 echo
 echo STOPPING AND REMOVING VUG CONTAINERS
 $docker_compose_cmd -f $docker_compose_file down
-source $VUG_LOCAL_VOICES_POC_PATH/scripts/utils/stop_current_vpn_connection.sh
+if [ $VUG_FORMAL_EVENT = true ]; then 
+    source $VUG_LOCAL_VOICES_POC_PATH/scripts/utils/stop_current_vpn_connection.sh
+fi
 }
 
 # Get the directory of the script, no matter where it's called from
@@ -127,24 +129,28 @@ then
     fi
 fi
 
-# Checks for active openvpn3 sessions and:
-#   removes stale connections, 
-#   resolves accidentally connecting multiple times,
-#   checks if you are connected to VPN when you dont mean to be (FORMAL_EVENT=false), 
-#   makes sure you are connected when you mean to (FORMAL_EVENT=true)
-#
-# returns exit 1 if FORMAL_EVENT=true and no VPN connections found
-#
-# should result in 0 or 1 openvpn3 sessions
-if ! $VUG_LOCAL_VOICES_POC_PATH/scripts/utils/prune_vpn_connections.sh; then
-    exit 1
-fi
-
 final_vpn_local_address=""
 final_vpn_em_address=""
 
-# confirms we have openvpn3 session, if we do, prune_vpn_connections.sh ensures its the right one
-vpn_check=$(sudo openvpn3 sessions-list | grep -oE tun[0-9])
+
+if [ $VUG_FORMAL_EVENT = true ]; then 
+
+    # Checks for active openvpn3 sessions and:
+    #   removes stale connections, 
+    #   resolves accidentally connecting multiple times,
+    #   checks if you are connected to VPN when you dont mean to be (FORMAL_EVENT=false), 
+    #   makes sure you are connected when you mean to (FORMAL_EVENT=true)
+    #
+    # returns exit 1 if FORMAL_EVENT=true and no VPN connections found
+    #
+    # should result in 0 or 1 openvpn3 sessions
+    if ! $VUG_LOCAL_VOICES_POC_PATH/scripts/utils/prune_vpn_connections.sh; then
+        exit 1
+    fi
+
+    # confirms we have openvpn3 session, if we do, prune_vpn_connections.sh ensures its the right one
+    vpn_check=$(sudo openvpn3 sessions-list | grep -oE tun[0-9])
+fi
 
 # if we have an openvpn3 connection active, we want to be connecting to the portal
 # go through some checks to automate and ensure IP information is correct

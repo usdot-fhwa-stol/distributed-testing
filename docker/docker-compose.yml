@@ -32,6 +32,7 @@ services:
     container_name: voices
     image: usdotfhwastoldev/voices:ITSWC-latest
     tty: true 
+    privileged: true
     depends_on:
       - carla-voices
     network_mode: "host"

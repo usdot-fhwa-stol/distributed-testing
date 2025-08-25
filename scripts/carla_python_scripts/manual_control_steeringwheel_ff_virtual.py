@@ -335,7 +335,7 @@ class DualControl(object):
         time.sleep(1)
 
         self._parser = ConfigParser()
-        self._parser.read('wheel_config.ini')
+        self._parser.read('/home/dt_user/voices-poc/scripts/carla_python_scripts/wheel_config.ini')
         self._steer_idx = int(
             self._parser.get('G29 Racing Wheel', 'steering_wheel'))
         self._throttle_idx = int(
@@ -1009,7 +1009,7 @@ class CameraManager(object):
         self.hud = hud
         self.recording = False
         self._camera_transforms = [
-            carla.Transform(carla.Location(x=0.15, y=-0.30, z=1.25)),
+            carla.Transform(carla.Location(x=0.4, y=-0.4, z=1.3)),
             carla.Transform(carla.Location(x=-5.5, z=2.8), carla.Rotation(pitch=-15)),
             carla.Transform(carla.Location(x=0.150, y=-0.30, z=1.25), carla.Rotation(yaw=-55)),
             carla.Transform(carla.Location(x=0.150, y=-0.30, z=1.25), carla.Rotation(yaw=55)),
@@ -1018,6 +1018,12 @@ class CameraManager(object):
             # carla.Transform(carla.Location(x=0.150, y= -0.30, z=1.25), carla.Rotation(pitch=-5)),
             # carla.Transform(carla.Location(x=-1.6, z=1.7))
         ]
+        print(f'parent_actor.type_id: {parent_actor.type_id}')
+        if parent_actor.type_id == 'vehicle.audi.etron':
+            self._camera_transforms[0] = carla.Transform(carla.Location(x=0.4, y=-0.4, z=1.3))
+        elif parent_actor.type_id == 'vehicle.mustang.mustang':
+            self._camera_transforms[0] = carla.Transform(carla.Location(x=-0.1, y=-0.4, z=1.1))
+
         self.transform_index = 1
         self.sensors = [
             ['sensor.camera.rgb', cc.Raw, 'Camera RGB']
