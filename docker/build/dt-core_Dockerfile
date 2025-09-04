@@ -167,7 +167,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && tar -xzf ${BOOST_PACKAGE}.tar.gz \
     && cd ${BOOST_PACKAGE} \
     && ./bootstrap.sh --prefix=/opt/boost-1.82.0 \
-         --with-libraries=python,filesystem,system,program_options,thread,timer,chrono,regex,log \
+         --with-libraries=filesystem,system,thread,regex,program_options \
     && ./b2 -j"$(nproc)" install \
     && cd /tmp \
     && rm -rf ${BOOST_PACKAGE} ${BOOST_PACKAGE}.tar.gz
@@ -176,8 +176,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # Environment setup for Boost 1.82.0
 # ------------------------------------------------------------------------
 ENV BOOST_ROOT=/opt/boost-1.82.0 \
-    CMAKE_PREFIX_PATH=/opt/boost-1.82.0 \
-    LD_LIBRARY_PATH=/opt/boost-1.82.0/lib
+    CMAKE_PREFIX_PATH=/opt/boost-1.82.0:$CMAKE_PREFIX_PATH \
+    LD_LIBRARY_PATH=/opt/boost-1.82.0/lib:$LD_LIBRARY_PATH
 
 RUN rm -rf /home/$USER/TENA
 USER $USER
