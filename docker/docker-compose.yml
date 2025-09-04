@@ -1,7 +1,8 @@
 services:
   carla-voices:
     container_name: carla-voices
-    image: usdotfhwastoldev/carla-voices:P-0.0.5
+    # image: usdotfhwastoldev/carla-voices:P-0.0.5
+    image: usdotfhwastoldev/carla-voices:9-15_0.0.1
     privileged: true
     network_mode: "host"
     environment:
@@ -27,7 +28,8 @@ services:
 
   voices:
     container_name: voices
-    image: usdotfhwastoldev/voices:P-latest
+    # image: usdotfhwastoldev/voices:P-latest
+    image: usdotfhwastoldev/voices:P-9-15_0.0.1
     tty: true 
     depends_on:
       - carla-voices
@@ -47,6 +49,8 @@ services:
       - ${VUG_LOCAL_VOICES_POC_PATH}:/home/dt_user/voices-poc
       - ${VUG_LOCAL_TENADEV_DIR}:/home/dt_user/tenadev
       - /dev/bus/usb:/dev/bus/usb
+      - ~/tenadev/INSTALL:/home/dt_user/VUG_Adapters
+      - ~/voices-poc/docker/build/lib/COPY/start_scripts:/home/dt_user/start_scripts
     devices:
       - /dev/input:/dev/input
     stop_grace_period: 30s

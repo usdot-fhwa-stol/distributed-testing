@@ -5,29 +5,25 @@
   </identifier>
   <OpenDrive>
     <MapFileName name="TFHRC.xodr">
-      <MapOrigin latitudeInDegrees="38.9511644208721" longitudeInDegrees="-77.14905380821106" heightAboveEllipsoidInMeters="0"> </MapOrigin>
+      <MapOrigin latitudeInDegrees="38.9511644208721" longitudeInDegrees="-77.14905380821106" heightAboveEllipsoidInMeters="35.8"> </MapOrigin>
     </MapFileName>
   </OpenDrive>
 
   <vehicles>
 
-    <vehicle name="annika-M-1" bsmid="f03ad619" type="vehicle.audi.etron" owner="CARLA-annika-1" material="Aluminum" lvcIndicator="Constructive">
+    <vehicle name="annika-M-1" bsmid="f03ad620" type="vehicle.audi.etron" owner="CARLA-annika-1" material="Aluminum" lvcIndicator="Constructive">
         <userData>
             <CARLA manual="true" generate_bsms="true"></CARLA>
         </userData>
         <initialTSPI>
-            <GeodeticPosition latitudeInDegrees="38.955812" longitudeInDegrees="-77.151061" heightAboveEllipsoidInMeters="39"> </GeodeticPosition>
-            <Heading>38</Heading>
+            <GeodeticPosition latitudeInDegrees="38.955812" longitudeInDegrees="-77.151061" heightAboveEllipsoidInMeters="75"> </GeodeticPosition>
+            <Heading>90</Heading>
         </initialTSPI>
     </vehicle>
 
-    <!-- <vehicle name="FHWA-M-A" bsmid="f03ad620" type="vehicle.mustang.mustang" owner="CARLA-FHWA-A" material="Aluminum" lvcIndicator="Live"> -->
-    <vehicle name="FHWA-M-3" bsmid="f03ad620" type="vehicle.mustang.mustang" owner="CARLA-FHWA-3" material="Aluminum" lvcIndicator="Live">
-        <userData>
-            <CARLA manual="true" generate_bsms="true"></CARLA>
-        </userData>
+    <vehicle name="FHWA-M-3" bsmid="0a000000" type="vehicle.mustang.mustang" owner="CARLA-FHWA-3" material="Aluminum" lvcIndicator="Live">
         <initialTSPI>
-            <GeodeticPosition latitudeInDegrees="38.955886" longitudeInDegrees="-77.151224" heightAboveEllipsoidInMeters="39"> </GeodeticPosition>
+            <GeodeticPosition latitudeInDegrees="38.955886" longitudeInDegrees="-77.151224" heightAboveEllipsoidInMeters="75"> </GeodeticPosition>
             <Heading>38</Heading>
         </initialTSPI>
     </vehicle>

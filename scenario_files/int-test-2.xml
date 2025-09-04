@@ -33,12 +33,12 @@
 
     <!-- <vehicle name="FHWA-CAR-3" bsmid="0a000000" type="vehicle.mustang.mustang" owner="CARLA-FHWA-3" material="Aluminum" lvcIndicator="Live"> -->
     <vehicle name="FHWA-LIVE-3" bsmid="0a000000" type="vehicle.mustang.mustang" owner="TRACK-FHWA-3" material="Aluminum" lvcIndicator="Live">
+
         <initialTSPI>
             <GeodeticPosition latitudeInDegrees="38.955886" longitudeInDegrees="-77.151224" heightAboveEllipsoidInMeters="39"> </GeodeticPosition>
             <Heading>38</Heading>
         </initialTSPI>
     </vehicle>
-
   </vehicles>
 
   <simulations>
@@ -54,8 +54,6 @@
     <simulation name="TRACK-FHWA-3" type="CARLA">
       <WeatherState>ClearNoon</WeatherState>
     </simulation>
-    
-
   </simulations>
 
 </scenario>

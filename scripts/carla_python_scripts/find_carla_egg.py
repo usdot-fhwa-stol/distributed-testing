@@ -17,6 +17,7 @@ def find_file(pattern, path):
 def find_carla_egg():
 
     carla_egg_dir = os.getenv("VUG_CARLA_EGG_DIR")
+    # carla_egg_dir = '/opt/carla-simulator/PythonAPI/carla/dist'
 
     if not carla_egg_dir:
         print("\n[!!!] VUG_CARLA_EGG_DIR not set, source node_info.config")
@@ -24,8 +25,10 @@ def find_carla_egg():
 
     #this looks for the carla python API .egg file
     try:
-        
-        carla_egg_name = 'carla-0.9.10*' + str(sys.version_info.major) + '*-' + str('win-amd64' if os.name == 'nt' else 'linux-x86_64') + '.egg'
+        print('Egg dir: ' + carla_egg_dir)
+        # CARLA_0.9.15/PythonAPI/carla/dist/carla-0.9.15-py3.7-linux-x86_64.egg
+        # Looking for CARLA egg:            carla-0.9.15*  3* -linux-x86_64.egg
+        carla_egg_name = 'carla-0.9.15*' + str(sys.version_info.major) + '*-' + str('win-amd64' if os.name == 'nt' else 'linux-x86_64') + '.egg'
         print("Looking for CARLA egg: " + carla_egg_name)
         carla_egg_locations = find_file(carla_egg_name,carla_egg_dir)
         print("Found carla egg(s): " + str(carla_egg_locations))

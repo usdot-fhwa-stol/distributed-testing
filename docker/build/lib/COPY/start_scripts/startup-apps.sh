@@ -21,20 +21,20 @@ if [[ $VUG_DEV_MODE == true ]]; then
    exit 0
 fi
 
-sleep 5s
+sleep 3s
 
 if [[ $VUG_DOCKER_START_EM == true ]]; then
    echo "STARTING TENA EXECUTION MANAGER"
    $HOME/voices-poc/scripts/run_scripts/start-em-bg.sh
 
-   sleep 5s
+   sleep 3s
 fi
 
 if [[ $VUG_DOCKER_START_CONSOLE == true ]]; then
    echo "STARTING TENA CONSOLE"
    $VUG_LOCAL_TENA_PATH/Console-v2.0.1/start.sh -emEndpoints $VUG_EM_ADDRESS:$VUG_EM_PORT -listenEndpoints $VUG_LOCAL_ADDRESS -autoConnect &
 
-   sleep 5s
+   sleep 3s
 fi
 
 # try to change carla map 
@@ -42,7 +42,7 @@ if [[ $VUG_DOCKER_START_CARLA == true ]]; then
    echo "CHANGING CARLA MAP TO: $VUG_CARLA_MAP_NAME"
 	python3 $HOME/voices-poc/scripts/carla_python_scripts/config.py -m $VUG_CARLA_MAP_NAME --weather ClearNoon --host $VUG_CARLA_ADDRESS &
 
-   sleep 5s
+   sleep 3s
    
    if [[ $VUG_CARLA_BLANK_SIGNALS == true ]]; then
       # blank signals and essentially disable their timing so that the only TL states we see are from TENA TrafficLight SDO updates
@@ -65,7 +65,7 @@ if [[ $VUG_DOCKER_START_CARLA == true ]]; then
       python3 $HOME/voices-poc/scripts/carla_python_scripts/draw_sdsm_json_live.py --host $VUG_CARLA_ADDRESS &
    fi
 
-   sleep 5s
+   sleep 3s
 fi
 
 if [[ $VUG_DOCKER_START_SUMO == true ]]; then
@@ -73,70 +73,77 @@ if [[ $VUG_DOCKER_START_SUMO == true ]]; then
    cd $HOME/voices-poc/scripts/carla_python_scripts/Sumo/
    python3 $HOME/voices-poc/scripts/carla_python_scripts/Sumo/run_synchronization.py $HOME/voices-poc/scripts/carla_python_scripts/Sumo/$VUG_DOCKER_SUMO_CONFIG --sumo-gui --tls-manager carla --carla-host $VUG_LOCAL_ADDRESS --sumo-host $VUG_LOCAL_ADDRESS &
    cd $HOME
-   sleep 5s
+   sleep 3s
 fi
 
 if [[ $VUG_DOCKER_START_CANARY == true ]]; then
    echo "STARTING TENA CANARY"
    $VUG_LOCAL_TENA_PATH/tenaCanary-v1.0.13/start.sh -emEndpoints $VUG_EM_ADDRESS:$VUG_EM_PORT -listenEndpoints $VUG_LOCAL_ADDRESS -auto &
 
-   sleep 5s
+   sleep 3s
 fi
 
 if [[ $VUG_DOCKER_START_TDCS == true ]]; then
    echo "STARTING TENA DATA COLLECTION SYSTEM"
    $HOME/voices-poc/scripts/run_scripts/start-tdcs.sh &
    
-   sleep 5s
+   sleep 3s
 fi
 
 if [[ $VUG_DOCKER_START_TENA_PLAYBACK == true ]]; then
    echo "STARTING TENA PLAYBACK SYSTEM"
    $HOME/voices-poc/scripts/run_scripts/start-playback-tool.sh &
    
-   sleep 5s
+   sleep 3s
 fi
 
 if [[ $VUG_DOCKER_START_DATAVIEW == true ]]; then
    echo "STARTING TENA DATAVIEW"
    $VUG_LOCAL_TENA_PATH/DataView-v1.5.4/start.sh &
 
-   sleep 5s
+   sleep 3s
 fi
 
 if [[ $VUG_DOCKER_START_SCENARIO_PUBLISHER == true ]]; then
    echo "STARTING SCENARIO PUBLISHER"
    $HOME/voices-poc/scripts/run_scripts/start-scenario-publisher.sh &
 
-   sleep 5s
+   sleep 3s
 fi
 
 if [[ $VUG_DOCKER_START_TENA_CARLA_ADAPTER == true ]]; then
    echo "STARTING TENA CARLA ADAPTER"
    $HOME/voices-poc/scripts/run_scripts/start-carla-tena-adapter.sh &
 
-   sleep 5s
+   sleep 3s
 fi
 
 if [[ $VUG_DOCKER_START_V2X_ADAPTER == true ]]; then
    echo "STARTING TENA V2X ADAPTER"
    $HOME/voices-poc/scripts/run_scripts/start-tv2x-adapter.sh &
 
-   sleep 5s
+   sleep 3s
+fi
+
+if [[ $VUG_DOCKER_START_TV2X_ADAPTER == true ]]; then
+   echo "STARTING TENA V2X ADAPTER"
+   $HOME/voices-poc/scripts/run_scripts/start-tv2x-adapter.sh &
+
+   sleep 3s
 fi
 
 if [[ $VUG_DOCKER_START_TRAFFIC_LIGHT_EG == true ]]; then
    echo "STARTING TENA TRAFFIC LIGHT ENTITY GENERATOR"
    $HOME/voices-poc/scripts/run_scripts/start-traffic-light-entity-generator.sh &
 
-   sleep 5s
+   sleep 3s
 fi
 
 if [[ $VUG_DOCKER_START_ENTITY_GENERATOR == true ]]; then
    echo "STARTING TENA ENTITY GENERATOR"
    $HOME/voices-poc/scripts/run_scripts/start-entity-generator.sh &
 
-   sleep 5s
+   sleep 3s
 fi
 
 if [[ $VUG_DOCKER_START_MANUAL_CARLA_VEHICLE == true ]]; then
@@ -153,7 +160,7 @@ if [[ $VUG_DOCKER_START_MANUAL_CARLA_VEHICLE == true ]]; then
 
    fi
 
-   sleep 5s
+   sleep 3s
 fi
 
 echo

@@ -2,7 +2,7 @@
 # BUILD COMMAND: VERSION=0.0.8 && sudo DOCKER_BUILDKIT=1 docker build --build-arg version=$VERSION -t usdotfhwastoldev/carla-voices:pilot2-event2-$VERSION . --progress=plain -f carla-voices_Dockerfile
 #
 
-FROM carlasim/carla:0.9.10
+FROM carlasim/carla:0.9.15
 
 ARG VERSION
 
@@ -14,16 +14,16 @@ SHELL ["/bin/bash", "-ec"]
 ARG DEBIAN_FRONTEND="noninteractive" 
 ARG TZ="America/New_York"
 
-RUN --mount=type=bind,target=./Import,readonly,source=./lib/MAPS \
-    sed -i 's/--keep-newer-files/--skip-old-files/' ImportAssets.sh && \
-    ./ImportAssets.sh 
+# RUN --mount=type=bind,target=./Import,readonly,source=./lib/MAPS \
+#     sed -i 's/--keep-newer-files/--skip-old-files/' ImportAssets.sh && \
+#     ./ImportAssets.sh 
 
 COPY ./lib/COPY/start_scripts /home/carla/start_scripts
 COPY ./lib/COPY/.voices_site_config_docker /home/carla/.voices_site_config_docker
 COPY ./lib/COPY/.voices_scenario_config_docker /home/carla/.voices_scenario_config_docker
 COPY ./lib/COPY/VOICES_Limited_License_V0.2.pdf /home/carla/VOICES_Limited_License_V0.2.pdf
 
-COPY ./lib/CARLA_TFHRC /home/CARLA_TFHRC
+# COPY ./lib/CARLA_TFHRC /home/CARLA_TFHRC
 
 USER root
 

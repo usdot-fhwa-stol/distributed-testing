@@ -57,9 +57,10 @@ RUN chown -R $USER:$USER /home/$USER/TENA
 USER $USER
 ENV USER="dt_user"
 
-# CARLA_0.9.10 (contains just the PythonAPI folder for CARLA PythonAPI capabilities)
-RUN gdown 1yFN-G2PaNna3kHtXop3XqVFu632l62HB
-RUN unzip CARLA_0.9.10.zip
+# RUN gdown 1yFN-G2PaNna3kHtXop3XqVFu632l62HB
+# CARLA_0.9.15 (contains just the PythonAPI folder for CARLA PythonAPI capabilities)
+RUN gdown 1mSt0_8wZGn6q8ist3ZAyhkVLT_W9fMR_
+RUN unzip CARLA_0.9.15.zip
 
 FROM usdotfhwastoldev/voices:base-P-latest
 
@@ -90,7 +91,7 @@ RUN apt clean && \
     # install apt utils for installing packages (mostly for TENA console)
     apt-utils \
     # install boost
-    libboost-all-dev \
+    # libboost-all-dev \
     # install qt packages
     libxcb-xinerama0 libfreetype6 libfontconfig libsm6 libxi6 libx11-xcb-dev libxcb-icccm4 libxcb-image0 libxcb-keysyms1 libxcb-randr0 libxcb-render-util0 libxcb-shape0 libxcb-sync1 libxcb-xfixes0 libxcb-xkb1 libxkbcommon-x11-0 libjpeg8 libtiff5 \
     # install debug tools
@@ -104,20 +105,20 @@ RUN apt clean && \
     # cleanup apt lists
     rm -rf /var/lib/apt/lists/*
 
-# Install Python 3.8 and clean NumPy
+# Install Python 3.10 and clean NumPy
 RUN apt-get clean && \
     add-apt-repository -y ppa:deadsnakes/ppa && \
     apt-get update && \
     apt-get purge -y python3-numpy && \
     rm -rf /usr/lib/python3*/dist-packages/numpy* && \
     apt-get install -y \
-        python3.8 \
-        python3.8-dev \
-        python3.8-distutils \
+        python3.10 \
+        python3.10-dev \
+        python3.10-distutils \
         curl && \
-    update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.8 100 && \
-    update-alternatives --set python3 /usr/bin/python3.8 && \
-    curl -sS https://bootstrap.pypa.io/get-pip.py | python3.8 && \
+    update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.10 100 && \
+    update-alternatives --set python3 /usr/bin/python3.10 && \
+    curl -sS https://bootstrap.pypa.io/get-pip.py | python3.10 && \
     python3 -m pip install --upgrade pip
 
 # Switch to non-root user
@@ -126,11 +127,36 @@ ENV PATH="/home/dt_user/.local/bin:$PATH"
 
 # Install Python packages as dt_user
 RUN python3 -m pip install --no-cache-dir --user --force-reinstall numpy && \
-    python3 -m pip install --no-cache-dir --user pygame pycrate traci lxml networkx pynput matplotlib && \
+    python3 -m pip install --no-cache-dir --user carla==0.9.15 pygame pycrate traci lxml networkx pynput matplotlib && \
     python3 -m pip install --no-cache-dir --user pandas && \
     rm -rf /home/dt_user/.cache
 
 USER root
+
+# ------------------------------------------------------------------------
+# Build and install Boost 1.82.0
+# ------------------------------------------------------------------------
+RUN apt-get update && apt-get install -y --no-install-recommends \
+      build-essential g++ cmake wget curl python3-dev \
+    && cd /tmp \
+    && BOOST_VERSION=1.82.0 \
+    && BOOST_PACKAGE=boost_${BOOST_VERSION//./_} \
+    && wget https://archives.boost.io/release/${BOOST_VERSION}/source/${BOOST_PACKAGE}.tar.gz \
+    && tar -xzf ${BOOST_PACKAGE}.tar.gz \
+    && cd ${BOOST_PACKAGE} \
+    && ./bootstrap.sh --prefix=/opt/boost-1.82.0 \
+         --with-libraries=filesystem,system,thread,regex,program_options \
+    && ./b2 -j"$(nproc)" install \
+    && cd /tmp \
+    && rm -rf ${BOOST_PACKAGE} ${BOOST_PACKAGE}.tar.gz
+
+# ------------------------------------------------------------------------
+# Environment setup for Boost 1.82.0
+# ------------------------------------------------------------------------
+ENV BOOST_ROOT=/opt/boost-1.82.0 \
+    CMAKE_PREFIX_PATH=/opt/boost-1.82.0:$CMAKE_PREFIX_PATH \
+    LD_LIBRARY_PATH=/opt/boost-1.82.0/lib:$LD_LIBRARY_PATH
+
 RUN rm -rf /home/$USER/TENA
 USER $USER
 
@@ -139,7 +165,7 @@ COPY --chown=dt_user:dt_user --from=build /home/$USER/TENA /home/$USER/TENA
 RUN DSTROOT=/home/dt_user ./TENA/postinst-DV
 RUN DSTROOT=/home/dt_user ./TENA/postinst-TDCS
 
-COPY --chown=dt_user:dt_user --from=build /home/$USER/CARLA_0.9.10 /home/$USER/CARLA_0.9.10
+COPY --chown=dt_user:dt_user --from=build /home/$USER/CARLA_0.9.15 /home/$USER/CARLA_0.9.15
 
 COPY --chown=dt_user:dt_user ./lib/COPY /home/$USER
 

@@ -105,7 +105,11 @@ tenaBuildVersion=u2204-gcc11-64
 # remoteDownloadsDir=/home/Downloads 		#DO NOT CHANGE: internal docker directory mapped to localTenaPackageDownloadDir
 remoteTenaDir=/home/dt_user/TENA			#DO NOT CHANGE: internal docker directory mapped to localTenaDir
 remoteInstallDir=/home/dt_user/INSTALL		#DO NOT CHANGE: internal docker directory mapped to localInstallDir	
+# remoteTenaDir=/root/TENA			#DO NOT CHANGE: internal docker directory mapped to localTenaDir
+# remoteInstallDir=/root/INSTALL		#DO NOT CHANGE: internal docker directory mapped to localInstallDir	
 remoteCarlaDir=/home/dt_user/carla
+remoteTenaDirV2xHub=/root/TENA
+remoteInstallDirV2xHub=/root/INSTALL
 #--------------------------------------------------------#
 
 middlewareVersion="MiddlewareSDK-v6.0.9"
@@ -186,7 +190,7 @@ elif [[ $tenaAppIndex == 3 ]]; then
 elif [[ $tenaAppIndex == 4 ]]; then
 	tenaApp=$vug_carla_adapter_name
 	gitCloneUrl=$carlaTenaAdapterGitUrl
-	dockerContainer=usdotfhwastoldev/voices:build-carla-P-latest
+	dockerContainer=usdotfhwastoldev/voices:build-carla-9-15_0.0.3
 	remoteAppDir=/home/dt_user/$tenaApp 			#DO NOT CHANGE: internal docker directory mapped to localAppDir
 	isV2xhubPlugin=false
 	requiresProtocolio=false
@@ -407,9 +411,10 @@ else
 		buildVersionCmakeArg="-D CMAKE_BUILD_TYPE=RELEASE"
 		
 	elif [[ $releaseOrDebug == 2 ]]; then
-		buildVersion="-B debug"
-		buildVersionDirCmd=
+		buildVersion="debug"
+		buildVersionDirArg="-B debug"
 		buildVersionCaps="-D CMAKE_BUILD_TYPE=DEBUG"
+		buildVersionCmakeArg="-D CMAKE_BUILD_TYPE=DEBUG"
 
 	else
 		echo
@@ -615,8 +620,7 @@ echo "#### Running CMAKE ####"
 # fi
 
 echo
-
-if ! ( set -x ; sudo docker run --entrypoint /bin/bash --rm -v $localAppDir:$remoteAppDir  -v $localInstallDir:$remoteInstallDir $dockerContainer -c "cd $remoteAppDir/build; export TENA_PLATFORM=$tenaBuildVersion; export TENA_HOME=$remoteTenaDir; export TENA_VERSION=6.0.9; export CARLA_HOME=$remoteCarlaDir; cmake -D CMAKE_EXPORT_COMPILE_COMMANDS=ON $buildVersionDirArg $buildVersionCmakeArg -D CMAKE_PREFIX_PATH='$remoteTenaDir/lib/cmake;$remoteInstallDir;/opt/carma/cmake;/opt/carma/lib' -D CMAKE_MODULE_PATH='/opt/carma/cmake' -D VUG_INSTALL_DIR=$remoteInstallDir -D tmx-plugin_DIR=/usr/local/share/tmx/ ../" ); then
+if ! ( set -x ; sudo docker run --entrypoint /bin/bash --rm -v $localAppDir:$remoteAppDir  -v $localInstallDir:$remoteInstallDir $dockerContainer -c "cd $remoteAppDir/build; export TENA_PLATFORM=$tenaBuildVersion; export TENA_HOME=$remoteTenaDir; export TENA_VERSION=6.0.9; export CARLA_HOME=$remoteCarlaDir; cmake -D CMAKE_EXPORT_COMPILE_COMMANDS=ON $buildVersionDirArg $buildVersionCmakeArg -D CMAKE_PREFIX_PATH='$remoteTenaDir/lib/cmake;$remoteInstallDir;/opt/carma/cmake;/opt/carma/lib;/home/dt_user/carla/Build/boost-1.80.0-c10-install' -D CMAKE_MODULE_PATH='/opt/carma/cmake' -D BOOST_ROOT=/home/dt_user/carla/Build/boost-1.82.0-c10-install -D Boost_NO_SYSTEM_PATHS=ON -D VUG_INSTALL_DIR=$remoteInstallDir -D tmx-plugin_DIR=/usr/local/share/tmx/ ../" ); then
 	echo
 	echo "[!!!] CMAKE FAILED"
 	exit
@@ -657,7 +661,7 @@ if [[ "$skipMake" == true ]]
 				
 				echo
 				echo "MAKE PACKAGE COMMAND: "
-				if ! ( set -x ; sudo docker run --entrypoint /bin/bash --rm -v $localAppDir:$remoteAppDir  -v $localInstallDir:$remoteInstallDir $dockerContainer -c "cd $remoteAppDir/build/$buildVersion; export TENA_PLATFORM=$tenaBuildVersion; export TENA_HOME=$remoteTenaDir; export TENA_VERSION=6.0.9; export CARLA_HOME=$remoteCarlaDir; make -j $numBuildJobs package VERBOSE=1" ); then
+				if ! ( set -x ; sudo docker run --entrypoint /bin/bash --rm -v $localAppDir:$remoteAppDir  -v $localInstallDir:$remoteInstallDirV2xHub $dockerContainer -c "cd $remoteAppDir/build/$buildVersion; export TENA_PLATFORM=$tenaBuildVersion; export TENA_HOME=$remoteTenaDirV2xHub; export TENA_VERSION=6.0.9; export CARLA_HOME=$remoteCarlaDirV2xHub; make -j $numBuildJobs package VERBOSE=1" ); then
 					echo
 					echo "[!!!] MAKE PACKAGE FAILED"
 					exit
