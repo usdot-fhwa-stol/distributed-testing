@@ -17,15 +17,42 @@ WORKDIR /home/dt_user
 
 USER root
 
+# libboost-all-dev 
 RUN apt update && apt-get install -y \
-    cmake cmake-data git build-essential libboost-all-dev clang g++ lld ninja-build \
+    cmake cmake-data git build-essential clang gcc-11 g++-11 lld ninja-build \
     libvulkan1 libpng-dev libtiff5-dev libjpeg-dev tzdata sed curl openssl unzip autoconf libtool rsync libxml2-dev
 
-RUN --mount=type=secret,id=usdotfhwastol_token \
-    USDOTFHWASTOL_TOKEN=$(cat /run/secrets/usdotfhwastol_token) && \
-    git clone https://${USDOTFHWASTOL_TOKEN}@github.com/usdot-fhwa-stol/vug-cmake-package.git cmake_temp && \
-    chown -R dt_user:dt_user cmake_temp && \
-	mv cmake_temp/cmake/ /home/dt_user/TENA/lib/ && \
-	rm -rf cmake_temp   
+# RUN --mount=type=secret,id=usdotfhwastol_token \
+#     USDOTFHWASTOL_TOKEN=$(cat /run/secrets/usdotfhwastol_token) && \
+#     git clone https://${USDOTFHWASTOL_TOKEN}@github.com/usdot-fhwa-stol/vug-cmake-package.git cmake_temp && \
+#     chown -R dt_user:dt_user cmake_temp && \
+# 	mv cmake_temp/cmake/ /home/dt_user/TENA/lib/ && \
+# 	rm -rf cmake_temp   
+COPY ./lib/COPY/vug-cmake-package/cmake /home/dt_user/TENA/lib/cmake
+RUN chown -R dt_user:dt_user /home/dt_user/TENA/lib/cmake
+
+# ------------------------------------------------------------------------
+# Build and install Boost 1.82.0
+# ------------------------------------------------------------------------
+RUN apt-get update && apt-get install -y --no-install-recommends \
+      build-essential g++ cmake wget curl python3-dev \
+    && cd /tmp \
+    && BOOST_VERSION=1.82.0 \
+    && BOOST_PACKAGE=boost_${BOOST_VERSION//./_} \
+    && wget https://archives.boost.io/release/${BOOST_VERSION}/source/${BOOST_PACKAGE}.tar.gz \
+    && tar -xzf ${BOOST_PACKAGE}.tar.gz \
+    && cd ${BOOST_PACKAGE} \
+    && ./bootstrap.sh --prefix=/opt/boost-1.82.0 \
+         --with-libraries=python,filesystem,system,program_options,thread,timer,chrono,regex,log \
+    && ./b2 -j"$(nproc)" install \
+    && cd /tmp \
+    && rm -rf ${BOOST_PACKAGE} ${BOOST_PACKAGE}.tar.gz
+
+# ------------------------------------------------------------------------
+# Environment setup for Boost 1.82.0
+# ------------------------------------------------------------------------
+ENV BOOST_ROOT=/opt/boost-1.82.0 \
+    CMAKE_PREFIX_PATH=/opt/boost-1.82.0 \
+    LD_LIBRARY_PATH=/opt/boost-1.82.0/lib
 
 USER dt_user

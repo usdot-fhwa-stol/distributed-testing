@@ -160,7 +160,7 @@ carlaTenaAdapterGitUrl="https://github.com/usdot-fhwa-stol/vug-carla-adapter.git
 if [[ $tenaAppIndex == 1 ]]; then
 	tenaApp=vug-threads-library
 	gitCloneUrl="https://github.com/usdot-fhwa-stol/vug-threads-library.git"
-	dockerContainer=usdotfhwastoldev/voices:build-general-P-latest
+	dockerContainer=usdotfhwastoldev/voices:build-general-carla_9-15-0.0.1
 	remoteAppDir=/home/dt_user/$tenaApp	#DO NOT CHANGE: internal docker directory mapped to localAppDir
 	isV2xhubPlugin=false
 	requiresProtocolio=false
@@ -170,7 +170,7 @@ if [[ $tenaAppIndex == 1 ]]; then
 elif [[ $tenaAppIndex == 2 ]]; then
 	tenaApp=vug-udp-protocolio
 	gitCloneUrl="https://github.com/usdot-fhwa-stol/vug-udp-protocolio.git"
-	dockerContainer=usdotfhwastoldev/voices:build-general-P-latest
+	dockerContainer=usdotfhwastoldev/voices:build-general-carla_9-15-0.0.1
 	remoteAppDir=/home/dt_user/$tenaApp	#DO NOT CHANGE: internal docker directory mapped to localAppDir
 	isV2xhubPlugin=false
 	requiresProtocolio=false
@@ -180,7 +180,7 @@ elif [[ $tenaAppIndex == 2 ]]; then
 elif [[ $tenaAppIndex == 3 ]]; then
 	tenaApp=vug-scenario-publisher
 	gitCloneUrl="https://github.com/usdot-fhwa-stol/vug-scenario-publisher.git"
-	dockerContainer=usdotfhwastoldev/voices:build-general-P-latest
+	dockerContainer=usdotfhwastoldev/voices:build-general-carla_9-15-0.0.1
 	remoteAppDir=/home/dt_user/$tenaApp	#DO NOT CHANGE: internal docker directory mapped to localAppDir
 	isV2xhubPlugin=false
 	requiresProtocolio=false
@@ -201,7 +201,7 @@ elif [[ $tenaAppIndex == 5 ]]; then
 	# tenaApp=tena-j2735-message-adapter
 	tenaApp=vug-j2735-adapter
 	gitCloneUrl="https://github.com/usdot-fhwa-stol/vug-j2735-adapter.git"
-	dockerContainer=usdotfhwastoldev/voices:build-general-P-latest
+	dockerContainer=usdotfhwastoldev/voices:build-general-carla_9-15-0.0.1
 	remoteAppDir=/home/dt_user/$tenaApp 			#DO NOT CHANGE: internal docker directory mapped to localAppDir
 	isV2xhubPlugin=false
 	requiresProtocolio=false
@@ -211,7 +211,7 @@ elif [[ $tenaAppIndex == 5 ]]; then
 elif [[ $tenaAppIndex == 6 ]]; then
 	tenaApp=vug-j3224-adapter
 	gitCloneUrl="https://github.com/usdot-fhwa-stol/vug-J3224-adapter.git"
-	dockerContainer=usdotfhwastoldev/voices:build-general-P-latest
+	dockerContainer=usdotfhwastoldev/voices:build-general-carla_9-15-0.0.1
 	remoteAppDir=/home/dt_user/$tenaApp 			#DO NOT CHANGE: internal docker directory mapped to localAppDir
 	isV2xhubPlugin=false
 	requiresProtocolio=false
@@ -221,7 +221,7 @@ elif [[ $tenaAppIndex == 6 ]]; then
 elif [[ $tenaAppIndex == 7 ]]; then
 	tenaApp=vug-v2x-adapter
 	gitCloneUrl="https://github.com/usdot-fhwa-stol/vug-v2x-adapter.git"
-	dockerContainer=usdotfhwastoldev/voices:build-general-P-latest
+	dockerContainer=usdotfhwastoldev/voices:build-general-carla_9-15-0.0.1
 	remoteAppDir=/home/dt_user/$tenaApp 			#DO NOT CHANGE: internal docker directory mapped to localAppDir
 	isV2xhubPlugin=false
 	requiresProtocolio=false
@@ -231,7 +231,7 @@ elif [[ $tenaAppIndex == 7 ]]; then
 elif [[ $tenaAppIndex == 8 ]]; then
 	tenaApp=vug-entity-generator
 	gitCloneUrl="https://github.com/usdot-fhwa-stol/vug-entity-generator.git"
-	dockerContainer=usdotfhwastoldev/voices:build-general-P-latest
+	dockerContainer=usdotfhwastoldev/voices:build-general-carla_9-15-0.0.1
 	remoteAppDir=/home/dt_user/$tenaApp	#DO NOT CHANGE: internal docker directory mapped to localAppDir
 	isV2xhubPlugin=false
 	requiresProtocolio=false
@@ -241,7 +241,7 @@ elif [[ $tenaAppIndex == 8 ]]; then
 elif [[ $tenaAppIndex == 9 ]]; then
 	tenaApp=vug-traffic-light-entity-generator
 	gitCloneUrl="https://github.com/usdot-fhwa-stol/vug-traffic-light-entity-generator.git"
-	dockerContainer=usdotfhwastoldev/voices:build-general-P-latest
+	dockerContainer=usdotfhwastoldev/voices:build-general-carla_9-15-0.0.1
 	remoteAppDir=/home/dt_user/$tenaApp 			#DO NOT CHANGE: internal docker directory mapped to localAppDir
 	isV2xhubPlugin=false
 	requiresProtocolio=false
@@ -251,7 +251,7 @@ elif [[ $tenaAppIndex == 9 ]]; then
 elif [[ $tenaAppIndex == 10 ]]; then
 	tenaApp=vug-carma-platform-adapter
 	gitCloneUrl="https://github.com/usdot-fhwa-stol/vug-carma-platform-adapter.git"
-	dockerContainer=usdotfhwastoldev/voices:build-general-P-latest
+	dockerContainer=usdotfhwastoldev/voices:build-general-carla_9-15-0.0.1
 	remoteAppDir=/home/dt_user/$tenaApp	#DO NOT CHANGE: internal docker directory mapped to localAppDir
 	isV2xhubPlugin=false
 	requiresProtocolio=true
@@ -558,7 +558,7 @@ else
 
 		dockerfileToUse=$VUG_LOCAL_TENADEV_DIR/$vug_carla_adapter_name/docker/Dockerfile
 
-	elif [ $dockerContainer == "usdotfhwastoldev/voices:build-general-P-latest" ]; then
+	elif [ $dockerContainer == "usdotfhwastoldev/voices:build-general-carla_9-15-0.0.1" ]; then
 
 		dockerfileToUse=$localVoicesPocDir/scripts/build_tena_adapters/tena-general-dockerfile
 	
@@ -620,7 +620,7 @@ echo "#### Running CMAKE ####"
 # fi
 
 echo
-if ! ( set -x ; sudo docker run --entrypoint /bin/bash --rm -v $localAppDir:$remoteAppDir  -v $localInstallDir:$remoteInstallDir $dockerContainer -c "cd $remoteAppDir/build; export TENA_PLATFORM=$tenaBuildVersion; export TENA_HOME=$remoteTenaDir; export TENA_VERSION=6.0.9; export CARLA_HOME=$remoteCarlaDir; cmake -D CMAKE_EXPORT_COMPILE_COMMANDS=ON $buildVersionDirArg $buildVersionCmakeArg -D CMAKE_PREFIX_PATH='$remoteTenaDir/lib/cmake;$remoteInstallDir;/opt/carma/cmake;/opt/carma/lib;/home/dt_user/carla/Build/boost-1.80.0-c10-install' -D CMAKE_MODULE_PATH='/opt/carma/cmake' -D BOOST_ROOT=/home/dt_user/carla/Build/boost-1.82.0-c10-install -D Boost_NO_SYSTEM_PATHS=ON -D VUG_INSTALL_DIR=$remoteInstallDir -D tmx-plugin_DIR=/usr/local/share/tmx/ ../" ); then
+if ! ( set -x ; sudo docker run --entrypoint /bin/bash --rm -v $localAppDir:$remoteAppDir  -v $localInstallDir:$remoteInstallDir $dockerContainer -c "cd $remoteAppDir/build; export TENA_PLATFORM=$tenaBuildVersion; export TENA_HOME=$remoteTenaDir; export TENA_VERSION=6.0.9; export CARLA_HOME=$remoteCarlaDir; cmake -D CMAKE_EXPORT_COMPILE_COMMANDS=ON $buildVersionDirArg $buildVersionCmakeArg -D CMAKE_PREFIX_PATH='$remoteTenaDir/lib/cmake;$remoteInstallDir;/opt/carma/cmake;/opt/carma/lib;/home/dt_user/carla/Build/boost-1.82.0-c10-install' -D CMAKE_MODULE_PATH='/opt/carma/cmake' -D BOOST_ROOT=/home/dt_user/carla/Build/boost-1.82.0-c10-install -D Boost_NO_SYSTEM_PATHS=ON -D VUG_INSTALL_DIR=$remoteInstallDir -D tmx-plugin_DIR=/usr/local/share/tmx/ ../" ); then
 	echo
 	echo "[!!!] CMAKE FAILED"
 	exit
