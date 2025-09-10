@@ -128,5 +128,5 @@ def process_csv_files(directory):
                 print(f"Skipping {filename.name}, required fields not found.")
 
 # Replace '/path/to/directory' with your actual directory path
-directory_path = '/home/vug/voices-poc/logs/Official_Eco_Data/ORIG/'
+directory_path = '/home/vug/distributed-testing/logs/Official_Eco_Data/ORIG/'
 process_csv_files(directory_path)

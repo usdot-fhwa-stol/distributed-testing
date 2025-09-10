@@ -414,10 +414,10 @@ dt__help() {
 -------------------------------------------------------------------------------
 
 Please enter one of the following commands:
-    init <voices-poc path>
+    init <distributed-testing path>
         - initialize the dt system, prompting the user to create a site config, 
           create a scenario config, and set their config. 
-        - voices-poc path is the location which the voices-poc GitHub repository is downloaded
+        - distributed-testing path is the location which the distributed-testing GitHub repository is downloaded
 
     config
         print 
