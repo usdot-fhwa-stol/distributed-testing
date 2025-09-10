@@ -1,14 +1,14 @@
 #!/usr/bin/bash
 
 # Confirm configs are the desired ones
-voices_site_config=$HOME/.voices_site_config
-voices_scenario_config=$HOME/.voices_scenario_config
-if [ -L ${voices_site_config} ] && [ -L ${voices_scenario_config} ]; then
-    if [ -e ${voices_site_config} ] && [ -e ${voices_scenario_config} ]; then
-        site_config_link_dest=$(readlink -f $voices_site_config)
+dt_site_config=$HOME/.dt_site_config
+dt_scenario_config=$HOME/.dt_scenario_config
+if [ -L ${dt_site_config} ] && [ -L ${dt_scenario_config} ]; then
+    if [ -e ${dt_site_config} ] && [ -e ${dt_scenario_config} ]; then
+        site_config_link_dest=$(readlink -f $dt_site_config)
         site_link_base_name=$(basename ${site_config_link_dest})
 
-        scenario_config_link_dest=$(readlink -f $voices_scenario_config)
+        scenario_config_link_dest=$(readlink -f $dt_scenario_config)
         scenario_link_base_name=$(basename ${scenario_config_link_dest})
     fi
 fi

@@ -84,7 +84,7 @@ dt__disconnect() {
 
     echo "Disconnecting from VPN"
 
-    "$VUG_LOCAL_VOICES_POC_PATH/scripts/utils/stop_current_vpn_connection.sh"
+    "$VUG_LOCAL_DT_PATH/scripts/utils/stop_current_vpn_connection.sh"
 }
 
 dt-config__set() {
@@ -119,7 +119,7 @@ dt-config__set() {
         esac
     done
 
-    "$VUG_LOCAL_VOICES_POC_PATH/config/set_voices_config.sh" "${args[@]}"
+    "$VUG_LOCAL_DT_PATH/config/set_voices_config.sh" "${args[@]}"
 }
 
 dt-config__create() {
@@ -129,7 +129,7 @@ dt-config__create() {
     fi
 
     local type="$1"
-    local config_dir="$VUG_LOCAL_VOICES_POC_PATH/config/${type}_config"
+    local config_dir="$VUG_LOCAL_DT_PATH/config/${type}_config"
     local default_config="$config_dir/default_${type}.config"
 
     if [[ ! -f "$default_config" ]]; then
@@ -195,7 +195,7 @@ dt-config__create() {
         done
         
         # replace /home/<username> with $HOME to keep the config tidy
-        sed -i "s|^export VUG_LOCAL_VOICES_POC_PATH=.*|export VUG_LOCAL_VOICES_POC_PATH=${VUG_LOCAL_VOICES_POC_PATH/#$HOME/\$HOME}|" "$new_config_path"
+        sed -i "s|^export VUG_LOCAL_DT_PATH=.*|export VUG_LOCAL_DT_PATH=${VUG_LOCAL_DT_PATH/#$HOME/\$HOME}|" "$new_config_path"
         sed -i "s|^export VUG_LOCAL_ADDRESS=.*|export VUG_LOCAL_ADDRESS='$VUG_LOCAL_ADDRESS'|" "$new_config_path"
         sed -i "s|^export VUG_SHORT_IDENTIFIER=.*|export VUG_SHORT_IDENTIFIER='$VUG_SHORT_IDENTIFIER'|" "$new_config_path"
         sed -i "s|^export VUG_DOCKER_START_CARLA=.*|export VUG_DOCKER_START_CARLA=$VUG_DOCKER_START_CARLA|" "$new_config_path"
@@ -235,20 +235,20 @@ dt-config__create() {
 }
 
 dt-config__print() {
-    local voices_site_config="$HOME/.voices_site_config"
-    local voices_scenario_config="$HOME/.voices_scenario_config"
+    local dt_site_config="$HOME/.dt_site_config"
+    local dt_scenario_config="$HOME/.dt_scenario_config"
 
-    echo "Voices Site Config ($voices_site_config):"
-    if [[ -f "$voices_site_config" ]]; then
-        cat "$voices_site_config"
+    echo "Distributed Testing Site Config ($dt_site_config):"
+    if [[ -f "$dt_site_config" ]]; then
+        cat "$dt_site_config"
     else
         echo "(Not found)"
     fi
 
     echo ""
-    echo "Voices Scenario Config ($voices_scenario_config):"
-    if [[ -f "$voices_scenario_config" ]]; then
-        cat "$voices_scenario_config"
+    echo "Distributed Testing Scenario Config ($dt_scenario_config):"
+    if [[ -f "$dt_scenario_config" ]]; then
+        cat "$dt_scenario_config"
     else
         echo "(Not found)"
     fi
@@ -260,7 +260,7 @@ dt__init() {
         return 1
     fi
 
-    export VUG_LOCAL_VOICES_POC_PATH="$1"
+    export VUG_LOCAL_DT_PATH="$1"
 
     echo ""
     read -p "Would you like to create a new site config? [Y/n] " confirm
@@ -287,12 +287,12 @@ dt__download() {
     EXTRA_ARGS=("$@")
     
     # Check that the env variable is set and compose file exists
-    if [[ -z "$VUG_LOCAL_VOICES_POC_PATH" ]]; then
-        echo "Error: VUG_LOCAL_VOICES_POC_PATH is not set."
+    if [[ -z "$VUG_LOCAL_DT_PATH" ]]; then
+        echo "Error: VUG_LOCAL_DT_PATH is not set."
         return 1
     fi
 
-    COMPOSE_FILE="$VUG_LOCAL_VOICES_POC_PATH/docker/docker-compose.yml"
+    COMPOSE_FILE="$VUG_LOCAL_DT_PATH/docker/docker-compose.yml"
 
     if [[ ! -f "$COMPOSE_FILE" ]]; then
         echo "Error: Cannot find docker-compose.yml at $COMPOSE_FILE"
@@ -312,7 +312,7 @@ dt__start() {
     EXTRA_ARGS=("$@")
 
     echo "Starting DT..."
-    $VUG_LOCAL_VOICES_POC_PATH/docker/start-docker.sh "${EXTRA_ARGS[@]}"
+    $VUG_LOCAL_DT_PATH/docker/start-docker.sh "${EXTRA_ARGS[@]}"
 
 }
 
@@ -322,12 +322,12 @@ dt__stop() {
     EXTRA_ARGS=("$@")
 
     # Check that the env variable is set and compose file exists
-    if [[ -z "$VUG_LOCAL_VOICES_POC_PATH" ]]; then
-        echo "Error: VUG_LOCAL_VOICES_POC_PATH is not set."
+    if [[ -z "$VUG_LOCAL_DT_PATH" ]]; then
+        echo "Error: VUG_LOCAL_DT_PATH is not set."
         return 1
     fi
 
-    COMPOSE_FILE="$VUG_LOCAL_VOICES_POC_PATH/docker/docker-compose.yml"
+    COMPOSE_FILE="$VUG_LOCAL_DT_PATH/docker/docker-compose.yml"
 
     if [[ ! -f "$COMPOSE_FILE" ]]; then
         echo "Error: Cannot find docker-compose.yml at $COMPOSE_FILE"
@@ -348,12 +348,12 @@ dt__ps() {
     EXTRA_ARGS=("$@")
 
     # Check that the env variable is set and compose file exists
-    if [[ -z "$VUG_LOCAL_VOICES_POC_PATH" ]]; then
-        echo "Error: VUG_LOCAL_VOICES_POC_PATH is not set."
+    if [[ -z "$VUG_LOCAL_DT_PATH" ]]; then
+        echo "Error: VUG_LOCAL_DT_PATH is not set."
         return 1
     fi
 
-    COMPOSE_FILE="$VUG_LOCAL_VOICES_POC_PATH/docker/docker-compose.yml"
+    COMPOSE_FILE="$VUG_LOCAL_DT_PATH/docker/docker-compose.yml"
 
     if [[ ! -f "$COMPOSE_FILE" ]]; then
         echo "Error: Cannot find docker-compose.yml at $COMPOSE_FILE"
@@ -369,7 +369,7 @@ dt__ps() {
 }
 
 dt__exec() {
-    local container="voices"
+    local container="dt"
     local command="bash"
     local exec_args=()
 
@@ -392,9 +392,9 @@ dt__exec() {
     done
 
     # Validate container
-    if [[ "$container" != "voices" && "$container" != "carla-voices" ]]; then
+    if [[ "$container" != "dt" && "$container" != "carla-dt" ]]; then
         echo "Error: Unknown container '$container'"
-        echo "Valid options are: voices or carla-voices"
+        echo "Valid options are: dt or carla-dt"
         return 1
     fi
 
@@ -441,7 +441,7 @@ Please enter one of the following commands:
     
     exec [docker exec args] [--container <container name>] [--command <command to execute>]
         - Opens a terminal inside the specified container with the specified args and commands
-        - Default container is voices, alternatively carla-voices
+        - Default container is dt, alternatively carla-dt
         - Default docker exec args are -it
         - Default command is bash
     
@@ -460,19 +460,19 @@ HELP
 }
 
 check_config() {
-    voices_site_config=$HOME/.voices_site_config
-    voices_scenario_config=$HOME/.voices_scenario_config
+    dt_site_config=$HOME/.dt_site_config
+    dt_scenario_config=$HOME/.dt_scenario_config
 
-    if [ -L ${voices_site_config} ] && [ -L ${voices_scenario_config} ]; then
-        if [ -e ${voices_site_config} ] && [ -e ${voices_scenario_config} ]; then
-            site_config_link_dest=$(readlink -f $voices_site_config)
+    if [ -L ${dt_site_config} ] && [ -L ${dt_scenario_config} ]; then
+        if [ -e ${dt_site_config} ] && [ -e ${dt_scenario_config} ]; then
+            site_config_link_dest=$(readlink -f $dt_site_config)
             site_link_base_name=$(basename ${site_config_link_dest})
 
-            scenario_config_link_dest=$(readlink -f $voices_scenario_config)
+            scenario_config_link_dest=$(readlink -f $dt_scenario_config)
             scenario_link_base_name=$(basename ${scenario_config_link_dest})
 
-            source $voices_site_config
-            source $voices_scenario_config
+            source $dt_site_config
+            source $dt_scenario_config
             export VUG_SITE_CONFIG_FILE=$site_link_base_name
             export VUG_SCENARIO_CONFIG_FILE=$scenario_link_base_name
 
@@ -483,9 +483,9 @@ check_config() {
             
         else
             echo
-            echo "[!!!] .voices_site_config or .voices_scenario_config link is broken"
-            echo "Site Config: "$(readlink -f $voices_site_config)
-            echo "Scenario Config: "$(readlink -f $voices_scenario_config)
+            echo "[!!!] .dt_site_config or .dt_scenario_config link is broken"
+            echo "Site Config: "$(readlink -f $dt_site_config)
+            echo "Scenario Config: "$(readlink -f $dt_scenario_config)
             
             echo ""
             read -p "Would you like to try setting your config again? (Y/n): " confirm
@@ -495,11 +495,11 @@ check_config() {
             
             exit 1
     fi
-    elif [ -e ${voices_site_config} ] || [ -e ${voices_site_config} ]; then
+    elif [ -e ${dt_site_config} ] || [ -e ${dt_site_config} ]; then
         echo
-        echo "[!!!] .voices_site_config or .voices_scenario_config file is not a symbolic link"
-        echo "Site Config: "$(readlink -f $voices_site_config)
-        echo "Scenario Config: "$(readlink -f $voices_scenario_config)
+        echo "[!!!] .dt_site_config or .dt_scenario_config file is not a symbolic link"
+        echo "Site Config: "$(readlink -f $dt_site_config)
+        echo "Scenario Config: "$(readlink -f $dt_scenario_config)
         
         echo ""
         read -p "Would you like to try setting your config again? (Y/n): " confirm
@@ -510,9 +510,9 @@ check_config() {
         exit 1
     else
         echo
-        echo "[!!!] .voices_site_config or .voices_scenario_config symbolic link does not exist"
-        echo "Site Config: "$(readlink -f $voices_site_config)
-        echo "Scenario Config: "$(readlink -f $voices_scenario_config)
+        echo "[!!!] .dt_site_config or .dt_scenario_config symbolic link does not exist"
+        echo "Site Config: "$(readlink -f $dt_site_config)
+        echo "Scenario Config: "$(readlink -f $dt_scenario_config)
         
         echo ""
         read -p "Would you like to try setting your config again? (Y/n): " confirm

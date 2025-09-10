@@ -1,5 +1,5 @@
 #
-# BUILD COMMAND: sudo DOCKER_BUILDKIT=1 docker build -t usdotfhwastoldev/voices:pilot2-event0-0.0.4 . --progress=plain -f pilot2-event0_Dockerfile
+# BUILD COMMAND: sudo DOCKER_BUILDKIT=1 docker build -t usdotfhwastoldev/dt:pilot2-event0-0.0.4 . --progress=plain -f pilot2-event0_Dockerfile
 #
 
 FROM ubuntu:20.04

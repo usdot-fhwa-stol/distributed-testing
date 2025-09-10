@@ -8,7 +8,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 DT_SCRIPT="$SCRIPT_DIR/dt"
 DT_AUTOCOMPLETE="$SCRIPT_DIR/__dt_autocomplete"
 
-VUG_LOCAL_VOICES_POC_PATH=$(echo "$SCRIPT_DIR" | sed -E 's|(/distributed-testing).*|\1|')
+VUG_LOCAL_DT_PATH=$(echo "$SCRIPT_DIR" | sed -E 's|(/distributed-testing).*|\1|')
 
 # Ensure required files exist
 if [[ ! -f "$DT_SCRIPT" || ! -f "$DT_AUTOCOMPLETE" ]]; then
@@ -40,6 +40,6 @@ sudo chmod ugo+x /usr/bin/dt
 sudo cp "$DT_AUTOCOMPLETE" /etc/bash_completion.d/__dt_autocomplete
 sudo chmod ugo+x /etc/bash_completion.d/__dt_autocomplete
 
-dt init $VUG_LOCAL_VOICES_POC_PATH
+dt init $VUG_LOCAL_DT_PATH
 
 echo "Installation complete. You may need to restart your terminal for autocomplete to take effect."

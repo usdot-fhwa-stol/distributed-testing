@@ -17,48 +17,48 @@
 #  * the License.
 #  *
 
-voices_site_config=$HOME/.voices_site_config
-voices_scenario_config=$HOME/.voices_scenario_config
+dt_site_config=$HOME/.dt_site_config
+dt_scenario_config=$HOME/.dt_scenario_config
 
-voices_site_config_docker=$HOME/.voices_site_config_docker
-voices_scenario_config_docker=$HOME/.voices_scenario_config_docker
+voices_site_config_docker=$HOME/.dt_site_config_docker
+voices_scenario_config_docker=$HOME/.dt_scenario_config_docker
 
-if [ -L ${voices_site_config} ] && [ -L ${voices_scenario_config} ]; then
-    if [ -e ${voices_site_config} ] && [ -e ${voices_scenario_config} ]; then
-        site_config_link_dest=$(readlink -f $voices_site_config)
+if [ -L ${dt_site_config} ] && [ -L ${dt_scenario_config} ]; then
+    if [ -e ${dt_site_config} ] && [ -e ${dt_scenario_config} ]; then
+        site_config_link_dest=$(readlink -f $dt_site_config)
         site_link_base_name=$(basename ${site_config_link_dest})
 
-        scenario_config_link_dest=$(readlink -f $voices_scenario_config)
+        scenario_config_link_dest=$(readlink -f $dt_scenario_config)
         scenario_link_base_name=$(basename ${scenario_config_link_dest})
 
-        source $HOME/.voices_site_config
+        source $HOME/.dt_site_config
 
-		# if voices config docker exists, then source it to overwrite docker specific vars
+		# if dt config docker exists, then source it to overwrite docker specific vars
 		if [ -e ${voices_site_config_docker} ]; then
-			source $HOME/.voices_site_config_docker
+			source $HOME/.dt_site_config_docker
 		fi
 
-		source $HOME/.voices_scenario_config
+		source $HOME/.dt_scenario_config
 
 		if [ -e ${voices_scenario_config_docker} ]; then
-			source $HOME/.voices_scenario_config_docker
+			source $HOME/.dt_scenario_config_docker
 		fi
 
         echo "Site Config: "$site_link_base_name
         echo "Scenario Config: "$scenario_link_base_name
     else
-        echo "[!!!] .voices_site_config or .voices_scenario_config link is broken"
+        echo "[!!!] .dt_site_config or .dt_scenario_config link is broken"
         echo "Site Config: "$(readlink -f $site_link_base_name)
         echo "Scenario Config: "$(readlink -f $scenario_link_base_name)
         exit 1
    fi
-elif [ -e ${voices_site_config} ] || [ -e ${voices_site_config} ]; then
-    echo "[!!!] .voices_site_config or .voices_scenario_config file is not a symbolic link"
+elif [ -e ${dt_site_config} ] || [ -e ${dt_site_config} ]; then
+    echo "[!!!] .dt_site_config or .dt_scenario_config file is not a symbolic link"
     echo "Site Config: "$(readlink -f $site_link_base_name)
     echo "Scenario Config: "$(readlink -f $scenario_link_base_name)
     exit 1
 else
-    echo "[!!!] .voices_site_config or .voices_scenario_config symbolic link does not exist"
+    echo "[!!!] .dt_site_config or .dt_scenario_config symbolic link does not exist"
     echo "Site Config: "$(readlink -f $site_link_base_name)
     echo "Scenario Config: "$(readlink -f $scenario_link_base_name)
     exit 1
