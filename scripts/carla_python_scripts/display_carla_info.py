@@ -88,8 +88,8 @@ def display_vehicle_rolenames():
                 cleaned_veh_name = "MCITY-TERASIM-02"
             elif cleaned_veh_name == "MCITY-TERASIM-02":
                 cleaned_veh_name = "MCITY-TERASIM-01"
-            else:
-                cleaned_veh_name = cleaned_veh_name.split('-', 1)[0]
+            # else:
+            #     cleaned_veh_name = cleaned_veh_name.split('-', 1)[0]
 
             if args.verbose:
                 print("    " + str(vehicle.attributes))
@@ -181,6 +181,7 @@ def display_traffic_signal_state():
                 life_time=label_duration,
                 persistent_lines=True)
 
+ 
 
 try:
     client = carla.Client(args.host, args.port)
@@ -212,6 +213,14 @@ try:
     if not display_traffic_signals_env and not display_vehicle_rolenames_env:
         print("NOT DISPLAYING VEHICLE ROLENAMES OR TRAFFIC SIGNAL STATES")
         sys.exit()
+
+    # world = client.get_world()
+    # world.debug.draw_string(
+    #             carla.Location(0,0,0),
+    #             "ORIGIN",
+    #             draw_shadow=False,color=carla.Color(r=255,g=0,b=0),
+    #             life_time=0,
+    #             persistent_lines=True)
 
     while (True):
         world = client.get_world()

@@ -1,0 +1,67 @@
+#
+# BUILD COMMAND: VERSION=P-1.1.0 && sudo DOCKER_BUILDKIT=1 docker build --secret id=usdotfhwastol_token,src=usdotfhwastol_token --build-arg VERSION=$VERSION -t usdotfhwaops/v2xhubamd:voices-$VERSION . --progress=plain -f base_v2xhub_Dockerfile_P_1-1-0
+#
+
+FROM usdotfhwaops/v2xhub:7.8.1 AS build
+
+RUN apt update && \
+    apt install -y python3-pip \
+    # add some build packages
+    zstd 
+
+RUN pip3 install gdown
+
+# TENA-MiddlewareSDK-v6.0.9.A@Product@u2204-gcc11-64-va3bc16dc.deb
+RUN gdown 1WrMDiZ1YkaK0MpHlOVrkHC2vMWN8COBQ
+
+# VUG-P???-Combined-Distribution-v1.1.0@Product@u2204-gcc11-64
+RUN gdown 1pXts1PIQeSyf10MTK462H4nTeANI5edQ
+
+# INSTALL TENA deb
+RUN dpkg -x --force-overwrite ./TENA-MiddlewareSDK-v6.0.9.A@Product@u2204-gcc11-64-*.deb .
+RUN ar -x ./TENA-MiddlewareSDK-v6.0.9.A@Product@u2204-gcc11-64-*.deb
+RUN tar xf control.tar.zst
+# move the postinst script into TENA dir to make it easier to copy and run later on final container
+RUN mv ./postinst ./opt/TENA/postinst-MW
+
+RUN dpkg -x --force-overwrite ./VUG-P???-Combined-Distribution-v1.1.0@Product@u2204-gcc11-64-*.deb .
+RUN ar -x ./VUG-P???-Combined-Distribution-v1.1.0@Product@u2204-gcc11-64-*.deb
+RUN tar xf control.tar.zst
+# move the postinst script into TENA dir to make it easier to copy and run later on final container
+RUN mv ./postinst ./opt/TENA/postinst-DIST
+
+FROM usdotfhwaops/v2xhub:7.8.1
+
+WORKDIR /root
+
+COPY --from=build /root/opt/TENA /root/TENA
+RUN DSTROOT=/root ./TENA/postinst-MW
+RUN DSTROOT=/root ./TENA/postinst-DIST
+
+RUN apt update && apt-get install -y \
+    cmake cmake-data git build-essential libboost-all-dev clang g++ lld ninja-build \
+    libvulkan1 libpng-dev libtiff5-dev libjpeg-dev tzdata sed curl openssl unzip autoconf libtool rsync libxml2-dev
+
+# COPY ./lib/COPY/vug-cmake-package cmake_temp
+RUN --mount=type=secret,id=usdotfhwastol_token \
+    USDOTFHWASTOL_TOKEN=$(cat /run/secrets/usdotfhwastol_token) && \
+    git clone https://${USDOTFHWASTOL_TOKEN}@github.com/usdot-fhwa-stol/vug-cmake-package.git cmake_temp && \
+    mv cmake_temp/cmake/ /root/TENA/lib/ && \
+	rm -rf cmake_temp   
+
+ARG VERSION=dev
+LABEL version=${VERSION}
+LABEL description="V2XHub Distributed Testing Docker Image"
+
+# SHELL ["/bin/bash", "-ec"]
+
+# ARG DEBIAN_FRONTEND="noninteractive"
+# ARG TZ="America/New_York"
+
+# COPY vug-build/TenaBsmPlugin.zip /usr/local/plugins/TenaBsmPlugin.zip
+# COPY vug-build/TenaSpatPlugin.zip /usr/local/plugins/TenaSpatPlugin.zip
+RUN echo 'source /root/TENA/6.0.9/scripts/tenaenv-u2204-gcc11-64-v6.0.9.sh' >> /root/.bashrc
+
+WORKDIR /var/log/tmx 
+
+ENTRYPOINT ["/usr/local/bin/service.sh"]

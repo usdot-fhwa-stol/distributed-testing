@@ -1,0 +1,565 @@
+#!/bin/bash
+
+#  Copyright (C) 2018-2022 LEIDOS.
+#
+#  Licensed under the Apache License, Version 2.0 (the "License"); you may not
+#  use this file except in compliance with the License. You may obtain a copy of
+#  the License at
+#
+#  http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+#  WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+#  License for the specific language governing permissions and limitations under
+#  the License.
+
+# Code below largely based on template from Stack Overflow:
+# https://stackoverflow.com/questions/37257551/defining-subcommands-that-take-arguments-in-bash
+# Question asked by user
+# DiogoSaraiva (https://stackoverflow.com/users/4465820/diogosaraiva)
+# and answered by user
+# Charles Duffy (https://stackoverflow.com/users/14122/charles-duffy)
+# Attribution here is in line with Stack Overflow's Attribution policy cc-by-sa found here:
+# https://stackoverflow.blog/2009/06/25/attribution-required/
+
+# Command line utility for distributed testing
+
+##
+# Helper function to print to stderr.
+# This is useful for allowing bash methods to return strings while still communicating information to the user
+##
+echoerr() { echo "$@" 1>&2; }
+
+# dt-config__edit() {
+#     if ! docker container inspect carma-config > /dev/null 2>&1; then
+#         echo "No existing CARMA configuration found, nothing to edit. Please set a config."
+#         echo "Done."
+#         exit 1
+#     fi
+
+#     echo "Opening shell inside carma-config container with read/write privileges..."
+
+#     local carma_base=$(__get_image_from_config carma-base)
+#     if [[ -z $carma_base ]]; then
+#         __pull_newest_carma_base
+#         carma_base=$(__get_most_recent_carma_base)
+#     fi
+
+#     docker run -it --rm --volumes-from carma-config $carma_base bash
+# }
+
+dt__connect() {
+    # Usage: dt connect <path-to-openvpn-config>
+    if [[ -z "$1" ]]; then
+        echo "Usage: dt connect <path-to-openvpn-config>"
+        return 1
+    fi
+
+    # Expand ~ if present and keep quotes for spaces
+    local cfg="${1/#\~/$HOME}"
+
+    # Basic checks
+    if ! command -v openvpn3 >/dev/null 2>&1; then
+        echo "Error: openvpn3 not found on PATH. Please install openvpn3."
+        return 1
+    fi
+
+    if [[ ! -f "$cfg" ]]; then
+        echo "Error: config file not found: $cfg"
+        return 1
+    fi
+
+    echo "Starting OpenVPN session with config: $cfg"
+    sudo openvpn3 session-start --config "$cfg"
+}
+
+dt__disconnect() {
+
+    # Basic checks
+    if ! command -v openvpn3 >/dev/null 2>&1; then
+        echo "Error: openvpn3 not found on PATH. Please install openvpn3."
+        return 1
+    fi
+
+    echo "Disconnecting from VPN"
+
+    "$VUG_LOCAL_VOICES_POC_PATH/scripts/utils/stop_current_vpn_connection.sh"
+}
+
+dt-config__set() {
+    local args=()
+
+    # Parse optional args
+    while [[ $# -gt 0 ]]; do
+        case "$1" in
+            --site)
+                if [[ -n "$2" && "$2" != --* ]]; then
+                    args+=(--site "$2")
+                    shift 2
+                else
+                    echo "Error: --site requires a filename argument."
+                    return 1
+                fi
+                ;;
+            --scenario)
+                if [[ -n "$2" && "$2" != --* ]]; then
+                    args+=(--scenario "$2")
+                    shift 2
+                else
+                    echo "Error: --scenario requires a filename argument."
+                    return 1
+                fi
+                ;;
+            *)
+                echo "Unknown option: $1"
+                echo "Usage: dt config set [--site <site.config>] [--scenario <scenario.config>]"
+                return 1
+                ;;
+        esac
+    done
+
+    "$VUG_LOCAL_VOICES_POC_PATH/config/set_voices_config.sh" "${args[@]}"
+}
+
+dt-config__create() {
+    if [[ -z "$1" || ( "$1" != "site" && "$1" != "scenario" ) ]]; then
+        echo "Usage: dt config create [site|scenario]"
+        return 1
+    fi
+
+    local type="$1"
+    local config_dir="$VUG_LOCAL_VOICES_POC_PATH/config/${type}_config"
+    local default_config="$config_dir/default_${type}.config"
+
+    if [[ ! -f "$default_config" ]]; then
+        echo "Error: Default config not found at $default_config"
+        return 1
+    fi
+
+    local example_name="fhwa.config"
+    [[ "$type" == "scenario" ]] && example_name="test_5.config"
+
+    echo "Creating new $type configuration file."
+    while true; do
+        read -p "Enter a name for the new config file (e.g., $example_name): " config_name
+        if [[ "$config_name" =~ \.config$ ]]; then
+            break
+        else
+            echo "Invalid filename. It must end in .config"
+        fi
+    done
+
+    local new_config_path="$config_dir/$config_name"
+    if [[ -f "$new_config_path" ]]; then
+        read -p "File already exists. Overwrite? (y/N): " confirm
+        if [[ ! "$confirm" =~ ^[Yy]$ ]]; then
+            echo "Aborting."
+            return 1
+        fi
+    fi
+
+    # Copy default template
+    cp "$default_config" "$new_config_path"
+
+    # === SITE CONFIG PROMPTS ===
+    if [[ "$type" == "site" ]]; then
+        local VUG_LOCAL_ADDRESS=""
+        while true; do
+            read -p "Enter VUG_LOCAL_ADDRESS (IPv4): " VUG_LOCAL_ADDRESS
+            if [[ "$VUG_LOCAL_ADDRESS" =~ ^([0-9]{1,3}\.){3}[0-9]{1,3}$ ]]; then
+                break
+            else
+                echo "Invalid IP address. Try again."
+            fi
+        done
+
+        local VUG_SHORT_IDENTIFIER=""
+        while true; do
+            read -p "Enter VUG_SHORT_IDENTIFIER (uppercase, < 8 characters): " VUG_SHORT_IDENTIFIER
+            if [[ "$VUG_SHORT_IDENTIFIER" =~ ^[A-Z0-9]{1,8}$ ]]; then
+                break
+            else
+                echo "Invalid identifier. Use all caps and up to 8 characters."
+            fi
+        done
+
+        local VUG_DOCKER_START_CARLA=""
+        while true; do
+            read -p "Would you be using CARLA? (true/false): " VUG_DOCKER_START_CARLA
+            if [[ "$VUG_DOCKER_START_CARLA" =~ ^(true|false)$ ]]; then
+                break
+            else
+                echo "Invalid input. Use 'true' or 'false'."
+            fi
+        done
+        
+        # replace /home/<username> with $HOME to keep the config tidy
+        sed -i "s|^export VUG_LOCAL_VOICES_POC_PATH=.*|export VUG_LOCAL_VOICES_POC_PATH=${VUG_LOCAL_VOICES_POC_PATH/#$HOME/\$HOME}|" "$new_config_path"
+        sed -i "s|^export VUG_LOCAL_ADDRESS=.*|export VUG_LOCAL_ADDRESS='$VUG_LOCAL_ADDRESS'|" "$new_config_path"
+        sed -i "s|^export VUG_SHORT_IDENTIFIER=.*|export VUG_SHORT_IDENTIFIER='$VUG_SHORT_IDENTIFIER'|" "$new_config_path"
+        sed -i "s|^export VUG_DOCKER_START_CARLA=.*|export VUG_DOCKER_START_CARLA=$VUG_DOCKER_START_CARLA|" "$new_config_path"
+
+    # === SCENARIO CONFIG PROMPTS ===
+    elif [[ "$type" == "scenario" ]]; then
+        local VUG_EM_ADDRESS=""
+        while true; do
+            read -p "Enter VUG_EM_ADDRESS (IPv4): " VUG_EM_ADDRESS
+            if [[ "$VUG_EM_ADDRESS" =~ ^([0-9]{1,3}\.){3}[0-9]{1,3}$ ]]; then
+                break
+            else
+                echo "Invalid IP address. Try again."
+            fi
+        done
+
+        read -p "Enter VUG_CARLA_MAP_NAME (map name): " VUG_CARLA_MAP_NAME
+        read -p "Enter VUG_INTERSECTION_ID (optional, leave blank if none): " VUG_INTERSECTION_ID
+
+        local VUG_SCENARIO_FILE=""
+        while true; do
+            read -p "Enter VUG_SCENARIO_FILE (must end in .xml): " VUG_SCENARIO_FILE
+            if [[ "$VUG_SCENARIO_FILE" =~ \.xml$ ]]; then
+                break
+            else
+                echo "Invalid scenario file. Must end in .xml"
+            fi
+        done
+
+        sed -i "s|^export VUG_EM_ADDRESS=.*|export VUG_EM_ADDRESS='$VUG_EM_ADDRESS'|" "$new_config_path"
+        sed -i "s|^export VUG_CARLA_MAP_NAME=.*|export VUG_CARLA_MAP_NAME='$VUG_CARLA_MAP_NAME'|" "$new_config_path"
+        sed -i "s|^export VUG_INTERSECTION_ID=.*|export VUG_INTERSECTION_ID='$VUG_INTERSECTION_ID'|" "$new_config_path"
+        sed -i "s|^export VUG_SCENARIO_FILE=.*|export VUG_SCENARIO_FILE='$VUG_SCENARIO_FILE'|" "$new_config_path"
+    fi
+
+    echo "New $type config created at: $new_config_path"
+}
+
+dt-config__print() {
+    local voices_site_config="$HOME/.voices_site_config"
+    local voices_scenario_config="$HOME/.voices_scenario_config"
+
+    echo "Voices Site Config ($voices_site_config):"
+    if [[ -f "$voices_site_config" ]]; then
+        cat "$voices_site_config"
+    else
+        echo "(Not found)"
+    fi
+
+    echo ""
+    echo "Voices Scenario Config ($voices_scenario_config):"
+    if [[ -f "$voices_scenario_config" ]]; then
+        cat "$voices_scenario_config"
+    else
+        echo "(Not found)"
+    fi
+}
+
+dt__init() {
+    if [[ -z "$1" ]]; then
+        echo "Install path not set..."
+        return 1
+    fi
+
+    export VUG_LOCAL_VOICES_POC_PATH="$1"
+
+    echo ""
+    read -p "Would you like to create a new site config? [Y/n] " confirm
+    if [[ ! "$confirm" =~ ^[Nn]$ ]]; then
+        dt-config__create site
+    fi
+
+    echo ""
+    read -p "Would you like to create a new scenario config? [Y/n] " confirm
+    if [[ ! "$confirm" =~ ^[Nn]$ ]]; then
+        dt-config__create scenario
+    fi
+
+    echo ""
+    read -p "Would you like to set your config? [Y/n] " confirm
+    if [[ ! "$confirm" =~ ^[Nn]$ ]]; then
+        dt-config__set
+    fi
+
+}
+
+dt__download() {
+    # Capture all extra arguments
+    EXTRA_ARGS=("$@")
+    
+    # Check that the env variable is set and compose file exists
+    if [[ -z "$VUG_LOCAL_VOICES_POC_PATH" ]]; then
+        echo "Error: VUG_LOCAL_VOICES_POC_PATH is not set."
+        return 1
+    fi
+
+    COMPOSE_FILE="$VUG_LOCAL_VOICES_POC_PATH/docker/docker-compose.yml"
+
+    if [[ ! -f "$COMPOSE_FILE" ]]; then
+        echo "Error: Cannot find docker-compose.yml at $COMPOSE_FILE"
+        return 1
+    fi
+
+    echo "Stopping DT Containers:"
+    echo ""
+    # run the docker compose pull, pass any extra args
+    # using script to simulate a TTY to get the proper formatting
+    # grep -v out the warning lines for env vars not set, we dont care on shutdown
+    script -q -c "docker compose -f \"$COMPOSE_FILE\" pull ${EXTRA_ARGS[@]}" /dev/null | grep -v 'variable is not set. Defaulting to a blank string'
+}
+
+dt__start() {
+    # Capture all extra arguments
+    EXTRA_ARGS=("$@")
+
+    echo "Starting DT..."
+    $VUG_LOCAL_VOICES_POC_PATH/docker/start-docker.sh "${EXTRA_ARGS[@]}"
+
+}
+
+dt__stop() {
+
+    # Capture all extra arguments
+    EXTRA_ARGS=("$@")
+
+    # Check that the env variable is set and compose file exists
+    if [[ -z "$VUG_LOCAL_VOICES_POC_PATH" ]]; then
+        echo "Error: VUG_LOCAL_VOICES_POC_PATH is not set."
+        return 1
+    fi
+
+    COMPOSE_FILE="$VUG_LOCAL_VOICES_POC_PATH/docker/docker-compose.yml"
+
+    if [[ ! -f "$COMPOSE_FILE" ]]; then
+        echo "Error: Cannot find docker-compose.yml at $COMPOSE_FILE"
+        return 1
+    fi
+
+    echo "Stopping DT Containers:"
+    echo ""
+    # run the docker compose down, pass any extra args
+    # using script to simulate a TTY to get the proper formatting
+    # grep -v out the warning lines for env vars not set, we dont care on shutdown
+    script -q -c "docker compose -f \"$COMPOSE_FILE\" down ${EXTRA_ARGS[@]}" /dev/null | grep -v 'variable is not set. Defaulting to a blank string'
+}
+
+dt__ps() {
+
+    # Capture all extra arguments
+    EXTRA_ARGS=("$@")
+
+    # Check that the env variable is set and compose file exists
+    if [[ -z "$VUG_LOCAL_VOICES_POC_PATH" ]]; then
+        echo "Error: VUG_LOCAL_VOICES_POC_PATH is not set."
+        return 1
+    fi
+
+    COMPOSE_FILE="$VUG_LOCAL_VOICES_POC_PATH/docker/docker-compose.yml"
+
+    if [[ ! -f "$COMPOSE_FILE" ]]; then
+        echo "Error: Cannot find docker-compose.yml at $COMPOSE_FILE"
+        return 1
+    fi
+
+    echo "Runinng DT Containers:"
+    echo ""
+    # run the docker compose ps, pass any extra args
+    # using script to simulate a TTY to get the proper formatting
+    # grep -v out the warning lines for env vars not set, we dont care on shutdown
+    script -q -c "docker compose -f \"$COMPOSE_FILE\" ps ${EXTRA_ARGS[@]}" /dev/null | grep -v 'variable is not set. Defaulting to a blank string'
+}
+
+dt__exec() {
+    local container="voices"
+    local command="bash"
+    local exec_args=()
+
+    # Parse arguments
+    while [[ $# -gt 0 ]]; do
+        case "$1" in
+            --container)
+                container="$2"
+                shift 2
+                ;;
+            --command)
+                command="$2"
+                shift 2
+                ;;
+            *)
+                exec_args+=("$1")
+                shift
+                ;;
+        esac
+    done
+
+    # Validate container
+    if [[ "$container" != "voices" && "$container" != "carla-voices" ]]; then
+        echo "Error: Unknown container '$container'"
+        echo "Valid options are: voices or carla-voices"
+        return 1
+    fi
+
+    # Set default exec args if none provided
+    if [[ ${#exec_args[@]} -eq 0 ]]; then
+        exec_args=(-it)
+    fi
+
+    echo "Attaching to container '$container' with args: ${exec_args[*]} and command: $command"
+    docker exec "${exec_args[@]}" "$container" $command
+}
+
+dt__help() {
+    cat <<HELP
+-------------------------------------------------------------------------------
+| USDOT FHWA STOL Distributed Testing Platform                                |
+-------------------------------------------------------------------------------
+
+Please enter one of the following commands:
+    init <voices-poc path>
+        - initialize the dt system, prompting the user to create a site config, 
+          create a scenario config, and set their config. 
+        - voices-poc path is the location which the voices-poc GitHub repository is downloaded
+
+    config
+        print 
+            - print the current scenario and site configuration file contents
+        set [--site <site config name>] [--scenario <scenario config name>]
+            - sets the users site and scenario config. Can be set directly using the --site
+              and --scenario args, prompts the user if no arguments are given. 
+        create [site|scenario]
+            - walks the user through creating a site or scenario config based on the indicated 
+              argument. This will prompt them to enter critial configuration but it is highly 
+              reccommended to review and adjust your configuration after creation
+
+    start [docker compose up args]
+        - Start the distributed testing platform
+        - Adapters and TENA applications will be started and configured based on your site config
+        - Accepts the same flags as "docker compose up"
+    
+    stop [docker compose down args]
+        - Stop the distributed testing platform.
+        - Accepts the same flags as "docker compose down"
+    
+    exec [docker exec args] [--container <container name>] [--command <command to execute>]
+        - Opens a terminal inside the specified container with the specified args and commands
+        - Default container is voices, alternatively carla-voices
+        - Default docker exec args are -it
+        - Default command is bash
+    
+    download [docker pull args]
+        - Pulls the docker containers from the docker compose
+        - Containers can be downloaded individually by specifying the container name in the 
+          docker pull args
+
+    ps
+        - List all running CARMA docker containers
+        - Accepts the same flags as "docker ps"
+    
+    help
+        - Display this information"
+HELP
+}
+
+check_config() {
+    voices_site_config=$HOME/.voices_site_config
+    voices_scenario_config=$HOME/.voices_scenario_config
+
+    if [ -L ${voices_site_config} ] && [ -L ${voices_scenario_config} ]; then
+        if [ -e ${voices_site_config} ] && [ -e ${voices_scenario_config} ]; then
+            site_config_link_dest=$(readlink -f $voices_site_config)
+            site_link_base_name=$(basename ${site_config_link_dest})
+
+            scenario_config_link_dest=$(readlink -f $voices_scenario_config)
+            scenario_link_base_name=$(basename ${scenario_config_link_dest})
+
+            source $voices_site_config
+            source $voices_scenario_config
+            export VUG_SITE_CONFIG_FILE=$site_link_base_name
+            export VUG_SCENARIO_CONFIG_FILE=$scenario_link_base_name
+
+            echo "Your current configs are:"
+            echo "      Site Config: $site_link_base_name"
+            echo "      Scenario Config:$scenario_link_base_name"
+            echo
+            
+        else
+            echo
+            echo "[!!!] .voices_site_config or .voices_scenario_config link is broken"
+            echo "Site Config: "$(readlink -f $voices_site_config)
+            echo "Scenario Config: "$(readlink -f $voices_scenario_config)
+            
+            echo ""
+            read -p "Would you like to try setting your config again? (Y/n): " confirm
+            if [[ ! "$confirm" =~ ^[Nn]$ ]]; then
+                dt-config__set
+            fi
+            
+            exit 1
+    fi
+    elif [ -e ${voices_site_config} ] || [ -e ${voices_site_config} ]; then
+        echo
+        echo "[!!!] .voices_site_config or .voices_scenario_config file is not a symbolic link"
+        echo "Site Config: "$(readlink -f $voices_site_config)
+        echo "Scenario Config: "$(readlink -f $voices_scenario_config)
+        
+        echo ""
+        read -p "Would you like to try setting your config again? (Y/n): " confirm
+        if [[ ! "$confirm" =~ ^[Nn]$ ]]; then
+            dt-config__set
+        fi
+        
+        exit 1
+    else
+        echo
+        echo "[!!!] .voices_site_config or .voices_scenario_config symbolic link does not exist"
+        echo "Site Config: "$(readlink -f $voices_site_config)
+        echo "Scenario Config: "$(readlink -f $voices_scenario_config)
+        
+        echo ""
+        read -p "Would you like to try setting your config again? (Y/n): " confirm
+        if [[ ! "$confirm" =~ ^[Nn]$ ]]; then
+            dt-config__set
+        fi
+
+        exit 1
+    fi
+}
+
+dt__config() {
+    local cmdname=$1; shift
+    if type "dt-config__$cmdname" >/dev/null 2>&1; then
+        "dt-config__$cmdname" "$@"
+    else
+        dt__help
+        exit 1
+    fi
+}
+
+dt() {
+    local cmdname=$1; shift
+    if type "dt__$cmdname" >/dev/null 2>&1; then     
+        "dt__$cmdname" "$@"
+    else
+        dt__help
+        exit 1
+    fi
+}
+
+# if the functions above are sourced into an interactive interpreter, the user can
+# just call "carma-config set" or "carma-config reset" with no further code needed.
+
+# if invoked as a script rather than sourced, call function named on argv via the below;
+# note that this must be the first operation other than a function definition
+# for $_ to successfully distinguish between sourcing and invocation:
+[[ $_ != $0 ]] && return
+
+# make sure we actually *did* get passed a valid function name
+if declare -f "dt__$1" >/dev/null 2>&1; then
+    if [[ "$1" != "init" ]]; then
+        check_config
+    fi
+    # invoke that function, passing arguments through
+    "dt__$@" # same as "$1" "$2" "$3" ... for full argument list
+else
+    dt__help
+    exit 1
+fi

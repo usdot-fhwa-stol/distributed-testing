@@ -23,6 +23,8 @@ COPY ./lib/COPY/.voices_site_config_docker /home/carla/.voices_site_config_docke
 COPY ./lib/COPY/.voices_scenario_config_docker /home/carla/.voices_scenario_config_docker
 COPY ./lib/COPY/VOICES_Limited_License_V0.2.pdf /home/carla/VOICES_Limited_License_V0.2.pdf
 
+COPY ./lib/CARLA_TFHRC /home/CARLA_TFHRC
+
 USER root
 
 # remove cuda and nvidia sources as we are not updating them

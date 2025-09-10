@@ -58,7 +58,6 @@ def main():
     client.set_timeout(10.0)
 
     try:
-        world = client.get_world()
 
         already_stopped_once = []
 
@@ -72,7 +71,12 @@ def main():
 
         for i in range(max_checks):
 
+            world = client.get_world()
+
             vehicles = world.get_actors().filter('vehicle.*')
+
+            # print(f'Found {len(vehicles)} vehicles')
+            # print(f'\t{vehicles}')
 
             stopped_vehicles = []
 
@@ -108,7 +112,9 @@ def main():
                     vehicle.apply_control(veh_control)
 
             time.sleep(1)
-
+    except Exception as errMsg:
+        print(f'ERROR: {errMsg}')
+        
     finally:
 
         time.sleep(0.5)

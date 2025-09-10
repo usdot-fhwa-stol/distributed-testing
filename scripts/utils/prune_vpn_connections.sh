@@ -13,68 +13,14 @@ if [ -L ${voices_site_config} ] && [ -L ${voices_scenario_config} ]; then
     fi
 fi
 
-# Check if openvpn3 is installed
-if ! command -v openvpn3 &> /dev/null
-then
-    if [ $VUG_FORMAL_EVENT = true ]
-    then
-        echo
-        echo "openvpn3 is not installed but you have set VUG_FORMAL_EVENT=true in your scenario config."
-        echo "Either install openvpn3 and activate a connection or set VUG_FORMAL_EVENT=false to continue."
-        exit 1
-    fi
-    echo
-    echo "openvpn3 could not be found. Skipping VPN checks..."
-    exit 0
-fi
-
-# Check if chronyc is installed
-if ! command -v chronyc &> /dev/null
-then
-    if [ $VUG_FORMAL_EVENT = true ]
-    then
-        echo
-        echo "chronyc is not installed but you have set VUG_FORMAL_EVENT=true in your scenario config."
-        echo "Either install chronyc or set VUG_FORMAL_EVENT=false to continue."
-        exit 1
-    fi
-    echo
-    echo "chronyc could not be found. Skipping VPN checks..."
-    exit 0
-fi
-
-# Check if chronyc sources are present
-if [ $VUG_FORMAL_EVENT = true ]
-then
-    chronyc_sources="$(sudo chronyc sources)"
-    valid_source=false
-    while read -ra line; do
-        if [[ ${line[4]} =~ ^-?[0-9]+$ ]] && [ ${line[4]} != 0 ]
-        then
-            valid_source=true
-            break
-        fi
-    done <<< "$chronyc_sources"
-    if [ $valid_source = false ]
-    then
-        echo
-        echo 'There are no valid chronyc sources present'
-        exit 1
-    fi
-fi
-
-# Check if code is up to date with remote repository
-if [ $VUG_FORMAL_EVENT = true ]
-then
-    git fetch
-    if git status -uno | grep -q 'Your branch is behind'; then
-        echo
-        echo "Local repository is behind the remote repository. Please pull the most recent code."
-        exit 1
-    fi
-fi
-
+#TODO:  
+#       
+#       This is cumbersome to give sudo all the time 
+#       when you are not testing with a VPN. 
+#       --> potentially find a way to not need sudo 
 # Get output from openvpn3 sessions-list
+echo
+echo "Checking for stale VPN connections..."
 openvpn_sessions="$(sudo openvpn3 sessions-list)"
 vpn_paths=()
 path_regex='Path: (.*)'
@@ -190,7 +136,13 @@ else
     if [ $VUG_FORMAL_EVENT = true ]
     then
         echo
-        echo "No active VPN connections found. Please connect to an openvpn3 session or set VUG_FORMAL_EVENT=false in your scenario config to continue."
-        exit 1
+        # echo "No active VPN connections found. Please connect to an openvpn3 session or set VUG_FORMAL_EVENT=false in your scenario config to continue."
+        read -p "You have an no active VPN session but have set VUG_FORMAL_EVENT=true. Would you like to continue the session? [y/N] " yn
+            case $yn in
+                [Yy]*)  echo;;
+                [Nn]* | "") exit 1;;
+                * );;
+            esac
+    
     fi
 fi

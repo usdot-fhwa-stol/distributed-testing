@@ -1,0 +1,61 @@
+<?xml version="1.0.0" encoding="UTF-8"?>
+<scenario>
+  <identifier>
+    <name>Integration Test 2</name>
+  </identifier>
+  <OpenDrive>
+    <MapFileName name="TFHRC.xodr">
+      <MapOrigin latitudeInDegrees="38.9511644208721" longitudeInDegrees="-77.14905380821106" heightAboveEllipsoidInMeters="35.8"> </MapOrigin>
+    </MapFileName>
+  </OpenDrive>
+
+  <vehicles>
+
+    <vehicle name="FHWA_CAR_3" bsmid="f03ad619" type="vehicle.audi.etron" owner="CARLA-FHWA-3" material="Aluminum" lvcIndicator="Constructive">
+        <userData>
+            <CARMA CARLAcosimulationIdentifier="CARLA-FHWA-3" roleName="FHWA_CAR_3"/>
+        </userData>
+        <initialTSPI>
+            <GeodeticPosition latitudeInDegrees="38.955812" longitudeInDegrees="-77.151061" heightAboveEllipsoidInMeters="39"> </GeodeticPosition>
+            <Heading>38</Heading>
+        </initialTSPI>
+    </vehicle>
+
+    <vehicle name="FHWA-M-3" bsmid="f03ad618" type="vehicle.audi.etron" owner="CARLA-FHWA-3" material="Aluminum" lvcIndicator="Virtual">
+        <userData>
+            <CARLA manual="true" generate_bsms="true"></CARLA>
+        </userData>
+        <initialTSPI>
+            <GeodeticPosition latitudeInDegrees="38.955812" longitudeInDegrees="-77.151061" heightAboveEllipsoidInMeters="100"> </GeodeticPosition>
+            <Heading>38</Heading>
+        </initialTSPI>
+    </vehicle>
+
+    <!-- <vehicle name="FHWA-CAR-3" bsmid="0a000000" type="vehicle.mustang.mustang" owner="CARLA-FHWA-3" material="Aluminum" lvcIndicator="Live"> -->
+    <vehicle name="FHWA-LIVE-3" bsmid="0a000000" type="vehicle.mustang.mustang" owner="TRACK-FHWA-3" material="Aluminum" lvcIndicator="Live">
+        <initialTSPI>
+            <GeodeticPosition latitudeInDegrees="38.955886" longitudeInDegrees="-77.151224" heightAboveEllipsoidInMeters="39"> </GeodeticPosition>
+            <Heading>38</Heading>
+        </initialTSPI>
+    </vehicle>
+
+  </vehicles>
+
+  <simulations>
+
+    <simulation name="CARLA-SRC-1" type="CARLA">
+      <WeatherState>ClearNoon</WeatherState>
+    </simulation>
+
+    <simulation name="CARLA-FHWA-3" type="CARLA">
+      <WeatherState>ClearNoon</WeatherState>
+    </simulation>
+    
+    <simulation name="TRACK-FHWA-3" type="CARLA">
+      <WeatherState>ClearNoon</WeatherState>
+    </simulation>
+    
+
+  </simulations>
+
+</scenario>

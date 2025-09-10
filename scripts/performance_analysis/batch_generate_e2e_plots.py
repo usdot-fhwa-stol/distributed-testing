@@ -585,7 +585,7 @@ def generate_all_dest_all_runs_hist_plot(plots_dir,data_type,run_data_frames,plo
                 # cdf = np.cumsum(ecdf_n) / np.sum(ecdf_n)
 
                 # Find and annotate where the CDF crosses 0.2, 0.4, 0.6, 0.8, and 1.0
-                target_values = [0.005, 0.2, 0.4, 0.6, 0.8, 0.995]
+                target_values = [0.005, 0.2, 0.4, 0.5, 0.6, 0.8, 0.995]
                 for target in target_values:
                     # Find the index where ECDF first reaches or exceeds the target value
                     crossing_idx = np.where(ecdf_y >= target)[0][0]
@@ -668,8 +668,8 @@ def generate_all_dest_all_runs_hist_plot(plots_dir,data_type,run_data_frames,plo
         plt.close()
 
 def main():
-    plot_performance_data("results","P2E2-RFR2-", "J2735-BSM",False)
-    # plot_performance_data("results/P2E2-RFR2-DOWNLOAD","P2E2-RFR2-", "BSM")
+    # plot_performance_data("results","P2E2-RFR2-", "J2735-BSM",True)
+    plot_performance_data("results/P2E2-RFR2-DOWNLOAD","P2E2-RFR2-", "BSM",True)
     # plot_performance_data("results", "SPAT")
     # plot_performance_data("results","P2E0-","Vehicle")
     # plot_performance_data("results","P2E0-","J2735-BSM")

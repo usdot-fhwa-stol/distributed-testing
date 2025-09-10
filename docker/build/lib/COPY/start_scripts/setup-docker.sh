@@ -1,6 +1,6 @@
 #! /bin/bash
 
-export HOME=/home
+# export HOME=/home
 
 env_set_site_config_path=$HOME/voices-poc/config/site_config/$VUG_SITE_CONFIG_FILE
 env_set_scenario_config_path=$HOME/voices-poc/config/scenario_config/$VUG_SCENARIO_CONFIG_FILE

@@ -1,89 +1,141 @@
-#! /bin/bash
+#!/bin/bash
 
-# move into site config to allow for autocomplete
-cd site_config
+# Get the directory of the script, no matter where it's called from
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+cd "$SCRIPT_DIR"
 
-# select site config file
-echo
-echo "Enter a site config from the list below: " 
-echo 
-{ 
-	ls ./*.config | xargs -n 1 basename
-} || { 
-	echo
-	echo "No config files found in directory" 
-	exit 
-}
-
-# create sym link
-while true; do
-	echo ""
-	read -rep "-->: " site_config_file
-	if [ ! -f ./$site_config_file ]; then
-		echo "    File not found!"
-	else
-		site_config_path=$(readlink -f ./$site_config_file)
-        break
-	fi
+# Parse optional --site and --scenario arguments
+site_arg=""
+scenario_arg=""
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        --site)
+            if [[ -n "$2" && "$2" != --* ]]; then
+                site_arg="$2"
+                shift 2
+            else
+                echo "Error: --site requires a filename argument."
+                exit 1
+            fi
+            ;;
+        --scenario)
+            if [[ -n "$2" && "$2" != --* ]]; then
+                scenario_arg="$2"
+                shift 2
+            else
+                echo "Error: --scenario requires a filename argument."
+                exit 1
+            fi
+            ;;
+        *)
+            echo "Unknown argument: $1"
+            echo "Usage: $0 [--site site_config_file] [--scenario scenario_config_file]"
+            exit 1
+            ;;
+    esac
 done
 
-ln -sf $site_config_path $HOME/.voices_site_config
+# -------------------
+# SITE CONFIG SECTION
+# -------------------
 
-source $HOME/.voices_site_config
+cd site_config || exit 1
 
-cd ../scenario_config
+if [[ -n "$site_arg" ]]; then
+    if [[ -f "$site_arg" ]]; then
+        site_config_path=$(readlink -f "$site_arg")
+    else
+        echo "Provided site config file '$site_arg' not found."
+        exit 1
+    fi
+else
+    echo
+    echo "Set your desired site config from the list below:"
+    echo
+    {
+        ls ./*.config | xargs -n 1 basename
+    } || {
+        echo
+        echo "No config files found in directory"
+        exit 1
+    }
 
-# select scenario config file
-echo
-echo "Enter a scenario config from the list below: " 
-echo 
-{ 
-	ls ./*.config | xargs -n 1 basename
-} || { 
-	echo
-	echo "No scenario config files found in directory" 
-	exit 
-}
+    while true; do
+        echo ""
+        read -rep "-->: " site_config_file
+        if [[ ! -f ./$site_config_file ]]; then
+            echo "    File not found!"
+        else
+            site_config_path=$(readlink -f ./$site_config_file)
+            break
+        fi
+    done
+fi
 
-# create sym link
-while true; do
-	echo ""
-	read -rep "-->: " scenario_config_file
-	if [ ! -f ./$scenario_config_file ]; then
-		echo "    File not found!"
-	else
-		scenario_config_path=$(readlink -f ./$scenario_config_file)
-        break
-	fi
-done
+ln -sf "$site_config_path" "$HOME/.voices_site_config"
+source "$HOME/.voices_site_config"
 
-ln -sf $scenario_config_path $HOME/.voices_scenario_config
+# ------------------------
+# SCENARIO CONFIG SECTION
+# ------------------------
 
-source $HOME/.voices_scenario_config
+cd ../scenario_config || exit 1
 
-# remove old config architecture
-rm -f $HOME/.voices_config
+if [[ -n "$scenario_arg" ]]; then
+    if [[ -f "$scenario_arg" ]]; then
+        scenario_config_path=$(readlink -f "$scenario_arg")
+    else
+        echo "Provided scenario config file '$scenario_arg' not found."
+        exit 1
+    fi
+else
+    echo
+    echo "Set your desired scenario config from the list below:"
+    echo
+    {
+        ls ./*.config | xargs -n 1 basename
+    } || {
+        echo
+        echo "No scenario config files found in directory"
+        exit 1
+    }
 
-echo
+    while true; do
+        echo ""
+        read -rep "-->: " scenario_config_file
+        if [[ ! -f ./$scenario_config_file ]]; then
+            echo "    File not found!"
+        else
+            scenario_config_path=$(readlink -f ./$scenario_config_file)
+            break
+        fi
+    done
+fi
 
-# add to bash rc
-if grep -qx "source ~/.voices_site_config" ~/.bashrc
-then
-	echo "Source site config command already exists in .bashrc"
+ln -sf "$scenario_config_path" "$HOME/.voices_scenario_config"
+source "$HOME/.voices_scenario_config"
+
+# Clean up deprecated symlink if present
+rm -f "$HOME/.voices_config"
+
+# ---------------------
+# Add sourcing to .bashrc
+# ---------------------
+
+if grep -qx "source ~/.voices_site_config" ~/.bashrc; then
+    echo "Source site config command already exists in .bashrc"
 else
     echo "Adding site config source command to .bashrc"
-	echo "source ~/.voices_site_config" >> ~/.bashrc
+    echo "source ~/.voices_site_config" >> ~/.bashrc
 fi
 
-if grep -qx "source ~/.voices_scenario_config" ~/.bashrc
-then
-	echo "Source scenario config command already exists in .bashrc"
+if grep -qx "source ~/.voices_scenario_config" ~/.bashrc; then
+    echo "Source scenario config command already exists in .bashrc"
 else
     echo "Adding scenario config source command to .bashrc"
-	echo "source ~/.voices_scenario_config" >> ~/.bashrc
+    echo "source ~/.voices_scenario_config" >> ~/.bashrc
 fi
 
 echo
-echo "Config successfully set. Please close and reopen the terminal or source ~/.bashrc to use the new config:"
-echo "			source ~/.bashrc"
-
+echo "Config successfully set. Please close and reopen the terminal or run:"
+echo "    source ~/.bashrc"

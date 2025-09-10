@@ -14,21 +14,25 @@ cleanup() {
 
 trap 'cleanup' SIGINT SIGTERM ERR EXIT
 
-source /home/start_scripts/setup-docker.sh
+source $HOME/start_scripts/setup-docker.sh
 
+if [[ $VUG_DEV_MODE == true ]]; then
+   echo "DEV MODE ENABLED, PLEASE RUN START SCRIPT MANUALLY"
+   exit 0
+fi
 
 sleep 5s
 
 if [[ $VUG_DOCKER_START_EM == true ]]; then
    echo "STARTING TENA EXECUTION MANAGER"
-   $HOME/voices-poc/scripts/run_scripts/pilot2/src/start-em-bg.sh
+   $HOME/voices-poc/scripts/run_scripts/start-em-bg.sh
 
    sleep 5s
 fi
 
 if [[ $VUG_DOCKER_START_CONSOLE == true ]]; then
    echo "STARTING TENA CONSOLE"
-   /opt/TENA/Console-v2.0.1/start.sh -emEndpoints $VUG_EM_ADDRESS:$VUG_EM_PORT -listenEndpoints $VUG_LOCAL_ADDRESS -autoConnect &
+   $VUG_LOCAL_TENA_PATH/Console-v2.0.1/start.sh -emEndpoints $VUG_EM_ADDRESS:$VUG_EM_PORT -listenEndpoints $VUG_LOCAL_ADDRESS -autoConnect &
 
    sleep 5s
 fi
@@ -74,70 +78,63 @@ fi
 
 if [[ $VUG_DOCKER_START_CANARY == true ]]; then
    echo "STARTING TENA CANARY"
-   /home/TENA/tenaCanary-v1.0.12/start.sh -emEndpoints $VUG_EM_ADDRESS:$VUG_EM_PORT -listenEndpoints $VUG_LOCAL_ADDRESS -auto &
+   $VUG_LOCAL_TENA_PATH/tenaCanary-v1.0.13/start.sh -emEndpoints $VUG_EM_ADDRESS:$VUG_EM_PORT -listenEndpoints $VUG_LOCAL_ADDRESS -auto &
 
    sleep 5s
 fi
 
 if [[ $VUG_DOCKER_START_TDCS == true ]]; then
    echo "STARTING TENA DATA COLLECTION SYSTEM"
-   $HOME/voices-poc/scripts/run_scripts/pilot2/src/start-tdcs.sh &
+   $HOME/voices-poc/scripts/run_scripts/start-tdcs.sh &
    
    sleep 5s
 fi
 
 if [[ $VUG_DOCKER_START_TENA_PLAYBACK == true ]]; then
    echo "STARTING TENA PLAYBACK SYSTEM"
-   $HOME/voices-poc/scripts/run_scripts/pilot2/src/start-playback-tool.sh &
+   $HOME/voices-poc/scripts/run_scripts/start-playback-tool.sh &
    
    sleep 5s
 fi
 
 if [[ $VUG_DOCKER_START_DATAVIEW == true ]]; then
    echo "STARTING TENA DATAVIEW"
-   /opt/TENA/DataView-v1.5.4/start.sh &
+   $VUG_LOCAL_TENA_PATH/DataView-v1.5.4/start.sh &
 
    sleep 5s
 fi
 
 if [[ $VUG_DOCKER_START_SCENARIO_PUBLISHER == true ]]; then
    echo "STARTING SCENARIO PUBLISHER"
-   $HOME/voices-poc/scripts/run_scripts/pilot2/src/start-scenario-publisher.sh &
+   $HOME/voices-poc/scripts/run_scripts/start-scenario-publisher.sh &
 
    sleep 5s
 fi
 
 if [[ $VUG_DOCKER_START_TENA_CARLA_ADAPTER == true ]]; then
    echo "STARTING TENA CARLA ADAPTER"
-   $HOME/voices-poc/scripts/run_scripts/pilot2/src/start-carla-tena-adapter.sh &
+   $HOME/voices-poc/scripts/run_scripts/start-carla-tena-adapter.sh &
 
    sleep 5s
 fi
 
-if [[ $VUG_DOCKER_START_TJ2735_ADAPTER == true ]]; then
-   echo "STARTING TENA J2735 ADAPTER"
-   $HOME/voices-poc/scripts/run_scripts/pilot2/src/start-tj2735-message-adapter.sh &
-
-   sleep 5s
-fi
-
-if [[ $VUG_DOCKER_START_TJ3224_ADAPTER == true ]]; then
-   echo "STARTING TENA J3224 ADAPTER"
-   $HOME/voices-poc/scripts/run_scripts/pilot2/src/start-tj3224-adapter.sh &
+if [[ $VUG_DOCKER_START_V2X_ADAPTER == true ]]; then
+   echo "STARTING TENA V2X ADAPTER"
+   $HOME/voices-poc/scripts/run_scripts/start-tv2x-adapter.sh &
 
    sleep 5s
 fi
 
 if [[ $VUG_DOCKER_START_TRAFFIC_LIGHT_EG == true ]]; then
    echo "STARTING TENA TRAFFIC LIGHT ENTITY GENERATOR"
-   $HOME/voices-poc/scripts/run_scripts/pilot2/src/start-traffic-light-entity-generator.sh &
+   $HOME/voices-poc/scripts/run_scripts/start-traffic-light-entity-generator.sh &
 
    sleep 5s
 fi
 
 if [[ $VUG_DOCKER_START_ENTITY_GENERATOR == true ]]; then
    echo "STARTING TENA ENTITY GENERATOR"
-   $HOME/voices-poc/scripts/run_scripts/pilot2/src/start-entity-generator.sh &
+   $HOME/voices-poc/scripts/run_scripts/start-entity-generator.sh &
 
    sleep 5s
 fi
