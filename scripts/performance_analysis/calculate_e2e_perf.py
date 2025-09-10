@@ -555,9 +555,14 @@ def check_if_data_matches(source_packet_params,data_to_search_params,source_pack
                 hex_element = hex(binary_element).split('x')[-1].zfill(2)
                 j2735_payload = j2735_payload + hex_element
 
+            # !!! ASSUME ALL SPAT ARE LESS THAN 255 HEX BYTES
+            # the third hex byte in a J2735 message is the remaining char
+            # ex: 00 13 6B  40 85...
+            #      0 19 107 64 79
+            #            ^ = 107 hex bytes remaining after this byte == 110 total
             if J2735_message_subtype_name == "SPAT":
-                hex_string_length = (int(num_j2735_vector_elements[3]) + 3)*2
-                j2735_payload = j2735_payload.slice(hex_string_length)
+                hex_string_length = (int(source_packet_to_match["binaryContent^UInt8 (3)"]) + 3)*2
+                j2735_payload = j2735_payload[0:hex_string_length]
 
             source_packet_to_match[source_packet_key] = j2735_payload
 
@@ -1329,6 +1334,8 @@ def plot_latency(file_path, results_base_dir):
     
     first_timestamp_data = pd.to_numeric(data[first_timestamp_col], errors='coerce')
 
+    end_of_shortest_data = None
+
     for col in incremental_col_to_plot:
         numeric_data = pd.to_numeric(data[col], errors='coerce')
         
@@ -1354,9 +1361,34 @@ def plot_latency(file_path, results_base_dir):
             plt.axvline(x=timestamps[idx], color='g', linestyle='--', linewidth=1, alpha=0.1, label='NO PREV PACKET' if not no_prev_packet_label_added else "")
             no_prev_packet_label_added = True
     
+        # Find where the condition is met
+        consecutive = data[col].eq("DROPPED PACKET").rolling(window=10).sum() == 10
+
+        # Get the first index where this is True
+        first_occurrence = consecutive.idxmax() if consecutive.any() else None
+
+        if first_occurrence != None:
+            if end_of_shortest_data == None or not end_of_shortest_data < first_occurrence:
+                end_of_shortest_data = first_occurrence
+
+
+
+
     plt.title('Latency of each Segment')
     plt.xlabel('Index')
+    # Ensure end_of_shortest_data is within the range of available timestamps
+    if end_of_shortest_data is not None:
+        max_timestamp = timestamps.max()
+        min_timestamp = timestamps.min()
+        
+        # Check if end_of_shortest_data falls within the range of the timestamps
+        if timestamps[end_of_shortest_data] >= min_timestamp and timestamps[end_of_shortest_data] <= max_timestamp:
+            plt.gca().set_xlim(right=timestamps[end_of_shortest_data])
+        else:
+            # If end_of_shortest_data is out of bounds, set the limit to the maximum timestamp
+            plt.gca().set_xlim(right=max_timestamp)
     plt.ylabel('Latency (ms)')
+    plt.gca().set_ylim(bottom=0)
     plt.legend()
     plt.grid(True)
     combined_plot_path = os.path.join(results_base_dir, f'{base_name}_combined_plot.png')
@@ -1375,10 +1407,14 @@ def plot_latency(file_path, results_base_dir):
         plt.bar(data["converted_timestamps"], height=incremental_col_to_plot_values[1], bottom=incremental_col_to_plot_values[0], color='b', width=bar_width)
 
         if len(incremental_col_to_plot_values) > 2:
-            plt.bar(data["converted_timestamps"], height=incremental_col_to_plot_values[2], bottom=incremental_col_to_plot_values[0]+incremental_col_to_plot_values[1], color='y', width=bar_width)
+            plt.bar(data["converted_timestamps"], height=incremental_col_to_plot_values[2], bottom=incremental_col_to_plot_values[0]+incremental_col_to_plot_values[1], color='g', width=bar_width)
     
     plt.ylabel("Latency (ms)")
+    plt.gca().set_ylim(bottom=0)
     plt.xlabel('Index')
+
+    if end_of_shortest_data != None:
+        plt.gca().set_xlim(right=end_of_shortest_data)
 
     cleaned_col_names = []
     for col_name in incremental_col_to_plot:
@@ -1423,9 +1459,18 @@ def plot_latency(file_path, results_base_dir):
         plt.axvline(x=timestamps[idx], color='g', linestyle='--', linewidth=1, alpha=0.1, label='NO PREV PACKET' if not no_prev_packet_label_added else "")
         no_prev_packet_label_added = True
 
+    # Find where the condition is met
+    consecutive = data[last_total_latency_col].eq("DROPPED PACKET").rolling(window=5).sum() == 5
+
+    # Get the first index where this is True
+    first_occurrence = consecutive.idxmax() if consecutive.any() else None
+
     plt.title('End to End Latency')
     plt.xlabel('Index')
+    if first_occurrence != None:
+        plt.gca().set_xlim(right=first_occurrence)
     plt.ylabel('Latency (ms)')
+    plt.gca().set_ylim(bottom=0)
     plt.legend()
     plt.grid(True)
     last_total_plot_path = os.path.join(results_base_dir, f'{base_name}_last_total_latency_plot.png')
@@ -1445,7 +1490,9 @@ def plot_latency(file_path, results_base_dir):
 def clean_column_name(column_name):
 
 
-    if "pcap_in" in column_name:
+    if "pcap_in_total_latency" in column_name:
+        return "Total Latency"
+    elif "pcap_in" in column_name:
         return "SDO to UDP Conversion"
     elif "sdo_transmit" in column_name:
         return "SDO Transmit Latency"

@@ -57,10 +57,10 @@ data_types = {
     #     "pcap_file_pattern" : "J2735-Payload",
     #     "sdo_file_pattern"   : ["TJ2735Msg-J2735"]
     # },
-    # "J2735-BSM": {
-    #     "pcap_file_pattern" : "J2735-Payload",
-    #     "sdo_file_pattern"   : ["TJ2735Msg-J2735"]
-    # },
+    "J2735-BSM": {
+        "pcap_file_pattern" : "J2735-Payload",
+        "sdo_file_pattern"   : ["TJ2735Msg-J2735"]
+    },
     # "J2735-MAP": {
     #     "pcap_file_pattern" : "J2735-Payload",
     #     "sdo_file_pattern"   : ["TJ2735Msg-J2735"]
@@ -69,10 +69,10 @@ data_types = {
     #     "pcap_file_pattern" : "J3224-Payload",
     #     "sdo_file_pattern"   : ["TJ3224Msg-J3224"]
     # },
-    "BSM": {
-        "pcap_file_pattern" : "BSM-SKIPME",
-        "sdo_file_pattern"   : ["Track-BSM"]
-    },
+    # "BSM": {
+    #     "pcap_file_pattern" : "BSM-SKIPME",
+    #     "sdo_file_pattern"   : ["Track-BSM"]
+    # },
     # "Mobility_Path": {
     #     "pcap_file_pattern" : "Mobility-Path",
     #     "sdo_file_pattern"   : "Mobility-Path"

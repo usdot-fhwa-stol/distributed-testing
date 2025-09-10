@@ -3,6 +3,7 @@ import argparse
 import sys
 import shutil
 import os
+import traceback
 
 def find_matching_rows(database_file, ip_address, entity_type, is_msg):
     try:
@@ -14,8 +15,17 @@ def find_matching_rows(database_file, ip_address, entity_type, is_msg):
         if is_msg:
             cursor.execute(f"SELECT name FROM sqlite_master WHERE type='table' AND name LIKE '{entity_type}%'")
 
+            
+
+
             table_name_with_const = cursor.fetchone()
+
+            if not table_name_with_const:
+                print(f"\tNo table found for {entity_type}.")
+                return []
+            
             table_name_with_const = table_name_with_const[0]
+
             if not table_name_with_const:
                 print(f"\tNo matching table found for {entity_type}.")
                 return []
@@ -28,6 +38,7 @@ def find_matching_rows(database_file, ip_address, entity_type, is_msg):
             query = f'SELECT rowID, "Metadata,Endpoint" FROM "{table_name_with_const}"'
             cursor.execute(query)
             rows = cursor.fetchall()
+
 
             final_matching_row_ids = []
             for row in rows:
@@ -101,8 +112,8 @@ def find_matching_rows(database_file, ip_address, entity_type, is_msg):
     except sqlite3.Error as e:
         print(f"SQLite error: {e}")
         sys.exit(1)
-    except Exception as e:
-        print(f"Error: {e}")
+    except Exception:
+        print(traceback.format_exc())
         sys.exit(1)
 
 def delete_rows(database_file, entity_type, row_ids, is_msg, include_rows=True):
@@ -118,6 +129,10 @@ def delete_rows(database_file, entity_type, row_ids, is_msg, include_rows=True):
             cursor.execute(f"SELECT name FROM sqlite_master WHERE type='table' AND name LIKE '{entity_type}%const'")
 
         table_name = cursor.fetchone()
+
+        if not table_name:
+            print(f"Table for {entity_type} not found, not deleting rows")
+            return
 
         # Find the table with the same name but without "const" at the end
         table_name_without_const = table_name[0].replace(",const", "")
@@ -143,12 +158,12 @@ def delete_rows(database_file, entity_type, row_ids, is_msg, include_rows=True):
     except sqlite3.Error as e:
         print(f"SQLite error: {e}")
         sys.exit(1)
-    except Exception as e:
-        print(f"Error: {e}")
+    except Exception:
+        print(traceback.format_exc())
         sys.exit(1)
 
 
-def create_folder(directory_path,directory_name_list):
+def create_folder(directory_path,directory_name_list,force_split):
     
     delete_old_data = None
     confirmation = None
@@ -159,13 +174,23 @@ def create_folder(directory_path,directory_name_list):
         # Check if the folder already exists and there are files in it
         if os.path.exists(exported_folder_path) and len([file for file in os.listdir(directory_path) if os.path.isfile(os.path.join(directory_path, file))]) > 0:
             # Confirm with the user before deleting
-            confirmation = input(f"\nExsisting {directory_name} data found, delete old data and re-export? [y/n]: ").lower()
-            if confirmation == 'y':
+            
+            if force_split == True:
                 delete_old_data = True
                 break
-            else:
+
+            elif force_split == False:
                 delete_old_data = False
                 print("\tKeeping old data.")
+                
+            else:
+                confirmation = input(f"\nExsisting {directory_name} data found, delete old data and re-export? [y/n]: ").lower()
+                if confirmation == 'y':
+                    delete_old_data = True
+                    break
+                else:
+                    delete_old_data = False
+                    print("\tKeeping old data.")
             
     # if we confrirmed, delete the data
     if delete_old_data:
@@ -179,6 +204,10 @@ def create_folder(directory_path,directory_name_list):
         except Exception as e:
             print(f"\tError deleting folder: {e}")
             sys.exit()
+
+        except Exception:
+            print(f'tError deleting folder: \n{traceback.format_exc()}')
+            sys.exit(1)
     # if we said no to deletting data, keep the data and move on
     elif delete_old_data == False:
         return True
@@ -192,7 +221,7 @@ def create_folder(directory_path,directory_name_list):
         except OSError as e:
             print(f"\tError creating folder {exported_folder_path}: {e}")
 
-def split_tdcs(database_file,ip_address):
+def split_tdcs(database_file,ip_address,force_split):
 
     database_file_directory = os.path.dirname(database_file)
     database_file_basename = os.path.basename(database_file)
@@ -201,7 +230,7 @@ def split_tdcs(database_file,ip_address):
     outbound_database_file = f"{database_file_prefix}_outbound{file_extension}"
     inbound_database_file = f"{database_file_prefix}_inbound{file_extension}"
 
-    skip_export = create_folder(database_file_directory,["split_tdcs"])
+    skip_export = create_folder(database_file_directory,["split_tdcs"],force_split)
 
     outbound_database_file_full = os.path.join(database_file_directory,"split_tdcs",outbound_database_file)
     inbound_database_file_full = os.path.join(database_file_directory,"split_tdcs",inbound_database_file)
@@ -209,7 +238,7 @@ def split_tdcs(database_file,ip_address):
     if skip_export == True:
         return
 
-    entity_types = ["Class,VUG::Entities::Vehicle","Class,VUG::Entities::Signals::TrafficLight","Msg,VUG::TJ2735Msg::J2735"]
+    entity_types = ["Class,VUG::Entities::Vehicle","Class,VUG::Entities::Signals::TrafficLight","Msg,VUG::TJ2735Msg::J2735","Msg,VUG::TJ3224Msg::J3224","Class,VUG::Track::BSM"]
     matching_rows_by_type = {}
 
     for entity_type in entity_types:
@@ -220,8 +249,11 @@ def split_tdcs(database_file,ip_address):
             is_msg = False
 
         matching_row_ids = find_matching_rows(database_file, ip_address, entity_type,is_msg)
-        if matching_row_ids:
-            matching_rows_by_type[entity_type] = matching_row_ids
+
+        # print(f'matching_row_ids for {entity_type}: {matching_row_ids}')
+
+        # if matching_row_ids:
+        matching_rows_by_type[entity_type] = matching_row_ids
             # print(f'\tMatching Rows: {matching_row_ids}')
 
     # all_matching_row_ids = set(vehicle_matching_row_ids + traffic_light_matching_row_ids)

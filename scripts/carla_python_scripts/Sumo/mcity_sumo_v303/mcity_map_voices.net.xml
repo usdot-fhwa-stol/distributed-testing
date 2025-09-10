@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<!-- generated on 2024-02-23 20:28:24 by Eclipse SUMO netconvert Version 1.19.0
+<!-- generated on 2024-02-23 20:57:01 by Eclipse SUMO netconvert Version 1.19.0
 <configuration xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/netconvertConfiguration.xsd">
 
     <input>
@@ -327,7 +327,7 @@
     </edge>
     <edge id=":277_2" function="internal">
         <lane id=":277_2_0" index="0" disallow="pedestrian tram rail_urban rail rail_electric rail_fast ship" speed="15.65" length="39.43" width="2.81" shape="113.77,110.85,236.51 113.80,119.81,236.65 113.25,130.54,236.83 112.64,141.27,237.01 112.52,150.24,237.16">
-            <param key="signalID" value="659 658"/>
+            <param key="signalID" value="659 658 662 663"/>
         </lane>
     </edge>
     <edge id=":277_3" function="internal">
@@ -2014,7 +2014,7 @@
     <connection from="-54" to="-30" fromLane="0" toLane="0" via=":356_0_0" dir="s" state="M"/>
     <connection from="-54" to="-73#0" fromLane="0" toLane="0" via=":356_1_0" dir="l" state="m"/>
     <connection from="-6" to="-36#0" fromLane="0" toLane="1" via=":277_2_0" tl="277" linkIndex="2" dir="s" state="O">
-        <param key="signalID" value="659 658"/>
+        <param key="signalID" value="659 658 662 663"/>
     </connection>
     <connection from="-6" to="-15#0" fromLane="1" toLane="0" via=":277_3_0" tl="277" linkIndex="3" dir="l" state="o">
         <param key="signalID" value="657 656"/>

@@ -77,7 +77,7 @@ RUN apt-get update && \
     # install pip
     python3-pip \
     # install debug tools
-    iputils-ping nano tshark git tcpdump \
+    iputils-ping nano tshark git tcpdump nethogs \
     # install sumo tools
     sumo=1.19.0-1~focal sumo-tools=1.19.0-1~focal sumo-doc=1.19.0-1~focal \
     # install iproute2
@@ -89,7 +89,7 @@ RUN apt-get update && \
 
 # INSTALL python packages
 
-RUN pip install numpy pygame pycrate traci lxml networkx pynput && \
+RUN pip install numpy pygame pycrate traci lxml networkx pynput matplotlib && \
     # have to install pandas separately because it requires a specific version of numpy
     pip install pandas && \
     rm -rf /root/.cache
