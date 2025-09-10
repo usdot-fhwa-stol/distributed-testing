@@ -11,15 +11,15 @@ env_set_scenario_config_path=$HOME/distributed-testing/config/scenario_config/$V
 # $HOME/.voices_scenario_config_link = actual scenario config link
 # 
 # 
-# .voices_site_config_docker = source $HOME/.voices_site_config_link + overwrite vars pertaining to locations within docker container
-# .voices_scenario_config_docker = source $HOME/.voices_scenario_config_link + overwrite vars pertaining to locations within docker container
+# .dt_site_config_docker = source $HOME/.voices_site_config_link + overwrite vars pertaining to locations within docker container
+# .dt_scenario_config_docker = source $HOME/.voices_scenario_config_link + overwrite vars pertaining to locations within docker container
 # 
 # therefore:
 # 
-# $HOME/.voices_site_config --> $HOME/.voices_site_config_docker = source $HOME/.voices_site_config_link + overwrites
-# $HOME/.voices_scenario_config --> $HOME/.voices_scenario_config_docker = source $HOME/.voices_scenario_config_link + overwrites
+# $HOME/.dt_site_config --> $HOME/.dt_site_config_docker = source $HOME/.voices_site_config_link + overwrites
+# $HOME/.dt_scenario_config --> $HOME/.dt_scenario_config_docker = source $HOME/.voices_scenario_config_link + overwrites
 # 
-# $HOME/.voices_site_config_docker and $HOME/.voices_site_config_docker exist because $HOME/.voices_site_config and $HOME/.voices_scenario_config must be a sym link for run_scripts
+# $HOME/.dt_site_config_docker and $HOME/.dt_site_config_docker exist because $HOME/.dt_site_config and $HOME/.dt_scenario_config must be a sym link for run_scripts
 # 
 
 export SUMO_HOME=/usr/share/sumo
@@ -33,41 +33,41 @@ elif [ ! -f $env_set_scenario_config_path ]; then
 else
         ln -sf $env_set_site_config_path $HOME/.voices_site_config_link
         ln -sf $env_set_scenario_config_path $HOME/.voices_scenario_config_link
-      #   ln -sf $HOME/.voices_site_config_docker $HOME/.voices_site_config
-      #   ln -sf $HOME/.voices_scenario_config_docker $HOME/.voices_scenario_config
+      #   ln -sf $HOME/.dt_site_config_docker $HOME/.dt_site_config
+      #   ln -sf $HOME/.dt_scenario_config_docker $HOME/.dt_scenario_config
 fi
 
-# voices_site_config=$HOME/.voices_site_config_link
-# voices_scenario_config=$HOME/.voices_scenario_config_link
+# dt_site_config=$HOME/.voices_site_config_link
+# dt_scenario_config=$HOME/.voices_scenario_config_link
 
-voices_site_config=$HOME/.voices_site_config
-voices_scenario_config=$HOME/.voices_scenario_config
+dt_site_config=$HOME/.dt_site_config
+dt_scenario_config=$HOME/.dt_scenario_config
 
-ln -sf $HOME/.voices_site_config_link $voices_site_config
-ln -sf $HOME/.voices_scenario_config_link $voices_scenario_config
+ln -sf $HOME/.voices_site_config_link $dt_site_config
+ln -sf $HOME/.voices_scenario_config_link $dt_scenario_config
 
-voices_site_config_docker=$HOME/.voices_site_config_docker
-voices_scenario_config_docker=$HOME/.voices_scenario_config_docker
+voices_site_config_docker=$HOME/.dt_site_config_docker
+voices_scenario_config_docker=$HOME/.dt_scenario_config_docker
 
-if [ -L ${voices_site_config} ] && [ -L ${voices_scenario_config} ]; then
-   if [ -e ${voices_site_config} ] && [ -e ${voices_scenario_config} ]; then
-      site_config_link_dest=$(readlink -f $voices_site_config)
+if [ -L ${dt_site_config} ] && [ -L ${dt_scenario_config} ]; then
+   if [ -e ${dt_site_config} ] && [ -e ${dt_scenario_config} ]; then
+      site_config_link_dest=$(readlink -f $dt_site_config)
       site_link_base_name=$(basename ${site_config_link_dest})
 
-      scenario_config_link_dest=$(readlink -f $voices_scenario_config)
+      scenario_config_link_dest=$(readlink -f $dt_scenario_config)
       scenario_link_base_name=$(basename ${scenario_config_link_dest})
       
-      source $HOME/.voices_site_config
+      source $HOME/.dt_site_config
 
       # if voices config docker exists, then source it to overwrite docker specific vars
       if [ -e ${voices_site_config_docker} ]; then
-         source $HOME/.voices_site_config_docker
+         source $HOME/.dt_site_config_docker
       fi
 
-      source $HOME/.voices_scenario_config
+      source $HOME/.dt_scenario_config
 
       if [ -e ${voices_scenario_config_docker} ]; then
-         source $HOME/.voices_scenario_config_docker
+         source $HOME/.dt_scenario_config_docker
       fi
       
       echo "Site Config: "$site_link_base_name
@@ -76,7 +76,7 @@ if [ -L ${voices_site_config} ] && [ -L ${voices_scenario_config} ]; then
       echo "[!!!] .voices_config link is broken"
       exit 1
    fi
-elif [ -e ${voices_site_config} ] || [ -e ${voices_site_config} ]; then
+elif [ -e ${dt_site_config} ] || [ -e ${dt_site_config} ]; then
    echo "[!!!] .voices_config file is not a symbolic link"
    exit 1
 else

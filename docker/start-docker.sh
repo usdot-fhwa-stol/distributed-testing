@@ -7,7 +7,7 @@ echo
 echo STOPPING AND REMOVING VUG CONTAINERS
 $docker_compose_cmd -f $docker_compose_file down
 if [ $VUG_FORMAL_EVENT = true ]; then 
-    source $VUG_LOCAL_VOICES_POC_PATH/scripts/utils/stop_current_vpn_connection.sh
+    source $VUG_LOCAL_DT_PATH/scripts/utils/stop_current_vpn_connection.sh
 fi
 }
 
@@ -18,19 +18,19 @@ cd $SCRIPT_DIR
 # Capture all extra arguments
 EXTRA_ARGS=("$@")
 
-voices_site_config=$HOME/.voices_site_config
-voices_scenario_config=$HOME/.voices_scenario_config
+dt_site_config=$HOME/.dt_site_config
+dt_scenario_config=$HOME/.dt_scenario_config
 
-if [ -L ${voices_site_config} ] && [ -L ${voices_scenario_config} ]; then
-    if [ -e ${voices_site_config} ] && [ -e ${voices_scenario_config} ]; then
-        site_config_link_dest=$(readlink -f $voices_site_config)
+if [ -L ${dt_site_config} ] && [ -L ${dt_scenario_config} ]; then
+    if [ -e ${dt_site_config} ] && [ -e ${dt_scenario_config} ]; then
+        site_config_link_dest=$(readlink -f $dt_site_config)
         site_link_base_name=$(basename ${site_config_link_dest})
 
-        scenario_config_link_dest=$(readlink -f $voices_scenario_config)
+        scenario_config_link_dest=$(readlink -f $dt_scenario_config)
         scenario_link_base_name=$(basename ${scenario_config_link_dest})
 
-        source $voices_site_config
-        source $voices_scenario_config
+        source $dt_site_config
+        source $dt_scenario_config
         export VUG_SITE_CONFIG_FILE=$site_link_base_name
         export VUG_SCENARIO_CONFIG_FILE=$scenario_link_base_name
 
@@ -49,22 +49,22 @@ if [ -L ${voices_site_config} ] && [ -L ${voices_scenario_config} ]; then
         
     else
         echo
-        echo "[!!!] .voices_site_config or .voices_scenario_config link is broken"
-        echo "Site Config: "$(readlink -f $voices_site_config)
-        echo "Scenario Config: "$(readlink -f $voices_scenario_config)
+        echo "[!!!] .dt_site_config or .dt_scenario_config link is broken"
+        echo "Site Config: "$(readlink -f $dt_site_config)
+        echo "Scenario Config: "$(readlink -f $dt_scenario_config)
         exit 1
    fi
-elif [ -e ${voices_site_config} ] || [ -e ${voices_site_config} ]; then
+elif [ -e ${dt_site_config} ] || [ -e ${dt_site_config} ]; then
     echo
-    echo "[!!!] .voices_site_config or .voices_scenario_config file is not a symbolic link"
-    echo "Site Config: "$(readlink -f $voices_site_config)
-    echo "Scenario Config: "$(readlink -f $voices_scenario_config)
+    echo "[!!!] .dt_site_config or .dt_scenario_config file is not a symbolic link"
+    echo "Site Config: "$(readlink -f $dt_site_config)
+    echo "Scenario Config: "$(readlink -f $dt_scenario_config)
     exit 1
 else
     echo
-    echo "[!!!] .voices_site_config or .voices_scenario_config symbolic link does not exist"
-    echo "Site Config: "$(readlink -f $voices_site_config)
-    echo "Scenario Config: "$(readlink -f $voices_scenario_config)
+    echo "[!!!] .dt_site_config or .dt_scenario_config symbolic link does not exist"
+    echo "Site Config: "$(readlink -f $dt_site_config)
+    echo "Scenario Config: "$(readlink -f $dt_scenario_config)
     exit 1
 fi
 
@@ -144,7 +144,7 @@ if [ $VUG_FORMAL_EVENT = true ]; then
     # returns exit 1 if FORMAL_EVENT=true and no VPN connections found
     #
     # should result in 0 or 1 openvpn3 sessions
-    if ! $VUG_LOCAL_VOICES_POC_PATH/scripts/utils/prune_vpn_connections.sh; then
+    if ! $VUG_LOCAL_DT_PATH/scripts/utils/prune_vpn_connections.sh; then
         exit 1
     fi
 

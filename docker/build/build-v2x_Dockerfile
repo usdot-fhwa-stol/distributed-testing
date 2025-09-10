@@ -1,10 +1,10 @@
-FROM usdotfhwastoldev/voices:build-general-latest
+FROM usdotfhwastoldev/dt:build-general-latest
 
 # Make sure that the docker container gets enough memory or the compiler will crash building the CppClient
 # On macos I increased the memory available from 2.0GB to 6.0GB.  I didn't try lower than this yet.
 # The settings are for the VM that runs the containers and can be accessed through the Docker UI settings.
 # Click on the gear icon (Setting) | Resoures then increase the memory.
-# VERSION=0.0.1 && sudo docker build --build-arg version=$VERSION -t usdotfhwastoldev/voices:build-v2x-$VERSION . --progress=plain -f build-v2x_Dockerfile
+# VERSION=0.0.1 && sudo docker build --build-arg version=$VERSION -t usdotfhwastoldev/dt:build-v2x-$VERSION . --progress=plain -f build-v2x_Dockerfile
 
 ARG DEBIAN_FRONTEND="noninteractive" 
 ARG TZ="America/New_York"

@@ -272,7 +272,7 @@ def export_pcap_data(site_dir_abs,this_site_metadata):
                 os.chdir(site_dir_abs)
 
                 try:
-                    pcap_decoder_path = os.environ["VUG_LOCAL_VOICES_POC_PATH"] + "/scripts/encoding_decoding_tools/J2735_pcap_decoder/src/J2735_pcap_decoder.sh"
+                    pcap_decoder_path = os.environ["VUG_LOCAL_DT_PATH"] + "/scripts/encoding_decoding_tools/J2735_pcap_decoder/src/J2735_pcap_decoder.sh"
                     decoded_pcap_dest = os.path.join(site_dir_abs,pcap_file["dest_dir"])
                     # set the pcap_in_dir and pcap_out_dir in metadata
                     this_site_metadata[pcap_file["dest_dir"]] = decoded_pcap_dest

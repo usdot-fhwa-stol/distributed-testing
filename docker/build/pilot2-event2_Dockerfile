@@ -46,7 +46,7 @@ COPY --from=build /home/TENA /home/TENA
 COPY --from=build /opt/TENA /opt/TENA
 
 LABEL version=${VERSION}
-LABEL description="VOICES Docker image for Pilot 2 Event 2"
+LABEL description="Distributed Testing Docker image for Pilot 2 Event 2"
 
 SHELL ["/bin/bash", "-ec"]
 
