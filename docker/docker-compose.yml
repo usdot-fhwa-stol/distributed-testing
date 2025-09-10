@@ -16,7 +16,7 @@ services:
       - VUG_VPN_EM_ADDRESS=${VUG_VPN_EM_ADDRESS}
     volumes:
       - /tmp/.X11-unix:/tmp/.X11-unix:rw
-      - ${VUG_LOCAL_VOICES_POC_PATH}:/home/carla/voices-poc
+      - ${VUG_LOCAL_VOICES_POC_PATH}:/home/carla/distributed-testing
     stop_grace_period: 30s
     deploy:
       resources:
@@ -46,7 +46,7 @@ services:
       - VUG_VPN_EM_ADDRESS=${VUG_VPN_EM_ADDRESS}
     volumes:
       - /tmp/.X11-unix:/tmp/.X11-unix:rw
-      - ${VUG_LOCAL_VOICES_POC_PATH}:/home/dt_user/voices-poc
+      - ${VUG_LOCAL_VOICES_POC_PATH}:/home/dt_user/distributed-testing
       - ${VUG_LOCAL_TENADEV_DIR}:/home/dt_user/tenadev
       - /dev/bus/usb:/dev/bus/usb
       - ~/tenadev/INSTALL:/home/dt_user/VUG_Adapters

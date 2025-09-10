@@ -8,7 +8,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 DT_SCRIPT="$SCRIPT_DIR/dt"
 DT_AUTOCOMPLETE="$SCRIPT_DIR/__dt_autocomplete"
 
-VUG_LOCAL_VOICES_POC_PATH=$(echo "$SCRIPT_DIR" | sed -E 's|(/voices-poc).*|\1|')
+VUG_LOCAL_VOICES_POC_PATH=$(echo "$SCRIPT_DIR" | sed -E 's|(/distributed-testing).*|\1|')
 
 # Ensure required files exist
 if [[ ! -f "$DT_SCRIPT" || ! -f "$DT_AUTOCOMPLETE" ]]; then

@@ -1,7 +1,7 @@
 #! /bin/bash
 
-env_set_site_config_path=$HOME/voices-poc/config/site_config/$VUG_SITE_CONFIG_FILE
-env_set_scenario_config_path=$HOME/voices-poc/config/scenario_config/$VUG_SCENARIO_CONFIG_FILE
+env_set_site_config_path=$HOME/distributed-testing/config/site_config/$VUG_SITE_CONFIG_FILE
+env_set_scenario_config_path=$HOME/distributed-testing/config/scenario_config/$VUG_SCENARIO_CONFIG_FILE
 
 # the .voices_config setup is as follows in order to make existing scripts work within docker container: 
 # 

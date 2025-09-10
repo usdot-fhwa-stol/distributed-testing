@@ -103,7 +103,7 @@ read -p "Would you like to collect eco data [y/n] " collect_eco
 
 if [[ $collect_eco =~ ^[yY]$ ]]; then
     echo collecting
-    collect_eco_cmd="python3 $HOME/voices-poc/scripts/carla_python_scripts/collect_pilot2_vehicle_eco_data.py --vehicle_rolenames $VUG_COLLECT_ECO_DATA_ROLENAMES --host $VUG_CARLA_ADDRESS --output_dir $VUG_LOG_FILES_ROOT/$logs_folder_name"
+    collect_eco_cmd="python3 $HOME/distributed-testing/scripts/carla_python_scripts/collect_pilot2_vehicle_eco_data.py --vehicle_rolenames $VUG_COLLECT_ECO_DATA_ROLENAMES --host $VUG_CARLA_ADDRESS --output_dir $VUG_LOG_FILES_ROOT/$logs_folder_name"
 fi
 
 #if we are not a live vehicle then prompt to collect logs 
