@@ -1504,7 +1504,7 @@ def clean_column_name(column_name):
 
 #################### SELECT SOURCE VEHICLE ####################
 
-sit1_voices_vehicles = [
+sit1_dt_vehicles = [
         {
             "tena_host_id"       : "CARMA-TFHRC-LIVE",
             "host_static_id":   "CARMA-TFHRC-LIVE", #CARMA-TFHRC-LIVE",
@@ -1555,7 +1555,7 @@ sit1_voices_vehicles = [
         },
     ]
 
-pilot1_voices_participants = [
+pilot1_dt_participants = [
         {
             "tena_host_id"       : "TFHRC_CAR_2",
             "host_static_id":   "TFHRC_CAR_2",
@@ -1580,18 +1580,18 @@ pilot1_voices_participants = [
         },
     ]
 
-voices_vehicles = pilot1_voices_participants
+dt_vehicles = pilot1_dt_participants
 
 def select_vehicle_user_input():
 
     print("\nWhat is the source vehicle? [#]\n")
-    for vehicle_i,vehicle in enumerate(voices_vehicles):
+    for vehicle_i,vehicle in enumerate(dt_vehicles):
         print("\n[" + str(vehicle_i + 1) + "] \tHOST ID: " + vehicle["host_static_id"] + " \n\tTENA ID: " + vehicle["tena_host_id"] + " \n\tBSM ID: " + vehicle["bsm_id"])
 
     vehicle_index = input("\n    --> ")
 
     try:
-        selected_vehicle = voices_vehicles[int(vehicle_index) -1]      
+        selected_vehicle = dt_vehicles[int(vehicle_index) -1]      
         return selected_vehicle
 
     except:
@@ -1804,15 +1804,15 @@ if J2735_message_subtype_name:
 #         vehicle_info = select_vehicle_user_input()
 #     else:
         
-#         if args.source_vehicle_index > len(voices_vehicles):
+#         if args.source_vehicle_index > len(dt_vehicles):
 #             print("ERROR: Source Vehicle index out of bounds, try again")
 #             print("\nValid Vehicles:")
-#             for vehicle_i,vehicle in enumerate(voices_vehicles):
+#             for vehicle_i,vehicle in enumerate(dt_vehicles):
 #                 print("\n[" + str(vehicle_i + 1) + "] \tHOST ID: " + vehicle["host_static_id"] + " \n\tTENA ID: " + vehicle["tena_host_id"] + " \n\tBSM ID: " + vehicle["bsm_id"])
 
 #             sys.exit()
         
-#         vehicle_info = voices_vehicles[args.source_vehicle_index - 1]
+#         vehicle_info = dt_vehicles[args.source_vehicle_index - 1]
 # else:
 # but, we need values for the params, so we put one in as a placeholder...
 # probably can do this better

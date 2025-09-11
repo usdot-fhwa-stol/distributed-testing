@@ -34,8 +34,8 @@ function print_help {
 dt_site_config=$HOME/.dt_site_config
 dt_scenario_config=$HOME/.dt_scenario_config
 
-voices_site_config_docker=$HOME/.dt_site_config_docker
-voices_scenario_config_docker=$HOME/.dt_scenario_config_docker
+dt_site_config_docker=$HOME/.dt_site_config_docker
+dt_scenario_config_docker=$HOME/.dt_scenario_config_docker
 
 if [ -L ${dt_site_config} ] && [ -L ${dt_scenario_config} ]; then
     if [ -e ${dt_site_config} ] && [ -e ${dt_scenario_config} ]; then
@@ -48,13 +48,13 @@ if [ -L ${dt_site_config} ] && [ -L ${dt_scenario_config} ]; then
         source $HOME/.dt_site_config
 
 		# if dt config docker exists, then source it to overwrite docker specific vars
-		if [ -e ${voices_site_config_docker} ]; then
+		if [ -e ${dt_site_config_docker} ]; then
 			source $HOME/.dt_site_config_docker
 		fi
 
 		source $HOME/.dt_scenario_config
 
-		if [ -e ${voices_scenario_config_docker} ]; then
+		if [ -e ${dt_scenario_config_docker} ]; then
 			source $HOME/.dt_scenario_config_docker
 		fi
 
@@ -88,8 +88,8 @@ fi
 
 mkdir -p $VUG_CARMA_SIM_LOG_PATH
 
-CARLA_LOG=$VUG_CARMA_SIM_LOG_PATH/voices_carla_simulator.log
-SIM_LOG=$VUG_CARMA_SIM_LOG_PATH/voices_carla_carma_integration.log
+CARLA_LOG=$VUG_CARMA_SIM_LOG_PATH/dt_carla_simulator.log
+SIM_LOG=$VUG_CARMA_SIM_LOG_PATH/dt_carla_carma_integration.log
 SET_TIME_MODE_LOG=$VUG_CARMA_SIM_LOG_PATH/set_time_mode.log
 
 echo "" >> $CARLA_LOG
