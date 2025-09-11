@@ -119,7 +119,7 @@ dt-config__set() {
         esac
     done
 
-    "$VUG_LOCAL_DT_PATH/config/set_voices_config.sh" "${args[@]}"
+    "$VUG_LOCAL_DT_PATH/config/set_dt_config.sh" "${args[@]}"
 }
 
 dt-config__create() {

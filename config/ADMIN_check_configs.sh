@@ -6,7 +6,7 @@ function print_help {
 	echo
 	echo "usage: start-carla.sh [--no_tick] [--low_quality] [--help]"
 	echo
-	echo "Start CARLA Simulator for VOICES"
+	echo "Start CARLA Simulator for Distributed Testing"
 	echo
 	echo "optional arguments:"
 	echo "    -d --debug         enable debug mode and step through each iteration"
