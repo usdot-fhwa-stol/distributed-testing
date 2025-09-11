@@ -1,5 +1,5 @@
 #
-# BUILD COMMAND: VERSION=0.0.8 && sudo DOCKER_BUILDKIT=1 docker build --build-arg version=$VERSION -t usdotfhwastoldev/carla-dt:pilot2-event2-$VERSION . --progress=plain -f carla-voices_Dockerfile
+# BUILD COMMAND: VERSION=0.0.8 && sudo DOCKER_BUILDKIT=1 docker build --build-arg version=$VERSION -t usdotfhwastoldev/carla-dt:pilot2-event2-$VERSION . --progress=plain -f carla-dt_Dockerfile
 #
 
 FROM carlasim/carla:0.9.15
