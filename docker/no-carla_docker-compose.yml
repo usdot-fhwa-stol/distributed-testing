@@ -1,7 +1,7 @@
 services:
-  dt:
-    container_name: dt
-    image: usdotfhwastoldev/dt:latest
+  dt-core:
+    container_name: dt-core
+    image: usdotfhwastoldev/dt-core:latest
     tty: true
     ipc: "host"
     network_mode: "host"
@@ -9,7 +9,7 @@ services:
       - DISPLAY=$DISPLAY
       - SDL_VIDEODRIVER=x11
       - XAUTHORITY=~/.Xauthority
-      - VUG_CONTAINER_IMAGE=dt
+      - VUG_CONTAINER_IMAGE=dt-core
       - VUG_SITE_CONFIG_FILE=${VUG_SITE_CONFIG_FILE}
       - VUG_SCENARIO_CONFIG_FILE=${VUG_SCENARIO_CONFIG_FILE}
       - VUG_VPN_LOCAL_ADDRESS=${VUG_VPN_LOCAL_ADDRESS}

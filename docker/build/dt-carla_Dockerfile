@@ -1,5 +1,5 @@
 #
-# BUILD COMMAND: VERSION=0.0.8 && sudo DOCKER_BUILDKIT=1 docker build --build-arg version=$VERSION -t usdotfhwastoldev/carla-dt:pilot2-event2-$VERSION . --progress=plain -f carla-dt_Dockerfile
+# BUILD COMMAND: VERSION=0.0.1 && sudo DOCKER_BUILDKIT=1 docker build --build-arg version=$VERSION -t usdotfhwastoldev/dt-carla:$VERSION . --progress=plain -f dt-carla_Dockerfile
 #
 
 FROM carlasim/carla:0.9.15
@@ -18,12 +18,7 @@ ARG TZ="America/New_York"
 #     sed -i 's/--keep-newer-files/--skip-old-files/' ImportAssets.sh && \
 #     ./ImportAssets.sh 
 
-COPY ./lib/COPY/start_scripts /home/carla/start_scripts
-COPY ./lib/COPY/.dt_site_config_docker /home/carla/.dt_site_config_docker
-COPY ./lib/COPY/.dt_scenario_config_docker /home/carla/.dt_scenario_config_docker
-COPY ./lib/COPY/VOICES_Limited_License_V0.2.pdf /home/carla/VOICES_Limited_License_V0.2.pdf
-
-# COPY ./lib/CARLA_TFHRC /home/CARLA_TFHRC
+COPY ./lib/CARLA_TFHRC /home/CARLA_TFHRC
 
 USER root
 
@@ -38,10 +33,19 @@ RUN rm /etc/apt/sources.list.d/cuda.list && \
     # cleanup apt lists
     rm -rf /var/lib/apt/lists/*
 
+USER carla
+
+COPY ./lib/COPY/start_scripts /home/carla/start_scripts
+COPY ./lib/COPY/.dt_site_config_docker /home/carla/.dt_site_config_docker
+COPY ./lib/COPY/.dt_scenario_config_docker /home/carla/.dt_scenario_config_docker
+COPY ./lib/COPY/VOICES_Limited_License_V0.2.pdf /home/carla/VOICES_Limited_License_V0.2.pdf
+
+USER root
+
 RUN chmod a+x -R /home/carla/start_scripts/*
 
-RUN echo 'source /home/carla/start_scripts/setup-carla-docker.sh' >> /home/carla/.bashrc
-
 USER carla
+
+RUN echo 'source /home/carla/start_scripts/setup-carla-docker.sh' >> /home/carla/.bashrc
 
 CMD ["/bin/bash","-l","-c","/home/carla/start_scripts/startup-carla.sh"]

@@ -1,14 +1,14 @@
 services:
-  carla-dt:
-    container_name: carla-dt
-    image: usdotfhwastoldev/carla-dt:0.0.1
+  dt-carla:
+    container_name: dt-carla
+    image: usdotfhwastoldev/dt-carla:latest
     privileged: true
     network_mode: "host"
     environment:
       - DISPLAY=$DISPLAY
       - SDL_VIDEODRIVER=x11
       - XAUTHORITY=~/.Xauthority
-      - VUG_CONTAINER_IMAGE=carla-dt
+      - VUG_CONTAINER_IMAGE=dt-carla
       - VUG_SITE_CONFIG_FILE=${VUG_SITE_CONFIG_FILE}
       - VUG_SCENARIO_CONFIG_FILE=${VUG_SCENARIO_CONFIG_FILE}
       - VUG_VPN_LOCAL_ADDRESS=${VUG_VPN_LOCAL_ADDRESS}
@@ -25,19 +25,19 @@ services:
               count: 1
               capabilities: [gpu]
 
-  dt:
-    container_name: dt
-    image: usdotfhwastoldev/dt:latest
+  dt-core:
+    container_name: dt-core
+    image: usdotfhwastoldev/dt-core:latest
     tty: true 
     depends_on:
-      - carla-dt
+      - dt-carla
     network_mode: "host"
     ipc: "host"
     environment:
       - DISPLAY=$DISPLAY
       - SDL_VIDEODRIVER=x11
       - XAUTHORITY=~/.Xauthority
-      - VUG_CONTAINER_IMAGE=dt
+      - VUG_CONTAINER_IMAGE=dt-core
       - VUG_SITE_CONFIG_FILE=${VUG_SITE_CONFIG_FILE}
       - VUG_SCENARIO_CONFIG_FILE=${VUG_SCENARIO_CONFIG_FILE}
       - VUG_VPN_LOCAL_ADDRESS=${VUG_VPN_LOCAL_ADDRESS}

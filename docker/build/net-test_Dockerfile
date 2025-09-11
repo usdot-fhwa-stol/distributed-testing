@@ -1,5 +1,5 @@
 #
-# BUILD COMMAND: sudo DOCKER_BUILDKIT=1 docker build -t usdotfhwastoldev/dt:net-test-#-#-# . --progress=plain
+# BUILD COMMAND: sudo DOCKER_BUILDKIT=1 docker build -t usdotfhwastoldev/dt-net-test:#-#-# . --progress=plain
 #
 
 FROM ubuntu:20.04
