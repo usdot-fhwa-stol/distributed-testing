@@ -1,8 +1,8 @@
 #
-# BUILD COMMAND: VERSION=0.0.1 && sudo DOCKER_BUILDKIT=1 docker build --build-arg version=$VERSION -t usdotfhwastoldev/dt:P-$VERSION . --progress=plain -f P_Dockerfile
+# BUILD COMMAND: VERSION=0.0.1 && sudo DOCKER_BUILDKIT=1 docker build --build-arg version=$VERSION -t usdotfhwastoldev/dt-core:$VERSION . --progress=plain -f dt-core_Dockerfile
 #
 
-FROM usdotfhwastoldev/dt:base-latest AS build
+FROM usdotfhwastoldev/dt-base:latest AS build
 
 SHELL ["/bin/bash", "-ec"]
 
@@ -61,7 +61,7 @@ ENV USER="dt_user"
 RUN gdown 1yFN-G2PaNna3kHtXop3XqVFu632l62HB
 RUN unzip CARLA_0.9.10.zip
 
-FROM usdotfhwastoldev/dt:base-latest
+FROM usdotfhwastoldev/dt-base:latest
 
 ARG VERSION=dev
 LABEL version=${VERSION}

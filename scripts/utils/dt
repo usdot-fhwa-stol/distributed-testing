@@ -392,9 +392,9 @@ dt__exec() {
     done
 
     # Validate container
-    if [[ "$container" != "dt" && "$container" != "carla-dt" ]]; then
+    if [[ "$container" != "dt-core" && "$container" != "dt-carla" ]]; then
         echo "Error: Unknown container '$container'"
-        echo "Valid options are: dt or carla-dt"
+        echo "Valid options are: dt-core or dt-carla"
         return 1
     fi
 
@@ -441,7 +441,7 @@ Please enter one of the following commands:
     
     exec [docker exec args] [--container <container name>] [--command <command to execute>]
         - Opens a terminal inside the specified container with the specified args and commands
-        - Default container is dt, alternatively carla-dt
+        - Default container is dt-core, alternatively dt-carla
         - Default docker exec args are -it
         - Default command is bash
     
