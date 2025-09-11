@@ -369,7 +369,7 @@ dt__ps() {
 }
 
 dt__exec() {
-    local container="dt"
+    local container="dt-core"
     local command="bash"
     local exec_args=()
 
