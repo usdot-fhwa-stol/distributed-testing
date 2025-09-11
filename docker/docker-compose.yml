@@ -1,7 +1,7 @@
 services:
   carla-dt:
     container_name: carla-dt
-    image: usdotfhwastoldev/carla-dt:P-0.0.5
+    image: usdotfhwastoldev/carla-dt:0.0.1
     privileged: true
     network_mode: "host"
     environment:
@@ -27,7 +27,7 @@ services:
 
   dt:
     container_name: dt
-    image: usdotfhwastoldev/dt:P-latest
+    image: usdotfhwastoldev/dt:latest
     tty: true 
     depends_on:
       - carla-dt
