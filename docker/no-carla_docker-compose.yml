@@ -1,7 +1,7 @@
 services:
   dt:
     container_name: dt
-    image: usdotfhwastoldev/dt:P-latest
+    image: usdotfhwastoldev/dt:latest
     tty: true
     ipc: "host"
     network_mode: "host"
