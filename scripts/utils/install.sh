@@ -42,4 +42,12 @@ sudo chmod ugo+x /etc/bash_completion.d/__dt_autocomplete
 
 dt init $VUG_LOCAL_DT_PATH
 
+# Create logs directory 
+
+mkdir -p $VUG_LOCAL_DT_PATH/logs
+
+echo "Setting permissions for log directory"
+
+sudo chmod -R a+rw $VUG_LOCAL_DT_PATH/logs
+
 echo "Installation complete. You may need to restart your terminal for autocomplete to take effect."

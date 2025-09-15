@@ -8,7 +8,7 @@ The use of these scripts requires a Python3 installation and the carla Python pa
 
   or
 
- - Have a built version of the Python API located at `~/carla/PythonAPI`. Instructions for building the API can be found [here](https://carla.readthedocs.io/en/0.9.10/build_linux/#carla-build).
+ - Have a built version of the Python API located at `~/carla/PythonAPI`. Instructions for building the API can be found [here](https://carla.readthedocs.io/en/0.9.15/build_linux/#carla-build).
 
 ## Executing Scripts
 Scripts are executed using python3:

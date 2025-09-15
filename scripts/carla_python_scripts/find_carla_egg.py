@@ -25,9 +25,7 @@ def find_carla_egg():
 
     #this looks for the carla python API .egg file
     try:
-        print('Egg dir: ' + carla_egg_dir)
-        # CARLA_0.9.15/PythonAPI/carla/dist/carla-0.9.15-py3.7-linux-x86_64.egg
-        # Looking for CARLA egg:            carla-0.9.15*  3* -linux-x86_64.egg
+        
         carla_egg_name = 'carla-0.9.15*' + str(sys.version_info.major) + '*-' + str('win-amd64' if os.name == 'nt' else 'linux-x86_64') + '.egg'
         print("Looking for CARLA egg: " + carla_egg_name)
         carla_egg_locations = find_file(carla_egg_name,carla_egg_dir)

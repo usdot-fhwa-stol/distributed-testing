@@ -1,0 +1,51 @@
+#
+# BUILD COMMAND: VERSION=0.0.1 && sudo DOCKER_BUILDKIT=1 docker build --build-arg version=$VERSION -t usdotfhwastoldev/dt-carla:0-9-15-$VERSION . --progress=plain -f dt-carla-0-9-15_Dockerfile
+#
+
+FROM carlasim/carla:0.9.15
+
+ARG VERSION
+
+LABEL version=${VERSION}
+LABEL description="Distributed Testing Docker image for CARLA including event maps"
+
+SHELL ["/bin/bash", "-ec"]
+
+ARG DEBIAN_FRONTEND="noninteractive" 
+ARG TZ="America/New_York"
+
+# RUN --mount=type=bind,target=./Import,readonly,source=./lib/MAPS \
+#     sed -i 's/--keep-newer-files/--skip-old-files/' ImportAssets.sh && \
+#     ./ImportAssets.sh 
+
+# COPY ./lib/CARLA_TFHRC /home/CARLA_TFHRC
+
+USER root
+
+# remove cuda and nvidia sources as we are not updating them
+RUN rm /etc/apt/sources.list.d/cuda.list && \
+    rm /etc/apt/sources.list.d/nvidia-ml.list && \
+    apt-get update && \
+    # add vulkan-utils to fix crashing 
+    apt install -y vulkan-utils && \
+    # install iproute2
+    apt install -y iproute2 && \
+    # cleanup apt lists
+    rm -rf /var/lib/apt/lists/*
+
+USER carla
+
+COPY ./lib/COPY/start_scripts /home/carla/start_scripts
+COPY ./lib/COPY/.dt_site_config_docker /home/carla/.dt_site_config_docker
+COPY ./lib/COPY/.dt_scenario_config_docker /home/carla/.dt_scenario_config_docker
+COPY ./lib/COPY/VOICES_Limited_License_V0.2.pdf /home/carla/VOICES_Limited_License_V0.2.pdf
+
+USER root
+
+RUN chmod a+x -R /home/carla/start_scripts/*
+
+USER carla
+
+RUN echo 'source /home/carla/start_scripts/setup-carla-docker.sh' >> /home/carla/.bashrc
+
+CMD ["/bin/bash","-l","-c","/home/carla/start_scripts/startup-carla.sh"]
