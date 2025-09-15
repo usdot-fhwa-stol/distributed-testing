@@ -154,7 +154,6 @@ fi
 
 # if we have an openvpn3 connection active, we want to be connecting to the portal
 # go through some checks to automate and ensure IP information is correct
-echo vpn_check $vpn_check
 if [[ ! -z $vpn_check ]]; then
 
     interfaces=($(ip -o link show | awk -F': ' '{print $2}'))
@@ -242,7 +241,9 @@ fi
 
 # check the configured EM address to see if it is not in IP format
 # if it is not in IP format, assume its a hostname and try to get IP from that
-if [[ ! "$VUG_EM_ADDRESS" =~ ^(([1-9]?[0-9]|1[0-9][0-9]|2([0-4][0-9]|5[0-5]))\.){3}([1-9]?[0-9]|1[0-9][0-9]|2([0-4][0-9]|5[0-5]))$ ]]; then
+echo $VUG_EM_ADDRESS
+echo $VUG_VPN_EM_ADDRESS
+if [[ ! "$VUG_EM_ADDRESS" =~ ^(([1-9]?[0-9]|1[0-9][0-9]|2([0-4][0-9]|5[0-5]))\.){3}([1-9]?[0-9]|1[0-9][0-9]|2([0-4][0-9]|5[0-5]))$ ]] && [[ ! "$VUG_EM_ADDRESS" == 'localhost' ]]; then
 
     # get the IP of the entered EM hostname
     em_fqdn_address=$(getent hosts $VUG_EM_ADDRESS | awk '{print $1}')
