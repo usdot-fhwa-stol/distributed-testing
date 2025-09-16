@@ -22,8 +22,9 @@ USER dt_user
 # TENA-MiddlewareSDK-v6.0.9.A@Product@u2204-gcc11-64-va3bc16dc.deb
 RUN gdown 1WrMDiZ1YkaK0MpHlOVrkHC2vMWN8COBQ
 
-# VUG-P???-Combined-Distribution-v1.1.0@Product@u2204-gcc11-64
-RUN gdown 1pXts1PIQeSyf10MTK462H4nTeANI5edQ
+# VUG-Combined-Distribution-v1.2.2@Product@u2204-gcc11-64
+RUN gdown 18Npp2v-NG2ZiNCtOOT6TePT-ujBUJWwV
+
 
 # INSTALL TENA deb
 RUN dpkg -x --force-overwrite ./TENA-MiddlewareSDK-v6.0.9.A@Product@u2204-gcc11-64-*.deb .
@@ -32,8 +33,8 @@ RUN tar xf control.tar.zst
 # move the postinst script into TENA dir to make it easier to copy and run later on final container
 RUN mv ./postinst ./opt/TENA/postinst-MW
 
-RUN dpkg -x --force-overwrite ./VUG-P???-Combined-Distribution-v1.1.0@Product@u2204-gcc11-64-*.deb .
-RUN ar -x ./VUG-P???-Combined-Distribution-v1.1.0@Product@u2204-gcc11-64-*.deb
+RUN dpkg -x --force-overwrite ./VUG-Combined-Distribution-v1.2.2@Product@u2204-gcc11-64-*.deb .
+RUN ar -x ./VUG-Combined-Distribution-v1.2.2@Product@u2204-gcc11-64-*.deb
 RUN tar xf control.tar.zst
 # move the postinst script into TENA dir to make it easier to copy and run later on final container
 RUN mv ./postinst ./opt/TENA/postinst-DIST
