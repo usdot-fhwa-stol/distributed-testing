@@ -25,13 +25,17 @@ USER dt_user
 
 RUN mkdir /home/$USER/INSTALL && mkdir /home/$USER/INSTALL/TDCS && mkdir /home/$USER/INSTALL/DV
 
-# VUG-P???-Combined-DataCollectionDistribution-v1.1.0@Product@u2204-gcc11-64-vbe110466.deb
+# VUG-Combined-DataCollectionDistribution-v1.2.2@Product@u2204-gcc11-64-vbe110466.deb
 WORKDIR /home/$USER/INSTALL/TDCS
-RUN gdown 1xuLT9aZ4GFpiVsrtc3RUBUO-ziDxv_yZ
+RUN gdown 1PslNz9EdCHpuqUN_oV6E48cQqRNhKDW2
 
 # TDCS-DataView-v1.5.4@Product@u2204-gcc11-64-vall
 WORKDIR /home/$USER/INSTALL/DV
 RUN gdown 1UojRtJBZHgS9U17hwq653sH2VjqRbOzq
+
+# VUG-Combined-JSONstreamerDistribution-v1.2.2@Product@u2204-gcc11-64
+# WORKDIR /home/$USER/INSTALL/JSON
+# RUN gdown 1YDy_ry-ColFa1AiuQb1RNxwhMfDvsbIA
 
 # INSTALL TENA DataView
 WORKDIR /home/$USER/INSTALL/DV
@@ -43,24 +47,36 @@ RUN mv ./postinst ./opt/TENA/postinst-DV
 
 # INSTALL TENA Data Collection System
 WORKDIR /home/$USER/INSTALL/TDCS
-RUN dpkg -x --force-overwrite ./VUG-P???-Combined-DataCollectionDistribution-*.deb .
-RUN ar -x ./VUG-P???-Combined-DataCollectionDistribution-*.deb
+RUN dpkg -x --force-overwrite ./VUG-Combined-DataCollectionDistribution-*.deb .
+RUN ar -x ./VUG-Combined-DataCollectionDistribution-*.deb
 RUN tar xf control.tar.*
 # move the postinst script into TENA dir to make it easier to copy and run later on final container
 RUN mv ./postinst ./opt/TENA/postinst-TDCS
 
+# # INSTALL TENA JSON Tools
+# WORKDIR /home/$USER/INSTALL/JSON
+# RUN dpkg -x --force-overwrite ./VUG-Combined-JSONstreamerDistribution-*.deb .
+# RUN ar -x ./VUG-Combined-JSONstreamerDistribution-*.deb
+# RUN tar xf control.tar.*
+# # move the postinst script into TENA dir to make it easier to copy and run later on final container
+# RUN ls -la .
+# RUN mv ./postinst ./opt/TENA/postinst-JSON
+
 WORKDIR /home/$USER
 
 USER root
+# RUN rsync -a /home/$USER/INSTALL/TDCS/opt/TENA/ /home/$USER/INSTALL/DV/opt/TENA/ /home/$USER/INSTALL/JSON/opt/TENA/ /home/$USER/TENA
 RUN rsync -a /home/$USER/INSTALL/TDCS/opt/TENA/ /home/$USER/INSTALL/DV/opt/TENA/ /home/$USER/TENA
+
 RUN chown -R $USER:$USER /home/$USER/TENA
 USER $USER
 ENV USER="dt_user"
 
-# RUN gdown 1yFN-G2PaNna3kHtXop3XqVFu632l62HB
 # CARLA_0.9.15 (contains just the PythonAPI folder for CARLA PythonAPI capabilities)
-RUN gdown 1mSt0_8wZGn6q8ist3ZAyhkVLT_W9fMR_
-RUN unzip CARLA_0.9.15.zip
+RUN gdown 1Q9BSeTI8INUKsaTSqLsAC2u8NAzph0V4
+RUN unzip CARLA_0.9.15.zip && \
+    mv CARLA_0.9.15 CARLA && \
+    rm -f CARLA_0.9.15.zip
 
 FROM usdotfhwastoldev/dt-base:latest
 
@@ -170,8 +186,9 @@ COPY --chown=dt_user:dt_user --from=build /home/$USER/TENA /home/$USER/TENA
 
 RUN DSTROOT=/home/dt_user ./TENA/postinst-DV
 RUN DSTROOT=/home/dt_user ./TENA/postinst-TDCS
+# RUN DSTROOT=/home/dt_user ./TENA/postinst-JSON
 
-COPY --chown=dt_user:dt_user --from=build /home/$USER/CARLA_0.9.15 /home/$USER/CARLA_0.9.15
+COPY --chown=dt_user:dt_user --from=build /home/$USER/CARLA /home/$USER/CARLA
 
 COPY --chown=dt_user:dt_user ./lib/COPY /home/$USER
 
