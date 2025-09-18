@@ -4,7 +4,7 @@
     <name>DEFAULT</name>
   </identifier>
   <OpenDrive>
-    <MapFileName name="TFHRC.xodr">
+    <MapFileName name="Town04.umap">
       <MapOrigin latitudeInDegrees="38.9511644208721" longitudeInDegrees="-77.14905380821106" heightAboveEllipsoidInMeters="35.8"> </MapOrigin>
     </MapFileName>
   </OpenDrive>
