@@ -36,8 +36,8 @@ pcap_outfile="rewrite_"$pcap_file_to_read
 source_ip="192.168.55.236"
 source_mac="a4:6b:b6:2f:28:a8" # v2xhub 146
 dest_ip="192.168.55.237"
-# dest_mac=04:d4:c4:5b:66:92 # voices lambda
-dest_mac="a4:6b:b6:2f:39:79" # voices 3
+# dest_mac=04:d4:c4:5b:66:92 # dt lambda
+dest_mac="a4:6b:b6:2f:39:79" # dt 3
 # old_dest_port="56700"
 # new_dest_port="56700"
 

@@ -25,7 +25,7 @@ sleep 5s
 
 if [[ $VUG_DOCKER_START_EM == true ]]; then
    echo "STARTING TENA EXECUTION MANAGER"
-   $HOME/voices-poc/scripts/run_scripts/start-em-bg.sh
+   $HOME/distributed-testing/scripts/run_scripts/start-em-bg.sh
 
    sleep 5s
 fi
@@ -40,29 +40,29 @@ fi
 # try to change carla map 
 if [[ $VUG_DOCKER_START_CARLA == true ]]; then
    echo "CHANGING CARLA MAP TO: $VUG_CARLA_MAP_NAME"
-	python3 $HOME/voices-poc/scripts/carla_python_scripts/config.py -m $VUG_CARLA_MAP_NAME --weather ClearNoon --host $VUG_CARLA_ADDRESS &
+	python3 $HOME/distributed-testing/scripts/carla_python_scripts/config.py -m $VUG_CARLA_MAP_NAME --weather ClearNoon --host $VUG_CARLA_ADDRESS &
 
    sleep 5s
    
    if [[ $VUG_CARLA_BLANK_SIGNALS == true ]]; then
       # blank signals and essentially disable their timing so that the only TL states we see are from TENA TrafficLight SDO updates
-      python3 $HOME/voices-poc/scripts/carla_python_scripts/blank_traffic_signals.py --host $VUG_CARLA_ADDRESS & 
+      python3 $HOME/distributed-testing/scripts/carla_python_scripts/blank_traffic_signals.py --host $VUG_CARLA_ADDRESS & 
    fi
 
    # set spectator view
    if [[ $VUG_CARLA_MAP_NAME == *"mcity"* ]]; then
-      python3 $HOME/voices-poc/scripts/carla_python_scripts/spectator_view_mcity.py --host $VUG_CARLA_ADDRESS &
+      python3 $HOME/distributed-testing/scripts/carla_python_scripts/spectator_view_mcity.py --host $VUG_CARLA_ADDRESS &
    fi
   
 
    if [[ $VUG_DISPLAY_VEHICLE_ROLENAMES == true ]] || [[ $VUG_DISPLAY_TRAFFIC_SIGNAL_STATES == true ]]; then
       # display vehicle names and/or traffic light info
-      python3 $HOME/voices-poc/scripts/carla_python_scripts/display_carla_info.py --host $VUG_CARLA_ADDRESS -d 0 &
+      python3 $HOME/distributed-testing/scripts/carla_python_scripts/display_carla_info.py --host $VUG_CARLA_ADDRESS -d 0 &
    fi
 
    if [[ $VUG_DISPLAY_SDSM == true ]]; then
       # display SDSMs as they are received
-      python3 $HOME/voices-poc/scripts/carla_python_scripts/draw_sdsm_json_live.py --host $VUG_CARLA_ADDRESS &
+      python3 $HOME/distributed-testing/scripts/carla_python_scripts/draw_sdsm_json_live.py --host $VUG_CARLA_ADDRESS &
    fi
 
    sleep 5s
@@ -70,8 +70,8 @@ fi
 
 if [[ $VUG_DOCKER_START_SUMO == true ]]; then
    echo "STARTING SUMO"
-   cd $HOME/voices-poc/scripts/carla_python_scripts/Sumo/
-   python3 $HOME/voices-poc/scripts/carla_python_scripts/Sumo/run_synchronization.py $HOME/voices-poc/scripts/carla_python_scripts/Sumo/$VUG_DOCKER_SUMO_CONFIG --sumo-gui --tls-manager carla --carla-host $VUG_LOCAL_ADDRESS --sumo-host $VUG_LOCAL_ADDRESS &
+   cd $HOME/distributed-testing/scripts/carla_python_scripts/Sumo/
+   python3 $HOME/distributed-testing/scripts/carla_python_scripts/Sumo/run_synchronization.py $HOME/distributed-testing/scripts/carla_python_scripts/Sumo/$VUG_DOCKER_SUMO_CONFIG --sumo-gui --tls-manager carla --carla-host $VUG_LOCAL_ADDRESS --sumo-host $VUG_LOCAL_ADDRESS &
    cd $HOME
    sleep 5s
 fi
@@ -85,14 +85,14 @@ fi
 
 if [[ $VUG_DOCKER_START_TDCS == true ]]; then
    echo "STARTING TENA DATA COLLECTION SYSTEM"
-   $HOME/voices-poc/scripts/run_scripts/start-tdcs.sh &
+   $HOME/distributed-testing/scripts/run_scripts/start-tdcs.sh &
    
    sleep 5s
 fi
 
 if [[ $VUG_DOCKER_START_TENA_PLAYBACK == true ]]; then
    echo "STARTING TENA PLAYBACK SYSTEM"
-   $HOME/voices-poc/scripts/run_scripts/start-playback-tool.sh &
+   $HOME/distributed-testing/scripts/run_scripts/start-playback-tool.sh &
    
    sleep 5s
 fi
@@ -106,35 +106,35 @@ fi
 
 if [[ $VUG_DOCKER_START_SCENARIO_PUBLISHER == true ]]; then
    echo "STARTING SCENARIO PUBLISHER"
-   $HOME/voices-poc/scripts/run_scripts/start-scenario-publisher.sh &
+   $HOME/distributed-testing/scripts/run_scripts/start-scenario-publisher.sh &
 
    sleep 5s
 fi
 
 if [[ $VUG_DOCKER_START_TENA_CARLA_ADAPTER == true ]]; then
    echo "STARTING TENA CARLA ADAPTER"
-   $HOME/voices-poc/scripts/run_scripts/start-carla-tena-adapter.sh &
+   $HOME/distributed-testing/scripts/run_scripts/start-carla-tena-adapter.sh &
 
    sleep 5s
 fi
 
 if [[ $VUG_DOCKER_START_V2X_ADAPTER == true ]]; then
    echo "STARTING TENA V2X ADAPTER"
-   $HOME/voices-poc/scripts/run_scripts/start-tv2x-adapter.sh &
+   $HOME/distributed-testing/scripts/run_scripts/start-tv2x-adapter.sh &
 
    sleep 5s
 fi
 
 if [[ $VUG_DOCKER_START_TRAFFIC_LIGHT_EG == true ]]; then
    echo "STARTING TENA TRAFFIC LIGHT ENTITY GENERATOR"
-   $HOME/voices-poc/scripts/run_scripts/start-traffic-light-entity-generator.sh &
+   $HOME/distributed-testing/scripts/run_scripts/start-traffic-light-entity-generator.sh &
 
    sleep 5s
 fi
 
 if [[ $VUG_DOCKER_START_ENTITY_GENERATOR == true ]]; then
    echo "STARTING TENA ENTITY GENERATOR"
-   $HOME/voices-poc/scripts/run_scripts/start-entity-generator.sh &
+   $HOME/distributed-testing/scripts/run_scripts/start-entity-generator.sh &
 
    sleep 5s
 fi
@@ -145,11 +145,11 @@ if [[ $VUG_DOCKER_START_MANUAL_CARLA_VEHICLE == true ]]; then
    # if we are starting the carla adapter and a manual vehicle, we almost certainly are trying to use a vehicle from the scenario which should already be spawined
    if [[ $VUG_DOCKER_MANUAL_CARLA_VEHICLE_IS_NEW == true ]]; then
       echo "   SPAWNING NEW MANUAL VEHICLE"
-      python3 $HOME/voices-poc/scripts/carla_python_scripts/manual_control_keyboard.py --rolename $VUG_MANUAL_VEHICLE_ID --host $VUG_CARLA_ADDRESS --speed_limit $VUG_MANUAL_VEHICLE_SPEED_LIMIT &
+      python3 $HOME/distributed-testing/scripts/carla_python_scripts/manual_control_keyboard.py --rolename $VUG_MANUAL_VEHICLE_ID --host $VUG_CARLA_ADDRESS --speed_limit $VUG_MANUAL_VEHICLE_SPEED_LIMIT &
 
    else
       echo "   CONNECTING TO SCENARIO MANUAL VEHICLE"
-      python3 $HOME/voices-poc/scripts/carla_python_scripts/manual_control_keyboard_virtual.py --follow_vehicle $VUG_MANUAL_VEHICLE_ID --host $VUG_CARLA_ADDRESS --speed_limit $VUG_MANUAL_VEHICLE_SPEED_LIMIT &
+      python3 $HOME/distributed-testing/scripts/carla_python_scripts/manual_control_keyboard_virtual.py --follow_vehicle $VUG_MANUAL_VEHICLE_ID --host $VUG_CARLA_ADDRESS --speed_limit $VUG_MANUAL_VEHICLE_SPEED_LIMIT &
 
    fi
 

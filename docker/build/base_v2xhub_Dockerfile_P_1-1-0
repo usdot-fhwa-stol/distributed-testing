@@ -1,8 +1,10 @@
 #
-# BUILD COMMAND: VERSION=P-1.1.0 && sudo DOCKER_BUILDKIT=1 docker build --secret id=usdotfhwastol_token,src=usdotfhwastol_token --build-arg VERSION=$VERSION -t usdotfhwaops/v2xhubamd:voices-$VERSION . --progress=plain -f base_v2xhub_Dockerfile_P_1-1-0
+# BUILD COMMAND: VERSION=P-0.0.3 && sudo DOCKER_BUILDKIT=1 docker build --secret id=usdotfhwastol_token,src=usdotfhwastol_token --build-arg VERSION=$VERSION -t usdotfhwaops/v2xhub:dt-$VERSION . --progress=plain -f base_v2xhub_Dockerfile_P_1-1-0
 #
 
 FROM usdotfhwaops/v2xhub:7.8.1 AS build
+
+WORKDIR /home/plugin
 
 RUN apt update && \
     apt install -y python3-pip \
@@ -32,11 +34,16 @@ RUN mv ./postinst ./opt/TENA/postinst-DIST
 
 FROM usdotfhwaops/v2xhub:7.8.1
 
-WORKDIR /root
+WORKDIR /home/plugin
 
-COPY --from=build /root/opt/TENA /root/TENA
-RUN DSTROOT=/root ./TENA/postinst-MW
-RUN DSTROOT=/root ./TENA/postinst-DIST
+USER plugin
+
+COPY --from=build --chown=plugin:plugin /home/plugin/opt/TENA /home/plugin/TENA
+RUN DSTROOT=/home/plugin ./TENA/postinst-MW
+RUN DSTROOT=/home/plugin ./TENA/postinst-DIST
+RUN mkdir /home/plugin/TENA/log
+
+USER root
 
 RUN apt update && apt-get install -y \
     cmake cmake-data git build-essential libboost-all-dev clang g++ lld ninja-build \
@@ -46,21 +53,15 @@ RUN apt update && apt-get install -y \
 RUN --mount=type=secret,id=usdotfhwastol_token \
     USDOTFHWASTOL_TOKEN=$(cat /run/secrets/usdotfhwastol_token) && \
     git clone https://${USDOTFHWASTOL_TOKEN}@github.com/usdot-fhwa-stol/vug-cmake-package.git cmake_temp && \
-    mv cmake_temp/cmake/ /root/TENA/lib/ && \
+    mv cmake_temp/cmake/ /home/plugin/TENA/lib/ && \
 	rm -rf cmake_temp   
 
 ARG VERSION=dev
 LABEL version=${VERSION}
 LABEL description="V2XHub Distributed Testing Docker Image"
 
-# SHELL ["/bin/bash", "-ec"]
-
-# ARG DEBIAN_FRONTEND="noninteractive"
-# ARG TZ="America/New_York"
-
-# COPY vug-build/TenaBsmPlugin.zip /usr/local/plugins/TenaBsmPlugin.zip
-# COPY vug-build/TenaSpatPlugin.zip /usr/local/plugins/TenaSpatPlugin.zip
-RUN echo 'source /root/TENA/6.0.9/scripts/tenaenv-u2204-gcc11-64-v6.0.9.sh' >> /root/.bashrc
+COPY lib/TenaV2Xplugin.zip /usr/local/plugins/TenaV2Xplugin.zip
+RUN echo 'source /home/plugin/TENA/6.0.9/scripts/tenaenv-u2204-gcc11-64-v6.0.9.sh' >> /home/plugin/.bashrc
 
 WORKDIR /var/log/tmx 
 

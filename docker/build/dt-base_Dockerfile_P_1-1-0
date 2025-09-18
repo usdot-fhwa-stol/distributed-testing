@@ -1,0 +1,63 @@
+#
+# BUILD COMMAND: VERSION=P-0.0.3 && sudo DOCKER_BUILDKIT=1 docker build --build-arg VERSION=$VERSION -t usdotfhwastoldev/dt-base:$VERSION . --progress=plain -f base_Dockerfile_P_1-1-0
+#
+
+FROM ubuntu:22.04 AS build
+
+RUN useradd -ms /bin/bash dt_user
+WORKDIR /home/dt_user
+USER dt_user
+
+USER root
+
+RUN apt update && \
+    apt install -y python3-pip \
+    # add some build packages
+    zstd 
+
+RUN pip3 install gdown
+
+USER dt_user
+
+# TENA-MiddlewareSDK-v6.0.9.A@Product@u2204-gcc11-64-va3bc16dc.deb
+RUN gdown 1WrMDiZ1YkaK0MpHlOVrkHC2vMWN8COBQ
+
+# VUG-P???-Combined-Distribution-v1.1.0@Product@u2204-gcc11-64
+RUN gdown 1pXts1PIQeSyf10MTK462H4nTeANI5edQ
+
+# INSTALL TENA deb
+RUN dpkg -x --force-overwrite ./TENA-MiddlewareSDK-v6.0.9.A@Product@u2204-gcc11-64-*.deb .
+RUN ar -x ./TENA-MiddlewareSDK-v6.0.9.A@Product@u2204-gcc11-64-*.deb
+RUN tar xf control.tar.zst
+# move the postinst script into TENA dir to make it easier to copy and run later on final container
+RUN mv ./postinst ./opt/TENA/postinst-MW
+
+RUN dpkg -x --force-overwrite ./VUG-P???-Combined-Distribution-v1.1.0@Product@u2204-gcc11-64-*.deb .
+RUN ar -x ./VUG-P???-Combined-Distribution-v1.1.0@Product@u2204-gcc11-64-*.deb
+RUN tar xf control.tar.zst
+# move the postinst script into TENA dir to make it easier to copy and run later on final container
+RUN mv ./postinst ./opt/TENA/postinst-DIST
+
+FROM ubuntu:22.04
+
+RUN useradd -ms /bin/bash dt_user
+USER dt_user
+ARG USER="dt_user"
+
+WORKDIR /home/dt_user
+
+COPY --from=build /home/dt_user/opt/TENA /home/dt_user/TENA
+RUN DSTROOT=/home/dt_user ./TENA/postinst-MW
+RUN DSTROOT=/home/dt_user ./TENA/postinst-DIST
+
+ARG VERSION=dev
+LABEL version=${VERSION}
+LABEL description="Base Distributed Testing Docker image with base tena installation"
+
+SHELL ["/bin/bash", "-ec"]
+
+ARG DEBIAN_FRONTEND="noninteractive"
+ARG TZ="America/New_York"
+
+RUN echo 'source /home/dt_user/TENA/6.0.9/scripts/tenaenv-u2204-gcc11-64-v6.0.9.sh' >> /home/dt_user/.bashrc
+

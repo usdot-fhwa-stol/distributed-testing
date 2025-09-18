@@ -5,7 +5,7 @@
 FROM ubuntu:20.04
 
 LABEL version="0.0.3"
-LABEL description="VOICES Docker image for Pilot 2 Event 1"
+LABEL description="Distributed Testing Docker image for Pilot 2 Event 1"
 
 SHELL ["/bin/bash", "-ec"]
 

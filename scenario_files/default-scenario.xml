@@ -1,0 +1,34 @@
+<?xml version="1.0.0" encoding="UTF-8"?>
+<scenario>
+  <identifier>
+    <name>DEFAULT</name>
+  </identifier>
+  <OpenDrive>
+    <MapFileName name="Town04.umap">
+      <MapOrigin latitudeInDegrees="38.9511644208721" longitudeInDegrees="-77.14905380821106" heightAboveEllipsoidInMeters="35.8"> </MapOrigin>
+    </MapFileName>
+  </OpenDrive>
+
+  <vehicles>
+
+    <vehicle name="DEFAULT-M-1" bsmid="f03ad618" type="vehicle.mustang.mustang" owner="CARLA-DEFAULT-1" material="Aluminum" lvcIndicator="Virtual">
+        <userData>
+            <CARLA manual="true" generate_bsms="true"></CARLA>
+        </userData>
+        <initialTSPI>
+            <GeodeticPosition latitudeInDegrees="38.955596" longitudeInDegrees="-77.150471" heightAboveEllipsoidInMeters="75"> </GeodeticPosition>
+            <Heading>146</Heading>
+        </initialTSPI>
+    </vehicle>
+
+  </vehicles>
+
+  <simulations>
+
+    <simulation name="DEFAULT-1" type="CARLA">
+      <WeatherState>ClearNoon</WeatherState>
+    </simulation>
+
+  </simulations>
+
+</scenario>

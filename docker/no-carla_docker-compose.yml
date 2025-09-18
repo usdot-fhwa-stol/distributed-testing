@@ -1,7 +1,7 @@
 services:
-  voices:
-    container_name: voices
-    image: usdotfhwastoldev/voices:P-latest
+  dt-core:
+    container_name: dt-core
+    image: usdotfhwastoldev/dt-core:latest
     tty: true
     ipc: "host"
     network_mode: "host"
@@ -9,11 +9,11 @@ services:
       - DISPLAY=$DISPLAY
       - SDL_VIDEODRIVER=x11
       - XAUTHORITY=~/.Xauthority
-      - VUG_CONTAINER_IMAGE=voices
+      - VUG_CONTAINER_IMAGE=dt-core
       - VUG_SITE_CONFIG_FILE=${VUG_SITE_CONFIG_FILE}
       - VUG_SCENARIO_CONFIG_FILE=${VUG_SCENARIO_CONFIG_FILE}
       - VUG_VPN_LOCAL_ADDRESS=${VUG_VPN_LOCAL_ADDRESS}
       - VUG_VPN_EM_ADDRESS=${VUG_VPN_EM_ADDRESS}
     volumes:
       - /tmp/.X11-unix:/tmp/.X11-unix:rw
-      - ${VUG_LOCAL_VOICES_POC_PATH}:/home/dt_user/voices-poc
+      - ${VUG_LOCAL_DT_PATH}:/home/dt_user/distributed-testing

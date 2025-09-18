@@ -1,21 +1,21 @@
 services:
-  carla-voices:
-    container_name: carla-voices
-    image: usdotfhwastoldev/carla-voices:P-0.0.5
+  dt-carla:
+    container_name: dt-carla
+    image: usdotfhwastoldev/dt-carla:latest
     privileged: true
     network_mode: "host"
     environment:
       - DISPLAY=$DISPLAY
       - SDL_VIDEODRIVER=x11
       - XAUTHORITY=~/.Xauthority
-      - VUG_CONTAINER_IMAGE=carla-voices
+      - VUG_CONTAINER_IMAGE=dt-carla
       - VUG_SITE_CONFIG_FILE=${VUG_SITE_CONFIG_FILE}
       - VUG_SCENARIO_CONFIG_FILE=${VUG_SCENARIO_CONFIG_FILE}
       - VUG_VPN_LOCAL_ADDRESS=${VUG_VPN_LOCAL_ADDRESS}
       - VUG_VPN_EM_ADDRESS=${VUG_VPN_EM_ADDRESS}
     volumes:
       - /tmp/.X11-unix:/tmp/.X11-unix:rw
-      - ${VUG_LOCAL_VOICES_POC_PATH}:/home/carla/voices-poc
+      - ${VUG_LOCAL_DT_PATH}:/home/carla/distributed-testing
     stop_grace_period: 30s
     deploy:
       resources:
@@ -25,26 +25,26 @@ services:
               count: 1
               capabilities: [gpu]
 
-  voices:
-    container_name: voices
-    image: usdotfhwastoldev/voices:P-latest
+  dt-core:
+    container_name: dt-core
+    image: usdotfhwastoldev/dt-core:latest
     tty: true 
     depends_on:
-      - carla-voices
+      - dt-carla
     network_mode: "host"
     ipc: "host"
     environment:
       - DISPLAY=$DISPLAY
       - SDL_VIDEODRIVER=x11
       - XAUTHORITY=~/.Xauthority
-      - VUG_CONTAINER_IMAGE=voices
+      - VUG_CONTAINER_IMAGE=dt-core
       - VUG_SITE_CONFIG_FILE=${VUG_SITE_CONFIG_FILE}
       - VUG_SCENARIO_CONFIG_FILE=${VUG_SCENARIO_CONFIG_FILE}
       - VUG_VPN_LOCAL_ADDRESS=${VUG_VPN_LOCAL_ADDRESS}
       - VUG_VPN_EM_ADDRESS=${VUG_VPN_EM_ADDRESS}
     volumes:
       - /tmp/.X11-unix:/tmp/.X11-unix:rw
-      - ${VUG_LOCAL_VOICES_POC_PATH}:/home/dt_user/voices-poc
+      - ${VUG_LOCAL_DT_PATH}:/home/dt_user/distributed-testing
       - ${VUG_LOCAL_TENADEV_DIR}:/home/dt_user/tenadev
       - /dev/bus/usb:/dev/bus/usb
     devices:

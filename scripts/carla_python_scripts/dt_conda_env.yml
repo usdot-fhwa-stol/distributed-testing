@@ -1,4 +1,4 @@
-name: voices
+name: dt
 channels:
   - defaults
 dependencies:

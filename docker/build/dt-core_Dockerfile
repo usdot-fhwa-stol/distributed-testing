@@ -1,8 +1,8 @@
 #
-# BUILD COMMAND: VERSION=0.0.1 && sudo DOCKER_BUILDKIT=1 docker build --build-arg version=$VERSION -t usdotfhwastoldev/voices:P-$VERSION . --progress=plain -f P_Dockerfile
+# BUILD COMMAND: VERSION=0.0.1 && sudo DOCKER_BUILDKIT=1 docker build --build-arg version=$VERSION -t usdotfhwastoldev/dt-core:$VERSION . --progress=plain -f dt-core_Dockerfile
 #
 
-FROM usdotfhwastoldev/voices:base-P-latest AS build
+FROM usdotfhwastoldev/dt-base:latest AS build
 
 SHELL ["/bin/bash", "-ec"]
 
@@ -25,13 +25,17 @@ USER dt_user
 
 RUN mkdir /home/$USER/INSTALL && mkdir /home/$USER/INSTALL/TDCS && mkdir /home/$USER/INSTALL/DV
 
-# VUG-P???-Combined-DataCollectionDistribution-v1.1.0@Product@u2204-gcc11-64-vbe110466.deb
+# VUG-Combined-DataCollectionDistribution-v1.2.2@Product@u2204-gcc11-64-vbe110466.deb
 WORKDIR /home/$USER/INSTALL/TDCS
-RUN gdown 1xuLT9aZ4GFpiVsrtc3RUBUO-ziDxv_yZ
+RUN gdown 1PslNz9EdCHpuqUN_oV6E48cQqRNhKDW2
 
 # TDCS-DataView-v1.5.4@Product@u2204-gcc11-64-vall
 WORKDIR /home/$USER/INSTALL/DV
 RUN gdown 1UojRtJBZHgS9U17hwq653sH2VjqRbOzq
+
+# VUG-Combined-JSONstreamerDistribution-v1.2.2@Product@u2204-gcc11-64
+# WORKDIR /home/$USER/INSTALL/JSON
+# RUN gdown 1YDy_ry-ColFa1AiuQb1RNxwhMfDvsbIA
 
 # INSTALL TENA DataView
 WORKDIR /home/$USER/INSTALL/DV
@@ -43,25 +47,38 @@ RUN mv ./postinst ./opt/TENA/postinst-DV
 
 # INSTALL TENA Data Collection System
 WORKDIR /home/$USER/INSTALL/TDCS
-RUN dpkg -x --force-overwrite ./VUG-P???-Combined-DataCollectionDistribution-*.deb .
-RUN ar -x ./VUG-P???-Combined-DataCollectionDistribution-*.deb
+RUN dpkg -x --force-overwrite ./VUG-Combined-DataCollectionDistribution-*.deb .
+RUN ar -x ./VUG-Combined-DataCollectionDistribution-*.deb
 RUN tar xf control.tar.*
 # move the postinst script into TENA dir to make it easier to copy and run later on final container
 RUN mv ./postinst ./opt/TENA/postinst-TDCS
 
+# # INSTALL TENA JSON Tools
+# WORKDIR /home/$USER/INSTALL/JSON
+# RUN dpkg -x --force-overwrite ./VUG-Combined-JSONstreamerDistribution-*.deb .
+# RUN ar -x ./VUG-Combined-JSONstreamerDistribution-*.deb
+# RUN tar xf control.tar.*
+# # move the postinst script into TENA dir to make it easier to copy and run later on final container
+# RUN ls -la .
+# RUN mv ./postinst ./opt/TENA/postinst-JSON
+
 WORKDIR /home/$USER
 
 USER root
+# RUN rsync -a /home/$USER/INSTALL/TDCS/opt/TENA/ /home/$USER/INSTALL/DV/opt/TENA/ /home/$USER/INSTALL/JSON/opt/TENA/ /home/$USER/TENA
 RUN rsync -a /home/$USER/INSTALL/TDCS/opt/TENA/ /home/$USER/INSTALL/DV/opt/TENA/ /home/$USER/TENA
+
 RUN chown -R $USER:$USER /home/$USER/TENA
 USER $USER
 ENV USER="dt_user"
 
-# CARLA_0.9.10 (contains just the PythonAPI folder for CARLA PythonAPI capabilities)
-RUN gdown 1yFN-G2PaNna3kHtXop3XqVFu632l62HB
-RUN unzip CARLA_0.9.10.zip
+# CARLA_0.9.15 (contains just the PythonAPI folder for CARLA PythonAPI capabilities)
+RUN gdown 1Q9BSeTI8INUKsaTSqLsAC2u8NAzph0V4
+RUN unzip CARLA_0.9.15.zip && \
+    mv CARLA_0.9.15 CARLA && \
+    rm -f CARLA_0.9.15.zip
 
-FROM usdotfhwastoldev/voices:base-P-latest
+FROM usdotfhwastoldev/dt-base:latest
 
 ARG VERSION=dev
 LABEL version=${VERSION}
@@ -104,30 +121,36 @@ RUN apt clean && \
     # cleanup apt lists
     rm -rf /var/lib/apt/lists/*
 
-# Install Python 3.8 and clean NumPy
+# Install Python 3.7 and clean NumPy
 RUN apt-get clean && \
     add-apt-repository -y ppa:deadsnakes/ppa && \
     apt-get update && \
     apt-get purge -y python3-numpy && \
     rm -rf /usr/lib/python3*/dist-packages/numpy* && \
     apt-get install -y \
-        python3.8 \
-        python3.8-dev \
-        python3.8-distutils \
+        python3.7 \
+        python3.7-dev \
+        python3.7-distutils \
         curl && \
-    update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.8 100 && \
-    update-alternatives --set python3 /usr/bin/python3.8 && \
-    curl -sS https://bootstrap.pypa.io/get-pip.py | python3.8 && \
-    python3 -m pip install --upgrade pip
+    update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.7 100 && \
+    update-alternatives --set python3 /usr/bin/python3.7 && \
+    curl -sS https://bootstrap.pypa.io/pip/3.7/get-pip.py | python3.7 && \
+    python3.7 -m pip install --upgrade "pip<23.1" "setuptools<68" "wheel<0.41"
 
 # Switch to non-root user
 USER dt_user
 ENV PATH="/home/dt_user/.local/bin:$PATH"
 
 # Install Python packages as dt_user
-RUN python3 -m pip install --no-cache-dir --user --force-reinstall numpy && \
-    python3 -m pip install --no-cache-dir --user pygame pycrate traci lxml networkx pynput matplotlib && \
-    python3 -m pip install --no-cache-dir --user pandas && \
+RUN python3 -m pip install --no-cache-dir --user --force-reinstall "numpy<=1.21.6" && \
+    python3 -m pip install --no-cache-dir --user \
+        "pygame==2.1.3" \
+        pycrate \
+        traci \
+        lxml==4.9.4 \
+        "networkx==2.6.3" \
+        "matplotlib<=3.5.3" && \
+    python3 -m pip install --no-cache-dir --user "pandas==1.3.5" && \
     rm -rf /home/dt_user/.cache
 
 USER root
@@ -138,8 +161,9 @@ COPY --chown=dt_user:dt_user --from=build /home/$USER/TENA /home/$USER/TENA
 
 RUN DSTROOT=/home/dt_user ./TENA/postinst-DV
 RUN DSTROOT=/home/dt_user ./TENA/postinst-TDCS
+# RUN DSTROOT=/home/dt_user ./TENA/postinst-JSON
 
-COPY --chown=dt_user:dt_user --from=build /home/$USER/CARLA_0.9.10 /home/$USER/CARLA_0.9.10
+COPY --chown=dt_user:dt_user --from=build /home/$USER/CARLA /home/$USER/CARLA
 
 COPY --chown=dt_user:dt_user ./lib/COPY /home/$USER
 

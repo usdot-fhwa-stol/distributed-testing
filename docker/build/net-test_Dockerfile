@@ -1,11 +1,11 @@
 #
-# BUILD COMMAND: sudo DOCKER_BUILDKIT=1 docker build -t usdotfhwastoldev/voices:net-test-#-#-# . --progress=plain
+# BUILD COMMAND: sudo DOCKER_BUILDKIT=1 docker build -t usdotfhwastoldev/dt-net-test:#-#-# . --progress=plain
 #
 
 FROM ubuntu:20.04
 
 LABEL version="0.0.2"
-LABEL description="VOICES Docker image for Pilot 2 Network Test"
+LABEL description="Distributed Testing Docker image for Pilot 2 Network Test"
 
 SHELL ["/bin/bash", "-ec"]
 

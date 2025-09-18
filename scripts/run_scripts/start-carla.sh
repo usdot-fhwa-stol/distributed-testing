@@ -11,7 +11,7 @@ function print_help {
 	echo
 	echo "usage: start-carla.sh [--no_tick] [--low_quality] [--help]"
 	echo
-	echo "Start CARLA Simulator for VOICES"
+	echo "Start CARLA Simulator for Distributed Testing"
 	echo
 	echo "optional arguments:"
 	echo "    --no_tick          do not set time mode and tick simulation"
@@ -25,48 +25,48 @@ function print_help {
 }
 
 
-voices_site_config=$HOME/.voices_site_config
-voices_scenario_config=$HOME/.voices_scenario_config
+dt_site_config=$HOME/.dt_site_config
+dt_scenario_config=$HOME/.dt_scenario_config
 
-voices_site_config_docker=$HOME/.voices_site_config_docker
-voices_scenario_config_docker=$HOME/.voices_scenario_config_docker
+dt_site_config_docker=$HOME/.dt_site_config_docker
+dt_scenario_config_docker=$HOME/.dt_scenario_config_docker
 
-if [ -L ${voices_site_config} ] && [ -L ${voices_scenario_config} ]; then
-    if [ -e ${voices_site_config} ] && [ -e ${voices_scenario_config} ]; then
-        site_config_link_dest=$(readlink -f $voices_site_config)
+if [ -L ${dt_site_config} ] && [ -L ${dt_scenario_config} ]; then
+    if [ -e ${dt_site_config} ] && [ -e ${dt_scenario_config} ]; then
+        site_config_link_dest=$(readlink -f $dt_site_config)
         site_link_base_name=$(basename ${site_config_link_dest})
 
-        scenario_config_link_dest=$(readlink -f $voices_scenario_config)
+        scenario_config_link_dest=$(readlink -f $dt_scenario_config)
         scenario_link_base_name=$(basename ${scenario_config_link_dest})
 
-        source $HOME/.voices_site_config
+        source $HOME/.dt_site_config
 
-		# if voices config docker exists, then source it to overwrite docker specific vars
-		if [ -e ${voices_site_config_docker} ]; then
-			source $HOME/.voices_site_config_docker
+		# if dt config docker exists, then source it to overwrite docker specific vars
+		if [ -e ${dt_site_config_docker} ]; then
+			source $HOME/.dt_site_config_docker
 		fi
 
-		source $HOME/.voices_scenario_config
+		source $HOME/.dt_scenario_config
 
-		if [ -e ${voices_scenario_config_docker} ]; then
-			source $HOME/.voices_scenario_config_docker
+		if [ -e ${dt_scenario_config_docker} ]; then
+			source $HOME/.dt_scenario_config_docker
 		fi
 
         echo "Site Config: "$site_link_base_name
         echo "Scenario Config: "$scenario_link_base_name
     else
-        echo "[!!!] .voices_site_config or .voices_scenario_config link is broken"
+        echo "[!!!] .dt_site_config or .dt_scenario_config link is broken"
         echo "Site Config: "$(readlink -f $site_link_base_name)
         echo "Scenario Config: "$(readlink -f $scenario_link_base_name)
         exit 1
    fi
-elif [ -e ${voices_site_config} ] || [ -e ${voices_site_config} ]; then
-    echo "[!!!] .voices_site_config or .voices_scenario_config file is not a symbolic link"
+elif [ -e ${dt_site_config} ] || [ -e ${dt_site_config} ]; then
+    echo "[!!!] .dt_site_config or .dt_scenario_config file is not a symbolic link"
     echo "Site Config: "$(readlink -f $site_link_base_name)
     echo "Scenario Config: "$(readlink -f $scenario_link_base_name)
     exit 1
 else
-    echo "[!!!] .voices_site_config or .voices_scenario_config symbolic link does not exist"
+    echo "[!!!] .dt_site_config or .dt_scenario_config symbolic link does not exist"
     echo "Site Config: "$(readlink -f $site_link_base_name)
     echo "Scenario Config: "$(readlink -f $scenario_link_base_name)
     exit 1
@@ -75,8 +75,8 @@ fi
 
 mkdir -p $VUG_CARMA_SIM_LOG_PATH
 
-CARLA_LOG=$VUG_CARMA_SIM_LOG_PATH/voices_carla_simulator.log
-SIM_LOG=$VUG_CARMA_SIM_LOG_PATH/voices_carla_carma_integration.log
+CARLA_LOG=$VUG_CARMA_SIM_LOG_PATH/dt_carla_simulator.log
+SIM_LOG=$VUG_CARMA_SIM_LOG_PATH/dt_carla_carma_integration.log
 SET_TIME_MODE_LOG=$VUG_CARMA_SIM_LOG_PATH/set_time_mode.log
 
 echo "" >> $CARLA_LOG
@@ -138,10 +138,10 @@ sleep 7s
 if [[ $carla_map == "Town04" ]]; then
 
 	echo "Changing map to: $carla_map"
-	python3 $VUG_LOCAL_VOICES_POC_PATH/scripts/carla_python_scripts/config.py -m $carla_map
+	python3 $VUG_LOCAL_DT_PATH/scripts/carla_python_scripts/config.py -m $carla_map
 	sleep 5s
 
-	python3 $VUG_LOCAL_VOICES_POC_PATH/scripts/carla_python_scripts/spectator_view_town_04.py
+	python3 $VUG_LOCAL_DT_PATH/scripts/carla_python_scripts/spectator_view_town_04.py
 
 	if [[ $VUG_CARMA_VEHICLE_ID == "TFHRC-CAR-1" ]]
 	then
@@ -154,15 +154,15 @@ if [[ $carla_map == "Town04" ]]; then
 elif [[ $carla_map == "smart_intersection" ]]; then
 
 	echo "Changing map to: $carla_map"
-	python3 $VUG_LOCAL_VOICES_POC_PATH/scripts/carla_python_scripts/config.py -m $carla_map --weather ClearNoon
+	python3 $VUG_LOCAL_DT_PATH/scripts/carla_python_scripts/config.py -m $carla_map --weather ClearNoon
 	sleep 5s
 
 	echo "Changing perspective to simulation site: $VUG_SIM_ID"
 
     if [[ $VUG_SIM_ID == "CARLA-TFHRC-1" ]]; then
-    	python3 $VUG_LOCAL_VOICES_POC_PATH/scripts/carla_python_scripts/spectator_view_smart_intersection.py 59.992634 195.027710 17.727715 -29.558195 -125.864532 0.002484
+    	python3 $VUG_LOCAL_DT_PATH/scripts/carla_python_scripts/spectator_view_smart_intersection.py 59.992634 195.027710 17.727715 -29.558195 -125.864532 0.002484
     elif [[ $VUG_SIM_ID == "CARLA-TFHRC-2" ]]; then
-    	python3 $VUG_LOCAL_VOICES_POC_PATH/scripts/carla_python_scripts/spectator_view_smart_intersection.py 28.327816 139.781906 16.607105 -25.901394 56.039539 0.000042
+    	python3 $VUG_LOCAL_DT_PATH/scripts/carla_python_scripts/spectator_view_smart_intersection.py 28.327816 139.781906 16.607105 -25.901394 56.039539 0.000042
     fi
 
 elif [[ $carla_map == "" ]]; then
@@ -177,7 +177,7 @@ else
 	
 fi
 
-python3 $VUG_LOCAL_VOICES_POC_PATH/scripts/carla_python_scripts/blank_traffic_signals.py
+python3 $VUG_LOCAL_DT_PATH/scripts/carla_python_scripts/blank_traffic_signals.py
 
 if [ "$no_tick_enabled" = true ]; then
 
