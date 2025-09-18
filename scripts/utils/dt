@@ -173,6 +173,15 @@ dt-config__create() {
                 echo "Invalid IP address. Try again."
             fi
         done
+        
+        echo
+        echo "Next, we will setup the unique identifiers for your assets."
+        echo "These will be assembled using 2 parts: "
+        echo "    - A short text identifier (uppercase, < 8 characters)"
+        echo "    - A number (integer, up to 2 digits)"
+        echo
+        echo "These will combine to form names like: FHWA-CAR-1, CARLA-FHWA-1, etc."
+        echo
 
         local VUG_SHORT_IDENTIFIER=""
         while true; do
@@ -183,6 +192,17 @@ dt-config__create() {
                 echo "Invalid identifier. Use all caps and up to 8 characters."
             fi
         done
+
+        local VUG_SHORT_IDENTIFIER_INDEX=""
+        while true; do
+            read -p "Enter VUG_SHORT_IDENTIFIER_INDEX (integer, up to 2 digits): " VUG_SHORT_IDENTIFIER_INDEX
+            if [[ "$VUG_SHORT_IDENTIFIER_INDEX" =~ ^[0-9]{1,2}$ ]]; then
+                break
+            else
+                echo "Invalid identifier. Enter an integer with 1 or 2 digits."
+            fi
+        done
+
 
         local VUG_DOCKER_START_CARLA=""
         while true; do
@@ -198,6 +218,7 @@ dt-config__create() {
         sed -i "s|^export VUG_LOCAL_DT_PATH=.*|export VUG_LOCAL_DT_PATH=${VUG_LOCAL_DT_PATH/#$HOME/\$HOME}|" "$new_config_path"
         sed -i "s|^export VUG_LOCAL_ADDRESS=.*|export VUG_LOCAL_ADDRESS='$VUG_LOCAL_ADDRESS'|" "$new_config_path"
         sed -i "s|^export VUG_SHORT_IDENTIFIER=.*|export VUG_SHORT_IDENTIFIER='$VUG_SHORT_IDENTIFIER'|" "$new_config_path"
+        sed -i "s|^export VUG_SHORT_IDENTIFIER_INDEX=.*|export VUG_SHORT_IDENTIFIER_INDEX='$VUG_SHORT_IDENTIFIER_INDEX'|" "$new_config_path"
         sed -i "s|^export VUG_DOCKER_START_CARLA=.*|export VUG_DOCKER_START_CARLA=$VUG_DOCKER_START_CARLA|" "$new_config_path"
 
     # === SCENARIO CONFIG PROMPTS ===
