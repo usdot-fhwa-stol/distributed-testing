@@ -50,7 +50,7 @@ if [[ -n "$site_arg" ]]; then
     fi
 else
     echo
-    echo "Set your desired site config from the list below:"
+    echo "Set your desired site config from the list below (use tab to auto-complete):"
     echo
     {
         ls ./*.config | xargs -n 1 basename
@@ -90,7 +90,7 @@ if [[ -n "$scenario_arg" ]]; then
     fi
 else
     echo
-    echo "Set your desired scenario config from the list below:"
+    echo "Set your desired scenario config from the list below (use tab to auto-complete):"
     echo
     {
         ls ./*.config | xargs -n 1 basename
