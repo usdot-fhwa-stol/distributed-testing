@@ -4,8 +4,8 @@
     <name>Integration Test 1</name>
   </identifier>
   <OpenDrive>
-    <MapFileName name="TFHRC.xodr">
-      <MapOrigin latitudeInDegrees="38.9511644208721" longitudeInDegrees="-77.14905380821106" heightAboveEllipsoidInMeters="35.8"> </MapOrigin>
+    <MapFileName name="Town04.xodr">
+      <MapOrigin latitudeInDegrees="0.0" longitudeInDegrees="0.0" heightAboveEllipsoidInMeters="0"> </MapOrigin>
     </MapFileName>
   </OpenDrive>
 
@@ -15,14 +15,14 @@
             <CARLA manual="true" generate_bsms="true"></CARLA>
         </userData>
         <initialTSPI>
-            <GeodeticPosition latitudeInDegrees="0.0013294" longitudeInDegrees="0.0015327" heightAboveEllipsoidInMeters="75"> </GeodeticPosition>
+            <GeodeticPosition latitudeInDegrees="0.002066" longitudeInDegrees="0.002291" heightAboveEllipsoidInMeters="1"> </GeodeticPosition>
             <Heading>90</Heading>
         </initialTSPI>
     </vehicle>
 
     <vehicle name="FHWA-M-3" bsmid="0a000000" type="vehicle.mustang.mustang" owner="CARLA-FHWA-3" material="Aluminum" lvcIndicator="Live">
         <initialTSPI>
-            <GeodeticPosition latitudeInDegrees="0.0016295" longitudeInDegrees="0.0015327" heightAboveEllipsoidInMeters="75"> </GeodeticPosition>
+            <GeodeticPosition latitudeInDegrees="0.001532" longitudeInDegrees="0.001931" heightAboveEllipsoidInMeters="1"> </GeodeticPosition>
             <Heading>38</Heading>
         </initialTSPI>
     </vehicle>
@@ -43,6 +43,42 @@
         </initialTSPI>
     </vehicle> -->
   </vehicles>
+
+  <intersectionSignalControllers>
+    <intersectionSignalController name="Town04_Main" adapterType="spat-adapter" adapterName="SPAT-1" lvcIndicator="Live">
+      <userData>
+        <CARLA>
+          <controllers>
+            <controller name="ctrl549" id="549"/>
+          </controllers>      
+        </CARLA>
+      </userData>
+    </intersectionSignalController>
+  </intersectionSignalControllers>
+  <phaseSignalMappings>
+        <configuration name="Town04_Main Configuration" intersectionName="Town04_Main">
+      <controller name="ctrl549-502A" id="549">
+        <control signalId="1629" type=""> <!-- SB, Actor 135 -->
+          <userData><phase>4</phase></userData>
+        </control>
+      </controller>
+      <controller name="ctrl549-497A" id="549">
+        <control signalId="1628" type=""> <!-- EB, Actor 118 -->
+          <userData><phase>2</phase></userData>
+        </control>
+      </controller>
+      <controller name="ctrl549-508A" id="549">
+        <control signalId="1627" type=""> <!-- NB, Actor 122 -->
+          <userData><phase>8</phase></userData>
+        </control>
+      </controller>
+      <controller name="ctrl549-504A" id="549">
+        <control signalId="1626" type=""> <!-- WB, Actor 124 -->
+          <userData><phase>6</phase></userData>
+        </control>
+      </controller>
+    </configuration>
+  </phaseSignalMappings>
 
   <simulations>
     <simulation name="CARLA-annika-1" type="CARLA">

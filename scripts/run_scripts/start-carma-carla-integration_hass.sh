@@ -139,7 +139,7 @@ docker run \
         bash -c \
         "export ROS_IP=127.0.0.1 && \
         export ROS_MASTER_URI=http://localhost:11311 && \
-        export PYTHONPATH=$PYTHONPATH:~/PythonAPI/carla/dist/carla-0.9.10-py3.7-linux-x86_64.egg:/home/carma/carla-sensor-lib/src && \
+        export PYTHONPATH=$PYTHONPATH:~/PythonAPI/carla/dist/carla-0.9.15-py3.7-linux-x86_64.egg:/home/carma/carla-sensor-lib/src && \
         export PYTHONUNBUFFERED=1 && \
         source ~/carma_carla_ws/devel/setup.bash && \
         roslaunch carma_carla_agent carma_carla_agent.launch \
