@@ -17,3 +17,5 @@ services:
     volumes:
       - /tmp/.X11-unix:/tmp/.X11-unix:rw
       - ${VUG_LOCAL_DT_PATH}:/home/dt_user/distributed-testing
+      - ${VUG_LOCAL_TENADEV_DIR}:/home/dt_user/tenadev
+      - /dev/bus/usb:/dev/bus/usb

@@ -118,6 +118,13 @@ if [[ $VUG_DOCKER_START_TENA_CARLA_ADAPTER == true ]]; then
    sleep 5s
 fi
 
+if [[ $VUG_DOCKER_START_JSON_TOOLS == true ]]; then
+   echo "STARTING JSON TOOLS"
+   $HOME/distributed-testing/scripts/run_scripts/start-json-tools.sh &
+
+   sleep 5s
+fi
+
 if [[ $VUG_DOCKER_START_V2X_ADAPTER == true ]]; then
    echo "STARTING TENA V2X ADAPTER"
    $HOME/distributed-testing/scripts/run_scripts/start-tv2x-adapter.sh &

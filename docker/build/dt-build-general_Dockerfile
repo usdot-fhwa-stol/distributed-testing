@@ -5,7 +5,7 @@ FROM usdotfhwastoldev/dt-base:latest
 # The settings are for the VM that runs the containers and can be accessed through the Docker UI settings.
 # Click on the gear icon (Setting) | Resoures then increase the memory.
 
-# VERSION=P-0.0.3 && sudo docker build --secret id=usdotfhwastol_token,src=usdotfhwastol_token --build-arg VERSION=$VERSION -t usdotfhwastoldev/dt-build-general:$VERSION . --progress=plain -f build-general_Dockerfile
+# VERSION=P-0.0.3 && sudo docker build --secret id=usdotfhwastol_token,src=usdotfhwastol_token --build-arg VERSION=$VERSION -t usdotfhwastoldev/dt-build-general:$VERSION . --progress=plain -f dt-build-general_Dockerfile
 
 ARG DEBIAN_FRONTEND="noninteractive" 
 ARG TZ="America/New_York"
@@ -17,8 +17,9 @@ WORKDIR /home/dt_user
 
 USER root
 
+# libboost-all-dev
 RUN apt update && apt-get install -y \
-    cmake cmake-data git build-essential libboost-all-dev clang g++ lld ninja-build \
+    cmake cmake-data git build-essential clang gcc-11 g++-11 lld ninja-build \
     libvulkan1 libpng-dev libtiff5-dev libjpeg-dev tzdata sed curl openssl unzip autoconf libtool rsync libxml2-dev
 
 RUN --mount=type=secret,id=usdotfhwastol_token \
@@ -26,6 +27,30 @@ RUN --mount=type=secret,id=usdotfhwastol_token \
     git clone https://${USDOTFHWASTOL_TOKEN}@github.com/usdot-fhwa-stol/vug-cmake-package.git cmake_temp && \
     chown -R dt_user:dt_user cmake_temp && \
 	mv cmake_temp/cmake/ /home/dt_user/TENA/lib/ && \
-	rm -rf cmake_temp   
+	rm -rf cmake_temp
+
+# ------------------------------------------------------------------------
+# Build and install Boost 1.82.0
+# ------------------------------------------------------------------------
+RUN apt-get update && apt-get install -y --no-install-recommends \
+      build-essential g++ cmake wget curl python3-dev \
+    && cd /tmp \
+    && BOOST_VERSION=1.82.0 \
+    && BOOST_PACKAGE=boost_${BOOST_VERSION//./_} \
+    && wget https://archives.boost.io/release/${BOOST_VERSION}/source/${BOOST_PACKAGE}.tar.gz \
+    && tar -xzf ${BOOST_PACKAGE}.tar.gz \
+    && cd ${BOOST_PACKAGE} \
+    && ./bootstrap.sh --prefix=/opt/boost-1.82.0 \
+         --with-libraries=python,filesystem,system,program_options,thread,timer,chrono,regex,log \
+    && ./b2 -j"$(nproc)" install \
+    && cd /tmp \
+    && rm -rf ${BOOST_PACKAGE} ${BOOST_PACKAGE}.tar.gz
+
+# ------------------------------------------------------------------------
+# Environment setup for Boost 1.82.0
+# ------------------------------------------------------------------------
+ENV BOOST_ROOT=/opt/boost-1.82.0 \
+    CMAKE_PREFIX_PATH=/opt/boost-1.82.0 \
+    LD_LIBRARY_PATH=/opt/boost-1.82.0/lib
 
 USER dt_user
