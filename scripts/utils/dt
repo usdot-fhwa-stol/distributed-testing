@@ -471,6 +471,12 @@ Please enter one of the following commands:
         - Containers can be downloaded individually by specifying the container name in the 
           docker pull args
 
+    connect <path-to-openvpn-config>
+        - Starts an OpenVPN session using the specified configuration file
+
+    disconnect
+        - Disconnects the user from their current OpenVPN session      
+
     ps
         - List all running CARMA docker containers
         - Accepts the same flags as "docker ps"
