@@ -38,7 +38,7 @@ if [[ $VUG_DOCKER_START_CONSOLE == true ]]; then
 fi
 
 # try to change carla map 
-if [[ $VUG_DOCKER_START_CARLA == true ]]; then
+if [[ $VUG_DOCKER_START_CARLA == "local" ]] || [[ $VUG_DOCKER_START_CARLA == "remote" ]]; then
    echo "CHANGING CARLA MAP TO: $VUG_CARLA_MAP_NAME"
 	python3 $HOME/distributed-testing/scripts/carla_python_scripts/config.py -m $VUG_CARLA_MAP_NAME --weather ClearNoon --host $VUG_CARLA_ADDRESS &
 
