@@ -1,43 +1,39 @@
 #
-# BUILD COMMAND: VERSION=0.0.1 && sudo DOCKER_BUILDKIT=1 docker build --build-arg VERSION=$VERSION -t usdotfhwastoldev/dt-base:$VERSION . --progress=plain -f dt-base_Dockerfile
+# BUILD COMMAND: VERSION=0.0.1 && source build-assets.env && sudo DOCKER_BUILDKIT=1 docker build --build-arg VERSION=$VERSION --build-context assets="$BUILD_DIR" -t usdotfhwastoldev/dt-base:$VERSION . --progress=plain -f dt-base_Dockerfile
 #
 
 FROM ubuntu:22.04 AS build
 
+SHELL ["/bin/bash", "-ec"]
+
 RUN useradd -ms /bin/bash dt_user
 WORKDIR /home/dt_user
-USER dt_user
 
 USER root
 
 RUN apt update && \
-    apt install -y python3-pip \
-    # add some build packages
-    zstd 
-
-RUN pip3 install gdown
+    apt install -y zstd
+     
 
 USER dt_user
 
-# TENA-MiddlewareSDK-v6.0.9.A@Product@u2204-gcc11-64-va3bc16dc.deb
-RUN gdown 1WrMDiZ1YkaK0MpHlOVrkHC2vMWN8COBQ
-
-# VUG-Combined-Distribution-v1.2.2@Product@u2204-gcc11-64
-RUN gdown 18Npp2v-NG2ZiNCtOOT6TePT-ujBUJWwV
-
-
 # INSTALL TENA deb
-RUN dpkg -x --force-overwrite ./TENA-MiddlewareSDK-v6.0.9.A@Product@u2204-gcc11-64-*.deb .
-RUN ar -x ./TENA-MiddlewareSDK-v6.0.9.A@Product@u2204-gcc11-64-*.deb
-RUN tar xf control.tar.zst
-# move the postinst script into TENA dir to make it easier to copy and run later on final container
-RUN mv ./postinst ./opt/TENA/postinst-MW
+RUN --mount=type=bind,from=assets,source=.,target=/mnt/build,readonly \
+    set -euo pipefail; \
+    dpkg -x --force-overwrite /mnt/build/TENA-MiddlewareSDK-v6.0.9.A@Product@u2204-gcc11-64-*.deb . && \
+    ar -x /mnt/build/TENA-MiddlewareSDK-v6.0.9.A@Product@u2204-gcc11-64-*.deb && \
+    tar xf control.tar.* && \
+    # move the postinst script into TENA dir to make it easier to copy and run later on final container
+    mv ./postinst ./opt/TENA/postinst-MW 
 
-RUN dpkg -x --force-overwrite ./VUG-Combined-Distribution-v1.2.2@Product@u2204-gcc11-64-*.deb .
-RUN ar -x ./VUG-Combined-Distribution-v1.2.2@Product@u2204-gcc11-64-*.deb
-RUN tar xf control.tar.zst
-# move the postinst script into TENA dir to make it easier to copy and run later on final container
-RUN mv ./postinst ./opt/TENA/postinst-DIST
+# Install DT OMs
+RUN --mount=type=bind,from=assets,source=.,target=/mnt/build,readonly \
+    set -euo pipefail; \
+    dpkg -x --force-overwrite /mnt/build/VUG-Combined-Distribution-v1.2.2@Product@u2204-gcc11-64-*.deb . && \
+    ar -x /mnt/build/VUG-Combined-Distribution-v1.2.2@Product@u2204-gcc11-64-*.deb && \
+    tar xf control.tar.* && \
+    # move the postinst script into TENA dir to make it easier to copy and run later on final container
+    mv ./postinst ./opt/TENA/postinst-DIST
 
 FROM ubuntu:22.04
 
