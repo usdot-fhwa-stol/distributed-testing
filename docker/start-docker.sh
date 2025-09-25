@@ -318,6 +318,6 @@ fi
 
 trap stopDocker SIGINT
 
-$docker_compose_cmd -f $docker_compose_file pull
+# $docker_compose_cmd -f $docker_compose_file pull
 
 $docker_compose_cmd -f $docker_compose_file up "${EXTRA_ARGS[@]}"
