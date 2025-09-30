@@ -13,11 +13,12 @@ import threading
 import json
 
 #If you are using waypoints, this is the CSV file containing the waypoint data
-SELECTED_WAYPOINT_CSV = "Mcity_breadcrumbs.csv"
-OBJECT_TYPE = 'VUG-LandVehicle-v1.1.1'
+SELECTED_WAYPOINT_CSV = "Town04_breadcrumbs.csv"
+OBJECT_TYPE = 'VUG-LandVehicle-v1.1.0'
 ENTITY_TYPE = 'VUG::Entities::LandVehicle'
 GET_OBJECT_TYPE = "waypoints"  # options are "waypoints" or "api"
-PUBLISHER_IP = "127.0.0.1:9001" #IP for TENA Publisher connection
+PUBLISHER_IP = "127.0.0.1:8004" #IP for TENA Publisher connection
+BREADCRUMB_VEHICLE_NAME = "test_vehicle"
 source_id = "03:05"
 
 # this template needs to be updated for land vehicle (currently entity)
@@ -27,20 +28,120 @@ landVehicle_json_template =  {
         "identifier": "Unset",
         "designation": "Unset",
         "sourceIdentifier": source_id,
-        "tspi": {"attributes": {
-                "time": {"attributes": {"nanosecondsSince1970": time.time_ns()}},
-                "position": {"attributes": {"geodetic_asTransmitted": {"attributes": {"srf": {"attributes": {"rtCode": "TENA::RTCODE_WGS_1984_IDENTITY"}}, "latitudeInDegrees": 0.0, "longitudeInDegrees": 0.0, "heightAboveEllipsoidInMeters": 0.0}}}},
-                "orientation": {"attributes": {"frdWRTltpENUbodyFixedZYX_asTransmitted": {"attributes": {"srf": {"attributes": {"rtCode": "TENA::RTCODE_WGS_1984_IDENTITY", "latitudeInDegrees": 0.0, "longitudeInDegrees": 0.0, "heightAboveEllipsoidInMeters": 0.0, "azimuthInRadians": 0.0, "xFalseOriginInMeters": 0.0, "yFalseOriginInMeters": 0.0}}, "rotZinRadians": 0.0, "rotYinRadians": 0.0, "rotXinRadians": 0.0}}}}}},
-        "entityID": {"attributes": {"siteID": int(source_id.split(':')[0]), "applicationID": int(source_id.split(':')[1]), "objectID": 0}},
+        "tspi": {
+            "attributes": {
+                "time": {
+                    "attributes": {
+                        "nanosecondsSince1970": time.time_ns()
+                    }
+                },
+                "position": {
+                    "attributes": {
+                        "ltpENU_asTransmitted": {
+                            "attributes": {
+                                "srf": {
+                                    "attributes": {
+                                        "rtCode": "TENA::RTCODE_WGS_1984_IDENTITY",
+                                        "latitudeInDegrees": 0.0, 
+                                        "longitudeInDegrees": 0.0, 
+                                        "heightAboveEllipsoidInMeters": 0.0,
+                                        "azimuthInRadians": 0.0,
+                                        "xFalseOriginInMeters": 0.0,
+                                        "yFalseOriginInMeters": 0.0
+                                    }
+                                }, 
+                                "xInMeters": 0.0,
+                                "yInMeters": 0.0,
+                                "zInMeters": 0.0
+                            }
+                        }
+                    }
+                },
+                "velocity": {
+                    "attributes": {
+                        "ltpENU_asTransmitted": {
+                            "attributes": {
+                                "srf": {
+                                    "attributes": {
+                                        "rtCode": "TENA::RTCODE_WGS_1984_IDENTITY",
+                                        "latitudeInDegrees": 0.0,
+                                        "longitudeInDegrees": 0.0,
+                                        "heightAboveEllipsoidInMeters": 0.0,
+                                        "azimuthInRadians": 0.0,
+                                        "xFalseOriginInMeters": 0.0,
+                                        "yFalseOriginInMeters": 0.0
+                                    }
+                                },
+                                "vxInMetersPerSecond": 0.0,
+                                "vyInMetersPerSecond": 0.0,
+                                "vzInMetersPerSecond": 0.0
+                            }
+                        }
+                    }
+                },
+                "orientation": {
+                    "attributes": {
+                        "frdWRTltpENUbodyFixedZYX_asTransmitted": {
+                            "attributes": {
+                                "srf": {
+                                    "attributes": {
+                                        "rtCode": "TENA::RTCODE_WGS_1984_IDENTITY", 
+                                        "latitudeInDegrees": 0.0, 
+                                        "longitudeInDegrees": 0.0, 
+                                        "heightAboveEllipsoidInMeters": 0.0, 
+                                        "azimuthInRadians": 0.0, 
+                                        "xFalseOriginInMeters": 0.0, 
+                                        "yFalseOriginInMeters": 0.0
+                                    }
+                                }, 
+                                "rotZinRadians": 0.0, 
+                                "rotYinRadians": 0.0, 
+                                "rotXinRadians": 0.0
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "entityID": {
+            "attributes": {
+                "siteID": int(source_id.split(':')[0]), 
+                "applicationID": int(source_id.split(':')[1]), 
+                "objectID": 0
+            }
+        },
         "lvcIndicator": "TENA::LVC::LVCindicator_Virtual",
-        ###TODO need to figuire out this entity type from siso standard: https://www.sisostandards.org/resource/resmgr/reference_documents_/siso-ref-010-v35.zip
-        "entityType": {"attributes": {"kind": 1, "domain": 1, "country": 0, "category": 81, "subcategory": 0, "specific": 0, "extra": 0}},
+        "entityType": {
+            "attributes": {
+                "kind": 0, 
+                "domain": 0, 
+                "country": 81, 
+                "category": 0, 
+                "subcategory": 0, 
+                "specific": 0, 
+                "extra": 0
+            }
+        },
         "affiliation": "TENA::LVC::Affiliation_Friendly",
         "damageState": "TENA::LVC::DamageState_NoDamage",
         "deadReckoningAlgorithm": "TENA::LVC::DeadReckoningAlgorithm_RVW",
-        "appearance": {"attributes": {"EntityKindDomain": "TENA::LVC::EntityKindDomain_AirPlatform"}},
-        "landVehicleData" : {"attributes" : {"exteriorLights" : {"attributes" : {
-                "HeadlightsOn" : False, "leftTurnSignalOn" : False, "rightTurnSignalOn" : False, "hazardSignalOn" : False, "brakeLightsOn" : False, "parkingLightsOn" : False, "specialLightsOn" : False}}}}
+        "sensorPedigree": [],
+        "trackPedigree": [],
+        "landVehicleData" : {
+            "attributes" : {
+                "exteriorLights" : {
+                    "attributes" : {
+                        "HeadlightsOn" : False, 
+                        "leftTurnSignalOn" : False, 
+                        "rightTurnSignalOn" : False, 
+                        "hazardSignalOn" : False, 
+                        "brakeLightsOn" : False, 
+                        "parkingLightsOn" : False, 
+                        "specialLightsOn" : False
+                    }
+                }
+            }
+        }
     }
 }
 
@@ -66,6 +167,12 @@ trafficSignalController_json_template =  {
     }
 }
 
+def get_vehicle_distance(vehicle_list, name):
+    for vehicle in vehicle_list:
+        if vehicle["vehicle_name"] == name:
+            return vehicle["distance_traveled"]
+    return None
+
 #This function parses a CSV file containing waypoint data and returns a list of waypoints
 #if you have different data, you will need to modify this function
 def waypoint(waypoint_list):
@@ -73,16 +180,16 @@ def waypoint(waypoint_list):
         csv_reader = csv.DictReader(file)
         return [
             {
-                'index': int(row['index']),
+                'total_distance_traveled': float(row['total_distance_traveled']),
                 'x': float(row['x']),
                 'y': float(row['y']),
                 'z': float(row['z']),
-                'carla_heading': float(row['carla_heading']),
-                'geo_heading': float(row['geo_heading']),
-                'latitude': float(row['latitude']),
-                'longitude': float(row['longitude']),
-                'altitude': float(row['altitude']),
-                'linear_distance': float(row['linear_distance'])
+                'vx': float(row['vx']),
+                'vy': float(row['vy']),
+                'vz': float(row['vz']),
+                'yaw': float(row['yaw']),
+                'pitch': float(row['pitch']),
+                'roll': float(row['roll'])
             }
             for row in csv_reader
         ]
@@ -99,7 +206,7 @@ def get_object_data_from_waypoints(waypoint_data):
     # based on the received JSON data
 
     # distance traveled per time interval
-    total_distance = fake_api.vehicle_algorithm(waypoint_data)
+    total_distance = fake_api.vehicle_algorithm()
     # once you find the distance traveled, you need to move that distance along the path created by the waypoints.
     # this will likely land you inbetween two waypoints.
     # you may decide how to handle this:
@@ -113,7 +220,7 @@ def get_object_data_from_waypoints(waypoint_data):
 
     last_waypoint = waypoint_data[0]
     # to keep our place on the waypoints, we want to remove all waypoints before and including the selected waypoint
-    while waypoint_data and total_distance > waypoint_data[0]['linear_distance']:
+    while waypoint_data and total_distance > waypoint_data[0]['total_distance_traveled']:
         last_waypoint = waypoint_data.pop(0)
     # Because we remove the last waypoint before our current location, make sure to re-add it.
     #   otherwise element [0] will always be the next waypoint
@@ -155,21 +262,24 @@ def pack_object_data_into_json(object_data_list):
     object_data_json_list = []
 
     # loop through data list and pack each object data into JSON
-    for object_data_json in object_data_list:
+    for object_data in object_data_list:
         object_data_json = copy.deepcopy(landVehicle_json_template)
         object_data_json["attributes"]["identifier"] = "test_vehicle"
         object_data_json["attributes"]["designation"] = "test_vehicle"
         object_data_json["attributes"]["tspi"]["attributes"]["time"]["attributes"]["nanosecondsSince1970"] = time.time_ns()
-        object_data_json["attributes"]["tspi"]["attributes"]["position"]["attributes"]["geodetic_asTransmitted"]["attributes"]["latitudeInDegrees"] = object_data_list[0]['latitude']
-        object_data_json["attributes"]["tspi"]["attributes"]["position"]["attributes"]["geodetic_asTransmitted"]["attributes"]["longitudeInDegrees"] = object_data_list[0]['longitude']
-        object_data_json["attributes"]["tspi"]["attributes"]["position"]["attributes"]["geodetic_asTransmitted"]["attributes"]["heightAboveEllipsoidInMeters"] = object_data_list[0]['altitude']
-        object_data_json["attributes"]["tspi"]["attributes"]["orientation"]["attributes"]["frdWRTltpENUbodyFixedZYX_asTransmitted"]["attributes"]["srf"]["attributes"]["latitudeInDegrees"] = object_data_list[0]['latitude']
-        object_data_json["attributes"]["tspi"]["attributes"]["orientation"]["attributes"]["frdWRTltpENUbodyFixedZYX_asTransmitted"]["attributes"]["srf"]["attributes"]["longitudeInDegrees"] = object_data_list[0]['longitude']
-        object_data_json["attributes"]["tspi"]["attributes"]["orientation"]["attributes"]["frdWRTltpENUbodyFixedZYX_asTransmitted"]["attributes"]["srf"]["attributes"]["heightAboveEllipsoidInMeters"] = object_data_list[0]['altitude']
+        object_data_json["attributes"]["tspi"]["attributes"]["position"]["attributes"]["ltpENU_asTransmitted"]["attributes"]["xInMeters"] = object_data['x']
+        object_data_json["attributes"]["tspi"]["attributes"]["position"]["attributes"]["ltpENU_asTransmitted"]["attributes"]["yInMeters"] = object_data['y']
+        object_data_json["attributes"]["tspi"]["attributes"]["position"]["attributes"]["ltpENU_asTransmitted"]["attributes"]["zInMeters"] = object_data['z']
+        object_data_json["attributes"]["tspi"]["attributes"]["velocity"]["attributes"]["ltpENU_asTransmitted"]["attributes"]["vxInMetersPerSecond"] = object_data['vx']
+        object_data_json["attributes"]["tspi"]["attributes"]["velocity"]["attributes"]["ltpENU_asTransmitted"]["attributes"]["vyInMetersPerSecond"] = object_data['vy']
+        object_data_json["attributes"]["tspi"]["attributes"]["velocity"]["attributes"]["ltpENU_asTransmitted"]["attributes"]["vzInMetersPerSecond"] = object_data['vz']
+        object_data_json["attributes"]["tspi"]["attributes"]["orientation"]["attributes"]["frdWRTltpENUbodyFixedZYX_asTransmitted"]["attributes"]["rotZinRaidans"] = object_data['yaw']
+        object_data_json["attributes"]["tspi"]["attributes"]["orientation"]["attributes"]["frdWRTltpENUbodyFixedZYX_asTransmitted"]["attributes"]["rotYinRaidans"] = object_data['pitch']
+        object_data_json["attributes"]["tspi"]["attributes"]["orientation"]["attributes"]["frdWRTltpENUbodyFixedZYX_asTransmitted"]["attributes"]["rotXinRaidans"] = object_data['roll']
         object_data_json_list.append(object_data_json)
 
-        object_data_json_string = json.dumps(object_data_json)
-    return object_data_json_string
+    #object_data_json_string = json.dumps(object_data_json_list)
+    return object_data_json_list
 
 def wait_for_port(host, port, timeout=30):
     start = time.time()
@@ -182,7 +292,7 @@ def wait_for_port(host, port, timeout=30):
     return False
 
 def transmit_object_json(object_json_list, EntityName, EntityMap):
-    if not wait_for_port("127.0.0.1", 9001):
+    if not wait_for_port("127.0.0.1", 8004):
         print("Server never came up")
         return
     else:
@@ -271,7 +381,7 @@ def receive_main():
 
     # Define host and port
     HOST = '127.0.0.1'  # Listen on all interfaces
-    PORT = 9000  # Choose an unused port
+    PORT = 8004  # Choose an unused port
 
     # Bind the socket
     server_socket.bind((HOST, PORT))
