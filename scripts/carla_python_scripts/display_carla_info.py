@@ -117,7 +117,7 @@ def display_vehicle_rolenames():
 
 
 def display_traffic_signal_state():
-    signal_list = world.get_actors().filter('traffic.*')
+    signal_list = world.get_actors().filter('traffic.traffic_light')
     # Print all index corresponding to all traffic signals in scene (CarlaUE4)
 
     if args.duration == 0:
@@ -138,9 +138,10 @@ def display_traffic_signal_state():
         for index, signal in enumerate(signal_list, start=1):
             
             if args.verbose:
+                print(signal)
                 print("    " + str(signal.attributes))
 
-            signal_state = signal.state
+            signal_state = signal.get_state()
             signal_state_display = str(signal_state).upper()
 
             if signal_state_display == "OFF":
