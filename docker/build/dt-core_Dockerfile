@@ -100,7 +100,7 @@ RUN apt clean && \
     # install apt utils for installing packages (mostly for TENA console)
     apt-utils \
     # install qt packages
-    libxcb-xinerama0 libfreetype6 libfontconfig libsm6 libxi6 libx11-xcb-dev libxcb-icccm4 libxcb-image0 libxcb-keysyms1 libxcb-randr0 libxcb-render-util0 libxcb-shape0 libxcb-sync1 libxcb-xfixes0 libxcb-xkb1 libxkbcommon-x11-0 libjpeg8 libtiff5 \
+    libxcb-xinerama0 libfreetype6 libfontconfig libsm6 libxi6 libx11-xcb1 libxcb-cursor0 libxcb-icccm4 libxcb-image0 libxcb-keysyms1 libxcb-randr0 libxcb-render-util0 libxcb-shape0 libxcb-sync1 libxcb-xfixes0 libxcb-xkb1 libxkbcommon-x11-0 libjpeg8 libtiff5 \
     # install debug tools
     iputils-ping nano tshark git tcpdump nethogs rsync \
     # install sumo tools
@@ -108,9 +108,16 @@ RUN apt clean && \
     # install iproute2
     iproute2 \
     # install dumb init to enable gracefully stopping container processes
-    dumb-init && \
+    dumb-init \
+    # install locales and set to UTF-8 for JSON Streamer 
+    locales && \
+    locale-gen en_US.UTF-8 && \
+    update-locale LANG=en_US.UTF-8 && \
     # cleanup apt lists
     rm -rf /var/lib/apt/lists/*
+
+# Set ENV for locales to UTF-8
+ENV LANG=en_US.UTF-8 LC_ALL=en_US.UTF-8
 
 # Install Python 3.7 and clean NumPy
 RUN apt-get clean && \
@@ -160,7 +167,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && tar -xzf ${BOOST_PACKAGE}.tar.gz \
     && cd ${BOOST_PACKAGE} \
     && ./bootstrap.sh --prefix=/opt/boost-1.82.0 \
-        --with-libraries=python,filesystem,system,program_options,thread,timer,chrono,regex,log \
+        --with-libraries=python,filesystem,system,program_options,thread,timer,chrono,regex,log,json \
     && ./b2 -j"$(nproc)" install \
     && cd /tmp \
     && rm -rf ${BOOST_PACKAGE} ${BOOST_PACKAGE}.tar.gz
@@ -170,7 +177,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # -----------------------------------------------------------------
 ENV BOOST_ROOT=/opt/boost-1.82.0 \
     CMAKE_PREFIX_PATH=/opt/boost-1.82.0 \
-    LD_LIBRARY_PATH=/opt/boost-1.82.0/lib
+    LD_LIBRARY_PATH=/opt/boost-1.82.0/lib:${LD_LIBRARY_PATH:-}
+
+RUN echo "/opt/boost-1.82.0/lib" > /etc/ld.so.conf.d/boost.conf && ldconfig
 
 RUN rm -rf /home/$USER/TENA
 USER $USER
