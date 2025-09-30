@@ -118,9 +118,16 @@ if [[ $VUG_DOCKER_START_TENA_CARLA_ADAPTER == true ]]; then
    sleep 5s
 fi
 
-if [[ $VUG_DOCKER_START_JSON_TOOLS == true ]]; then
-   echo "STARTING JSON TOOLS"
-   $HOME/distributed-testing/scripts/run_scripts/start-json-tools.sh &
+if [[ $VUG_DOCKER_START_JSON_STREAMER == true ]]; then
+   echo "STARTING JSON STREAMER"
+   $HOME/distributed-testing/scripts/run_scripts/start-json-streamer.sh &
+
+   sleep 5s
+fi
+
+if [[ $VUG_DOCKER_START_JSON_PUBLISHER == true ]]; then
+   echo "STARTING JSON PUBLISHER"
+   $HOME/distributed-testing/scripts/run_scripts/start-json-publisher.sh &
 
    sleep 5s
 fi
