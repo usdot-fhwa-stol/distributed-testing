@@ -2,8 +2,17 @@
 
 source /home/carla/start_scripts/setup-carla-docker.sh
 
-if [[ ! $VUG_DOCKER_START_CARLA == 'local' ]]; then
-   echo "CARLA CONFIGURED NOT TO START"
+if [[ $VUG_DOCKER_START_CARLA == 'local' ]]; then
+   echo "STARTING CARLA DOCKER"
+elif [[ $VUG_DOCKER_START_CARLA == 'remote' ]]; then
+   echo "USING REMOTE CARLA, CARLA DOCKER NOT STARTING"
+   exit 1
+elif [[ $VUG_DOCKER_START_CARLA == 'off' ]]; then
+   echo "CARLA SET TO OFF, CARLA DOCKER NOT STARTING"
+   exit 1
+else
+   echo "UNKNOWN VUG_DOCKER_START_CARLA VALUE: $VUG_DOCKER_START_CARLA, CARLA DOCKER NOT STARTING"
+   echo "    VALID VUG_DOCKER_START_CARLA VALUES: local, remote, off"
    exit 1
 fi
 

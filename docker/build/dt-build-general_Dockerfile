@@ -1,4 +1,4 @@
-FROM usdotfhwastoldev/dt-base:0.0.2
+FROM usdotfhwastoldev/dt-base:dev-latest
 
 # Make sure that the docker container gets enough memory or the compiler will crash building the CppClient
 # On macos I increased the memory available from 2.0GB to 6.0GB.  I didn't try lower than this yet.
@@ -29,29 +29,5 @@ RUN --mount=type=secret,id=usdotfhwastol_token \
     chown -R dt_user:dt_user cmake_temp && \
 	mv cmake_temp/cmake/ /home/dt_user/TENA/lib/ && \
 	rm -rf cmake_temp
-
-# ------------------------------------------------------------------------
-# Build and install Boost 1.82.0
-# ------------------------------------------------------------------------
-RUN apt-get update && apt-get install -y --no-install-recommends \
-      build-essential g++ cmake wget curl python3-dev \
-    && cd /tmp \
-    && BOOST_VERSION=1.82.0 \
-    && BOOST_PACKAGE=boost_${BOOST_VERSION//./_} \
-    && wget https://archives.boost.io/release/${BOOST_VERSION}/source/${BOOST_PACKAGE}.tar.gz \
-    && tar -xzf ${BOOST_PACKAGE}.tar.gz \
-    && cd ${BOOST_PACKAGE} \
-    && ./bootstrap.sh --prefix=/opt/boost-1.82.0 \
-         --with-libraries=python,filesystem,system,program_options,thread,timer,chrono,regex,log \
-    && ./b2 -j"$(nproc)" install \
-    && cd /tmp \
-    && rm -rf ${BOOST_PACKAGE} ${BOOST_PACKAGE}.tar.gz
-
-# ------------------------------------------------------------------------
-# Environment setup for Boost 1.82.0
-# ------------------------------------------------------------------------
-ENV BOOST_ROOT=/opt/boost-1.82.0 \
-    CMAKE_PREFIX_PATH=/opt/boost-1.82.0 \
-    LD_LIBRARY_PATH=/opt/boost-1.82.0/lib
 
 USER dt_user
