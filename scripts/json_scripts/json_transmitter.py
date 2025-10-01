@@ -18,17 +18,17 @@ SELECTED_WAYPOINT_CSV = "Town04_breadcrumbs.csv"
 OBJECT_TYPE = 'VUG-LandVehicle-v1.1.0'
 ENTITY_TYPE = 'VUG::Entities::LandVehicle'
 GET_OBJECT_TYPE = "waypoints"  # options are "waypoints" or "api"
+COORDINATE_FORMAT = "ltpENU" # options are "geocentric", "ltpENU", and "lstp"
 PUBLISHER_IP = "127.0.0.1:8004" #IP for TENA Publisher connection
-BREADCRUMB_VEHICLE_NAME = "test_vehicle"
 source_id = "03:05"
 
 # this template needs to be updated for land vehicle (currently entity)
 # andrew to provide
 landVehicle_json_template =  {
     "attributes": {
-        "identifier": "Unset",
+        "identifier": "JSON-M-1",
         "designation": "Unset",
-        "sourceIdentifier": source_id,
+        "sourceIdentifier": "CARLA-JSON-1",
         "tspi": {
             "attributes": {
                 "time": {
@@ -168,12 +168,6 @@ trafficSignalController_json_template =  {
     }
 }
 
-def get_vehicle_distance(vehicle_list, name):
-    for vehicle in vehicle_list:
-        if vehicle["vehicle_name"] == name:
-            return vehicle["distance_traveled"]
-    return None
-
 #This function parses a CSV file containing waypoint data and returns a list of waypoints
 #if you have different data, you will need to modify this function
 def waypoint(waypoint_list):
@@ -208,6 +202,7 @@ def get_object_data_from_waypoints(waypoint_data):
 
     # distance traveled per time interval
     total_distance = fake_api.vehicle_algorithm()
+    print("Total distance traveled: " + str(total_distance))
     # once you find the distance traveled, you need to move that distance along the path created by the waypoints.
     # this will likely land you inbetween two waypoints.
     # you may decide how to handle this:
@@ -232,6 +227,7 @@ def get_object_data_from_waypoints(waypoint_data):
     # it is not required, but helpful to include velocity and acceleration
     # TODO note required and optional (useful) fields here for each object model
     object_data = last_waypoint
+    print("Last waypoint passed: " + str(object_data))
     return [object_data]
 
 def get_object_data_from_api(vehicle_list, trafficSignalController_list):
@@ -265,8 +261,8 @@ def pack_object_data_into_json(object_data_list):
     # loop through data list and pack each object data into JSON
     for object_data in object_data_list:
         object_data_json = copy.deepcopy(landVehicle_json_template)
-        object_data_json["attributes"]["identifier"] = "test_vehicle"
-        object_data_json["attributes"]["designation"] = "test_vehicle"
+        object_data_json["attributes"]["identifier"] = "JSON-M-1"
+        object_data_json["attributes"]["designation"] = "CARLA-JSON-1"
         object_data_json["attributes"]["tspi"]["attributes"]["time"]["attributes"]["nanosecondsSince1970"] = time.time_ns()
         object_data_json["attributes"]["tspi"]["attributes"]["position"]["attributes"]["ltpENU_asTransmitted"]["attributes"]["xInMeters"] = object_data['x']
         object_data_json["attributes"]["tspi"]["attributes"]["position"]["attributes"]["ltpENU_asTransmitted"]["attributes"]["yInMeters"] = object_data['y']
@@ -274,9 +270,9 @@ def pack_object_data_into_json(object_data_list):
         object_data_json["attributes"]["tspi"]["attributes"]["velocity"]["attributes"]["ltpENU_asTransmitted"]["attributes"]["vxInMetersPerSecond"] = object_data['vx']
         object_data_json["attributes"]["tspi"]["attributes"]["velocity"]["attributes"]["ltpENU_asTransmitted"]["attributes"]["vyInMetersPerSecond"] = object_data['vy']
         object_data_json["attributes"]["tspi"]["attributes"]["velocity"]["attributes"]["ltpENU_asTransmitted"]["attributes"]["vzInMetersPerSecond"] = object_data['vz']
-        object_data_json["attributes"]["tspi"]["attributes"]["orientation"]["attributes"]["frdWRTltpENUbodyFixedZYX_asTransmitted"]["attributes"]["rotZinRaidans"] = object_data['yaw']
-        object_data_json["attributes"]["tspi"]["attributes"]["orientation"]["attributes"]["frdWRTltpENUbodyFixedZYX_asTransmitted"]["attributes"]["rotYinRaidans"] = object_data['pitch']
-        object_data_json["attributes"]["tspi"]["attributes"]["orientation"]["attributes"]["frdWRTltpENUbodyFixedZYX_asTransmitted"]["attributes"]["rotXinRaidans"] = object_data['roll']
+        object_data_json["attributes"]["tspi"]["attributes"]["orientation"]["attributes"]["frdWRTltpENUbodyFixedZYX_asTransmitted"]["attributes"]["rotZinRadians"] = object_data['yaw']
+        object_data_json["attributes"]["tspi"]["attributes"]["orientation"]["attributes"]["frdWRTltpENUbodyFixedZYX_asTransmitted"]["attributes"]["rotYinRadians"] = object_data['pitch']
+        object_data_json["attributes"]["tspi"]["attributes"]["orientation"]["attributes"]["frdWRTltpENUbodyFixedZYX_asTransmitted"]["attributes"]["rotXinRadians"] = object_data['roll']
         object_data_json_list.append(object_data_json)
 
     #object_data_json_string = json.dumps(object_data_json_list)
@@ -308,10 +304,8 @@ def transmit_object_json(object_json_list, EntityName, EntityMap):
             sdo_index = (ast.literal_eval(initial_response.text)).get("sdo_index")
             tena_publisher_url += "/" + str(sdo_index)
             EntityMap[EntityName] = tena_publisher_url
-            # print('sent creation')
         else:
             update_response = requests.put(EntityMap[EntityName], json=object_json)
-            # print('sent update')
 
         # this will send to a speficied REST endpoint
     return
@@ -328,7 +322,7 @@ def transmit_main():
     EntityMap = {}
 
     # period for retrieval of data (in seconds)
-    data_update_period = 5
+    data_update_period = 0.1
 
     # give them an option to choose at runtime to use waypoints or API
     
@@ -364,7 +358,7 @@ def transmit_main():
         ##### Step 2: pack data into JSON
         # This 
         object_json_list = pack_object_data_into_json(object_data_list)
-        EntityName = "test_vehicle" # TODO get this from the object data
+        EntityName = "JSON-M-1" # TODO get this from the object data
         ##### Step 3: transmit the JSON 
         # This 
         # TODO adapt code such that the transmitter can handle multiple objects from the provided lists
@@ -422,9 +416,9 @@ def receive_main():
 # TODO make this actually functional
 def main():
 
-    receive_thread = threading.Thread(target=receive_main)
+    #receive_thread = threading.Thread(target=receive_main)
     send_thread = threading.Thread(target=transmit_main)
-    receive_thread.start()
+    #receive_thread.start()
     send_thread.start()
 
 if __name__ == "__main__":
