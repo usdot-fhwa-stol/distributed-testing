@@ -2,6 +2,7 @@
 # BUILD COMMAND: VERSION=0.0.1 && source build-assets.env && sudo DOCKER_BUILDKIT=1 docker build --build-arg VERSION=$VERSION --build-context assets="$BUILD_DIR" -t usdotfhwastoldev/dt-base:$VERSION . --progress=plain -f dt-base_Dockerfile
 #
 
+# ----------------------- BUILD STAGE ----------------------- #
 FROM ubuntu:22.04 AS build
 
 SHELL ["/bin/bash", "-ec"]
@@ -11,11 +12,36 @@ WORKDIR /home/dt_user
 
 USER root
 
-RUN apt update && \
-    apt install -y zstd binutils
-     
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential g++ curl zstd ca-certificates python3-dev \
+    binutils \
+    && rm -rf /var/lib/apt/lists/*
+
+ARG BOOST_VERSION=1.82.0
+ARG BOOST_PACKAGE=boost_${BOOST_VERSION//./_}
+ARG BOOST_PREFIX=/opt/boost
+
+WORKDIR /tmp
+
+# Fetch, build, and install only the libs you want
+RUN curl -L "https://archives.boost.io/release/${BOOST_VERSION}/source/${BOOST_PACKAGE}.tar.gz" -o boost.tar.gz \
+  && tar -xzf boost.tar.gz \
+  && cd "${BOOST_PACKAGE}" \
+  && ./bootstrap.sh --prefix="${BOOST_PREFIX}" \
+       --with-libraries=python,filesystem,system,program_options,thread,timer,chrono,regex,log,json \
+  && ./b2 -j"$(nproc)" \
+       variant=release \
+       link=shared runtime-link=shared \
+       cxxstd=17 \
+       install \
+  && find "${BOOST_PREFIX}/lib" -type f -name '*.so*' -exec strip --strip-unneeded {} + || true \
+  && rm -rf /tmp/"${BOOST_PACKAGE}"* 
+
+# Package the installed tree to preserve symlinks for the COPY
+RUN tar -C /opt -czf /tmp/boost-runtime.tgz "$(basename ${BOOST_PREFIX})"
 
 USER dt_user
+WORKDIR /home/dt_user
 
 # INSTALL TENA deb
 RUN --mount=type=bind,from=assets,source=.,target=/mnt/build,readonly \
@@ -35,15 +61,31 @@ RUN --mount=type=bind,from=assets,source=.,target=/mnt/build,readonly \
     # move the postinst script into TENA dir to make it easier to copy and run later on final container
     mv ./postinst ./opt/TENA/postinst-DIST
 
+# ----------------------- RUNTIME STAGE ----------------------- #
 FROM ubuntu:22.04
 
 RUN useradd -ms /bin/bash dt_user
 USER dt_user
 ARG USER="dt_user"
 
+USER root
+
+COPY --from=build /tmp/boost-runtime.tgz /tmp/boost-runtime.tgz
+RUN mkdir -p /opt && tar -C /opt -xzf /tmp/boost-runtime.tgz && rm /tmp/boost-runtime.tgz
+
+# Boost env setup
+ENV BOOST_ROOT=/opt/boost \
+    CMAKE_PREFIX_PATH=/opt/boost:${CMAKE_PREFIX_PATH:-} \
+    LD_LIBRARY_PATH=/opt/boost/lib:${LD_LIBRARY_PATH:-}
+
+# Boost runtime linker cache
+RUN echo "/opt/boost/lib" > /etc/ld.so.conf.d/boost.conf && ldconfig
+
+USER dt_user
+
 WORKDIR /home/dt_user
 
-COPY --from=build /home/dt_user/opt/TENA /home/dt_user/TENA
+COPY --from=build --chown=dt_user:dt_user /home/dt_user/opt/TENA /home/dt_user/TENA
 RUN DSTROOT=/home/dt_user ./TENA/postinst-MW
 RUN DSTROOT=/home/dt_user ./TENA/postinst-DIST
 
