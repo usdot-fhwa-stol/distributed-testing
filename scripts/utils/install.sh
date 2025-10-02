@@ -40,6 +40,31 @@ sudo chmod ugo+x /usr/bin/dt
 sudo cp "$DT_AUTOCOMPLETE" /etc/bash_completion.d/__dt_autocomplete
 sudo chmod ugo+x /etc/bash_completion.d/__dt_autocomplete
 
+# Remove old config from previous versions
+old_config_found=0
+
+# Check for source lines
+grep -q 'source ~/.voices_site_config' ~/.bashrc && old_config_found=1
+grep -q 'source ~/.voices_scenario_config' ~/.bashrc && old_config_found=1
+
+# Check for files
+[ -f ~/.voices_site_config ] && old_config_found=1
+[ -f ~/.voices_scenario_config ] && old_config_found=1
+
+if [ $old_config_found -eq 1 ]; then
+    echo "Symbolic links from a previous version of distributed testing detected."
+    echo "These links have been renamed."
+    read -p "Do you want to remove the old ones from your system? (y/n): " yn
+    if [[ "$yn" == [Yy]* ]]; then
+        sed -i '/source ~\/\.voices_site_config/d' ~/.bashrc
+        sed -i '/source ~\/\.voices_scenario_config/d' ~/.bashrc
+        rm -f ~/.voices_site_config ~/.voices_scenario_config
+        echo "All old configuration removed."
+    else
+        echo "Nothing removed."
+    fi
+fi
+
 dt init $VUG_LOCAL_DT_PATH
 
 # Create logs directory 
