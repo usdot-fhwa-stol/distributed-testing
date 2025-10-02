@@ -45,6 +45,8 @@ services:
     volumes:
       - /tmp/.X11-unix:/tmp/.X11-unix:rw
       - ${VUG_LOCAL_DT_PATH}:/home/dt_user/distributed-testing
+      - /home/annika/tenadev/INSTALL:/home/dt_user/VUG_Adapters
+      - /home/annika/distributed-testing/docker/build/lib/COPY/.dt_scenario_config_docker:/home/dt_user/.dt_scenario_config_docker
     stop_grace_period: 30s
     deploy:
       resources:
