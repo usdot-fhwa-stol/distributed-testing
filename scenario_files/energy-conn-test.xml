@@ -4,28 +4,34 @@
     <name>DT Energy - Connectivity Test</name>
   </identifier>
   <OpenDrive>
-    <MapFileName name="Town04.xodr">
-      <MapOrigin latitudeInDegrees="38.9511644208721" longitudeInDegrees="-77.14905380821106" heightAboveEllipsoidInMeters="35.8"> </MapOrigin>
+    <MapFileName name="DelaveV21.xodr">
+      <MapOrigin latitudeInDegrees="0.00841723681631434" longitudeInDegrees="0.00773563408642701" heightAboveEllipsoidInMeters="0"> </MapOrigin>
     </MapFileName>
   </OpenDrive>
 
   <vehicles>
-
-    <vehicle name="FHWA-M-3" bsmid="f03ad619" type="vehicle.audi.etron" owner="CARLA-FHWA-3" material="Aluminum" lvcIndicator="Live">
-        <userData>
-            <CARLA manual="true" generate_bsms="true"></CARLA>
-        </userData>
-        <initialTSPI>
-            <GeodeticPosition latitudeInDegrees="42.300399" longitudeInDegrees="-83.698250" heightAboveEllipsoidInMeters="40"/>
-            <Heading>272</Heading>
-        </initialTSPI>
-    </vehicle>
 
   </vehicles>
 
   <simulations>
 
     <simulation name="CARLA-FHWA-3" type="CARLA">
+      <WeatherState>ClearNoon</WeatherState>
+    </simulation>
+
+    <simulation name="CARLA-ORNL-1" type="CARLA">
+      <WeatherState>ClearNoon</WeatherState>
+    </simulation>
+
+    <simulation name="CARLA-PITT-1" type="CARLA">
+      <WeatherState>ClearNoon</WeatherState>
+    </simulation>
+
+    <simulation name="CARLA-SWRI-1" type="CARLA">
+      <WeatherState>ClearNoon</WeatherState>
+    </simulation>
+
+    <simulation name="CARLA-ALA-1" type="CARLA">
       <WeatherState>ClearNoon</WeatherState>
     </simulation>
 
