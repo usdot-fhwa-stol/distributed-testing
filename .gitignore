@@ -48,6 +48,7 @@ docker/build/lib/BUILD
 docker/build/lib/COPY/VUG_Adapters
 docker/build/lib/COPY/CARLA*
 docker/build/lib/MAPS
+docker/build/lib/MAPS_915
 docker/build/lib/OLD
 docker/build/lib/CARLA_TFHRC
 
