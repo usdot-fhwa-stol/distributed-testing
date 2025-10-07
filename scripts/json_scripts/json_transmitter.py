@@ -11,6 +11,7 @@ import ast
 import socket
 import threading
 import json
+import sys
 
 #If you are using waypoints, this is the CSV file containing the waypoint data
 SELECTED_WAYPOINT_CSV = "Town04_breadcrumbs.csv"
@@ -293,11 +294,11 @@ def wait_for_port(host, port, timeout=30):
 
 def transmit_object_json(object_json_list, EntityName, EntityMap):
     if not wait_for_port("127.0.0.1", 8004):
-        print("Server never came up")
+        # print("Server never came up")
         return
     else:
         time.sleep(1)
-    print('sending json')
+    # print('sending json')
 
     for object_json in object_json_list:
         tena_publisher_url = f"http://{PUBLISHER_IP}/v1/objects/{OBJECT_TYPE}/{ENTITY_TYPE}"
@@ -307,10 +308,10 @@ def transmit_object_json(object_json_list, EntityName, EntityMap):
             sdo_index = (ast.literal_eval(initial_response.text)).get("sdo_index")
             tena_publisher_url += "/" + str(sdo_index)
             EntityMap[EntityName] = tena_publisher_url
-            print('sent creation')
+            # print('sent creation')
         else:
             update_response = requests.put(EntityMap[EntityName], json=object_json)
-            print('sent update')
+            # print('sent update')
 
         # this will send to a speficied REST endpoint
     return
@@ -340,7 +341,7 @@ def transmit_main():
         selectMethod = get_object_data_from_api
         args = (vehicle_list,trafficSignalController_list) # can be multiple vehicles and traffic signals when using API
     else:
-        print("Invalid getObjectDataType, must be 'waypoints' or 'api'")
+        # print("Invalid getObjectDataType, must be 'waypoints' or 'api'")
         return
 
     while True: 
@@ -374,48 +375,49 @@ def transmit_main():
         time.sleep(data_update_period)
 
 # this will open a UDP socket to receive JSON
+
 def receive_main():
-
-    # open a UDP socket at a configurable IP and port
-    server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-
     # Define host and port
-    HOST = '127.0.0.1'  # Listen on all interfaces
+    HOST = '127.0.0.1'  # Listen on localhost
     PORT = 8004  # Choose an unused port
 
-    # Bind the socket
-    server_socket.bind((HOST, PORT))
-    server_socket.listen(1)
+    sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 
-    # Listen for incoming connections (max 5 queued connections)
-    print(f"Server listening on {HOST}:{PORT}")
+    sock.bind((HOST, PORT))
+    print(f"Server listening on {HOST}:{PORT} for UDP data...")
 
-    try:
-        while True:
-            # Accept a client connection
-            client_socket, client_address = server_socket.accept()
-            print(f"Connected to client: {client_address}")
+    # Initialize counters - dictionary to track all types
+    type_counts = {}
 
-            # Receive data (up to 1024 bytes)
-            data = client_socket.recv(1024).decode('utf-8')  # Assuming text data
-            print(f"Connected to client: {client_address}")
-            if not data:
-                print("No data received, closing connection")
-                client_socket.close()
-                continue
+    while True:
+        data, addr = sock.recvfrom(4096)
+        try: 
+            json_data = json.loads(data.decode('utf-8'))
+            
+            # Extract and count based on type_name
+            if "metadata" in json_data and "type_name" in json_data["metadata"]:
+                type_name = json_data["metadata"]["type_name"]
+                
+                # Keeps count of each type_name
+                if type_name not in type_counts:
+                    type_counts[type_name] = 0
+                type_counts[type_name] += 1
+                
+                # Build display string
+                display_types = []
+                for name, count in type_counts.items():
+                    short_name = name.split("::")[-1]  # Get last part of each type_name after the "::" (ex. VUG::Entities::LandVehicle)
+                    display_types.append(f"{short_name}: {count}")
+                
+                # Update the same line with current counts
+                sys.stdout.write(f"\r{' | '.join(display_types)}  ")
+                sys.stdout.flush() # Ensure it prints immediately
+                    
+        except json.JSONDecodeError:
+            print(f"\nReceived non-JSON data from {addr}")
 
-            print(f"Received data: {data}")
+# TODO - pulling position/orientation from vehicle id - if time permits
 
-
-    except KeyboardInterrupt:
-        print("Shutting down server")
-    finally:
-        server_socket.close()
-
-    # this will recieve JSON data from JSON Tools
-
-    # it is up to the end user to decide what to do with it
-    #   this could be simply including 
 
 # TODO make this actually functional
 def main():
