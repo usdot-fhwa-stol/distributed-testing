@@ -3,7 +3,7 @@
 # VERSION=0.0.2 && docker tag usdotfhwastoldev/dt-build-carla:$VERSION usdotfhwastoldev/dt-build-carla:latest
 #
 
-FROM usdotfhwastoldev/dt-build-general:0.0.2
+FROM usdotfhwastoldev/dt-build-general:latest
 
 ARG DEBIAN_FRONTEND="noninteractive" 
 ARG TZ="America/New_York"
@@ -82,10 +82,6 @@ ENV PATH="/home/dt_user/carla/Build/boost-1.82.0-c10-install:$PATH"
 
 # I tried building as dt_user, but something or another was failing so I'm doing this instead
 RUN chown -R dt_user:dt_user /home/dt_user/carla
-
-# RUN add-apt-repository ppa:mhier/libboost-latest && \
-#     apt update && \
-#     apt install -y libboost1.81-dev
 
 USER dt_user
 

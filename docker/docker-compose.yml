@@ -1,7 +1,7 @@
 services:
   dt-carla:
     container_name: dt-carla
-    image: usdotfhwastoldev/dt-carla:0-9-15-0.0.1
+    image: usdotfhwastoldev/dt-carla:latest
     privileged: true
     network_mode: "host"
     environment:
@@ -27,7 +27,7 @@ services:
 
   dt-core:
     container_name: dt-core
-    image: usdotfhwastoldev/dt-core:0.0.6
+    image: usdotfhwastoldev/dt-core:latest
     tty: true 
     depends_on:
       - dt-carla
@@ -45,6 +45,8 @@ services:
     volumes:
       - /tmp/.X11-unix:/tmp/.X11-unix:rw
       - ${VUG_LOCAL_DT_PATH}:/home/dt_user/distributed-testing
+      - /home/annika/tenadev/INSTALL:/home/dt_user/VUG_Adapters
+      - /home/annika/distributed-testing/docker/build/lib/COPY/.dt_scenario_config_docker:/home/dt_user/.dt_scenario_config_docker
     stop_grace_period: 30s
     deploy:
       resources:

@@ -2,7 +2,8 @@
 # BUILD COMMAND: VERSION=0.0.1 && source build-assets.env && DOCKER_BUILDKIT=1 docker build --build-arg version=$VERSION --build-context assets="$BUILD_DIR" -t usdotfhwastoldev/dt-core:$VERSION . --progress=plain -f dt-core_Dockerfile
 #
 
-FROM usdotfhwastoldev/dt-base:0.0.3 AS build
+# ----------------------- BUILD STAGE ----------------------- #
+FROM usdotfhwastoldev/dt-base:dev-latest AS build
 
 SHELL ["/bin/bash", "-ec"]
 
@@ -71,7 +72,8 @@ RUN --mount=type=bind,from=assets,source=.,target=/mnt/build,readonly \
     unzip /mnt/build/CARLA_0.9.15.zip && \
     mv CARLA_0.9.15 $HOME/CARLA
 
-FROM usdotfhwastoldev/dt-base:0.0.3
+# ----------------------- RUNTIME STAGE ----------------------- #
+FROM usdotfhwastoldev/dt-base:dev-latest
 
 ARG VERSION=dev
 LABEL version=${VERSION}
@@ -143,43 +145,16 @@ ENV PATH="/home/dt_user/.local/bin:$PATH"
 # Install Python packages as dt_user
 RUN python3 -m pip install --no-cache-dir --user --force-reinstall "numpy<=1.21.6" && \
     python3 -m pip install --no-cache-dir --user \
-        "carla==0.9.15" \
         "pygame==2.1.3" \
         pycrate \
         traci \
+        pynput \
+        requests \
         "lxml==4.9.4" \
         "networkx==2.6.3" \
         "matplotlib<=3.5.3" && \
     python3 -m pip install --no-cache-dir --user "pandas==1.3.5" && \
     rm -rf /home/dt_user/.cache
-
-USER root
-
-# -----------------------------------------------------------------
-# Build and install Boost 1.82.0
-# -----------------------------------------------------------------
-RUN apt-get update && apt-get install -y --no-install-recommends \
-        build-essential g++ cmake wget curl python3-dev \
-    && cd /tmp \
-    && BOOST_VERSION=1.82.0 \
-    && BOOST_PACKAGE=boost_${BOOST_VERSION//./_} \
-    && wget https://archives.boost.io/release/${BOOST_VERSION}/source/${BOOST_PACKAGE}.tar.gz \
-    && tar -xzf ${BOOST_PACKAGE}.tar.gz \
-    && cd ${BOOST_PACKAGE} \
-    && ./bootstrap.sh --prefix=/opt/boost-1.82.0 \
-        --with-libraries=python,filesystem,system,program_options,thread,timer,chrono,regex,log,json \
-    && ./b2 -j"$(nproc)" install \
-    && cd /tmp \
-    && rm -rf ${BOOST_PACKAGE} ${BOOST_PACKAGE}.tar.gz
-
-# -----------------------------------------------------------------
-# Environment setup for Boost 1.82.0
-# -----------------------------------------------------------------
-ENV BOOST_ROOT=/opt/boost-1.82.0 \
-    CMAKE_PREFIX_PATH=/opt/boost-1.82.0 \
-    LD_LIBRARY_PATH=/opt/boost-1.82.0/lib:${LD_LIBRARY_PATH:-}
-
-RUN echo "/opt/boost-1.82.0/lib" > /etc/ld.so.conf.d/boost.conf && ldconfig
 
 RUN rm -rf /home/$USER/TENA
 USER $USER
