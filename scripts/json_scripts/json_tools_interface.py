@@ -484,7 +484,7 @@ def get_count_of_objects(type_counts, type_name):
 
 def receive_main(mapOrigin_queue):
     """
-        Start a TCP server to receive object SDOs in JSON format
+        Start a UDP server to receive object SDOs in JSON format
 
         This function creates a UDP socket, binds it to a configurable host and port, and listens for incoming connections.
         When a client connects, it receives up to 8192 bytes of data, decodes it as UTF-8, and prints it to the console.
@@ -502,9 +502,6 @@ def receive_main(mapOrigin_queue):
         - Assumes incoming data is UTF-8 encoded text.
         - It is up to the user to implement further processing of the received SDOs
     """
-
-    # open a TCP socket at a configurable IP and port
-    server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
     # Define host and port
     HOST = '127.0.0.1'  # Listen on localhost
