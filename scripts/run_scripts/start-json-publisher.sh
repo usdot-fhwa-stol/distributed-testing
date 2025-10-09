@@ -64,7 +64,7 @@ else
     exit 1
 fi
 
-adapterVerbosity='4'
+adapterVerbosity='1'
 
 mkdir -p $VUG_ADAPTER_LOG_PATH
 

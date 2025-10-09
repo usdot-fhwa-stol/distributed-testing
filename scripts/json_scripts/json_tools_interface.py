@@ -9,11 +9,16 @@
     - The script includes several global variables that can be customized to suit the user's environment and needs.
     
     Helper functions:
-    - waypoint(): Reads a CSV file of breadcrumbs and creates a list of dictionary objects (waypoints) for determining location.
-    - get_object_data_from_waypoints():
-    - get_object_data_from_api():
-    - wait_for_port():
-    - transmit_object_json():
+    - waypoint(): Reads a CSV file of waypoints and creates a list of dictionary objects (waypoints) for determining location.
+    - get_object_data_from_waypoints(): Utilizes the distance traveled retrieved from a custom vehicle algorithm, and the waypoints
+        from the CSV file to determine the location of your vehicle. Custom logic is needed for vehicle algorithm, determining location using waypoints,
+        and packing object data.
+    - get_object_data_from_api(): Returns a dictionary containing object data that has been retrieved via API and transformed to match the necessary structure.
+    - wait_for_port(): Wait for a TCP port on a host to become available.
+    - transmit_object_json(): Transmit object SDOs to the Publisher REST API.
+
+    Example functions:
+    - get_count_of_objects(): Returns a running count of the number of JSONs received for each entity type
 
     Main threaded functions:
     - transmit_main(): Runs in a thread to continuously:
@@ -39,7 +44,6 @@
         2. One for receiving object SDOs from the JSON Streamer
 """
 
-import copy
 import csv
 import time
 import math
@@ -47,24 +51,41 @@ import requests
 import ast
 import socket
 import threading
+import json
+import sys
+import queue
+
 import fake_api
 import json_templates
 
 # =================================
 # Global configuration
 # =================================
-SELECTED_WAYPOINT_CSV = "Town04_breadcrumbs.csv" # CSV file containing breadcrumb/waypoint data
-# TODO: Have these update based on the object being transmitted, support for transmitting both vehicles and traffic signal controllers
-OBJECT_TYPE = 'VUG-LandVehicle-v1.1.0' # options are "VUG-LandVehicle-v1.1.0"
-ENTITY_TYPE = 'VUG::Entities::LandVehicle'
-
-GET_OBJECT_TYPE = "api"  # options are "waypoints" or "api"
+SELECTED_WAYPOINT_CSV = "Town04_waypoints.csv" # CSV file containing waypoint data
+GET_OBJECT_TYPE = "waypoints"  # options are "waypoints" or "api"
 COORDINATE_FORMAT = "ltpENU" # options are "geocentric" or "ltpENU"
 PUBLISHER_IP = "127.0.0.1:8004" #IP for TENA Publisher connection
-SOURCE_ID = "03:05" # TODO: Add description for what source_id is
-VEHICLE_ROLENAME = "JSON-M-1" # Name of your vehicle following breadcrumbs, this should match "$VUG_MANUAL_VEHICLE_ID" in your_site.config file
-VEHICLE_LIST = ["JSON-M-1","JSON-M-2","JSON-M-3","JSON-M-4","JSON-M-5"] # List of vehicles you will be providing updates for from the API
-TRAFFICSIGNALCONTROLLER_LIST = [] # List of traffic signal controllers you will be providing updates for from the API
+DATA_UPDATE_PERIOD = 0.2 # Period for retrieval of data (in seconds)
+
+ENTITY_ID = "03:05" # Unique identifier used to determine entityID of the object JSON
+VEHICLE_LIST = {    # List of vehicles you will be providing updates for
+    "JSON-M-1" : {
+        "objectID" : 1 
+    },
+    "JSON-M-2" : {
+        "objectID" : 2
+    },
+    "JSON-M-3" : {
+        "objectID" : 3
+    },
+    "JSON-M-4" : {
+        "objectID" : 4
+    },
+    "JSON-M-5" : {
+        "objectID" : 5
+    }
+} 
+TRAFFICSIGNALCONTROLLER_LIST = {} # List of traffic signal controllers you will be providing updates for from the API
 
 # =================================
 # Helper functions
@@ -72,12 +93,12 @@ TRAFFICSIGNALCONTROLLER_LIST = [] # List of traffic signal controllers you will 
 
 def waypoint(waypoint_list):
     """
-        Parses a CSV file containing breadcrumb/waypoint data and returns a list of waypoints.
+        Parses a CSV file containing waypoint data and returns a list of waypoints.
 
         Parameters
         ----------
         waypoint_list : str
-            Path to the CSV file containing breadcrumb/waypoint data.
+            Path to the CSV file containing waypoint data.
 
         Returns
         -------
@@ -94,16 +115,17 @@ def waypoint(waypoint_list):
         # Returns a list of dictionaries, where each row in 'waypoint_list' is an entry in the returned list
         return [
             {
-                'total_distance_traveled': float(row['total_distance_traveled']),
-                'x': float(row['x']),
-                'y': float(row['y']),
-                'z': float(row['z']),
-                'vx': float(row['vx']),
-                'vy': float(row['vy']),
-                'vz': float(row['vz']),
-                'yaw': float(row['yaw']),
-                'pitch': float(row['pitch']),
-                'roll': float(row['roll'])
+                # The left side are the keys in the resulting dictionary
+                # These should not change as they match the expected keys for the json_templates
+                # The right side is the corresponding column name in your specified waypoint CSV file
+                # These fields will need to be updated based on your waypoint file
+                'total_distance_traveled': float(row['total_distance']),
+                'x': float(row['xMeters']),
+                'y': float(row['yMeters']),
+                'z': float(row['zMeters']),
+                'yaw': float(row['yawRad']),
+                'pitch': float(row['pitchRad']),
+                'roll': float(row['rollRad'])
             }
             for row in csv_reader
         ]
@@ -142,15 +164,18 @@ def get_object_data_from_waypoints(waypoint_data):
     # Determine current object state using the user's custom vehicle algorithm - this can include current location, speed, acceleration, update period (etc.).
     # User must determine and retrieve the total distance traveled by the object to determine where along the waypoints their object currently resides
 
+    #----- TODO: YOUR VEHICLE ALGORITHM HERE -----
+
     #----- Our Example Implementation -----
     total_distance = fake_api.vehicle_algorithm()
-    #print("Total distance traveled: " + str(total_distance))
+    
 
     # Once you find the distance traveled, you need to move that distance along the path created by the waypoints.
     # This will likely land you inbetween two waypoints.
     # Use this new_linear_distance to figure out which waypoints you fall between
     # Use the logic you decided on in the previous step to select/generate waypoint data for your new location
 
+    #----- TODO: YOUR SELECT/GENERATION WAYPOINT DATA LOGIC HERE -----
 
     #----- Our Example Implementation -----
     last_waypoint = waypoint_data[0]
@@ -167,12 +192,15 @@ def get_object_data_from_waypoints(waypoint_data):
     # Not all fields are required, the json_templates will use default values for missing fields.
     # Role_name, (x,y,z) location, and (yaw,pitch,roll) orientation are minimum
 
+    #----- TODO: YOUR OBJECT DATA TRANSFORMATION AND PACKAGING LOGIC HERE -----
+
     #----- Our Example Implementation -----
-    object_data = last_waypoint
-    object_data["role_name"] = VEHICLE_ROLENAME
-    object_data["object_type"] = "LandVehicle"
-    # print("Last waypoint passed: " + str(object_data))
-    return [object_data]
+    object_data = last_waypoint # Sets object data as the last_waypoint passed
+    
+    
+    object_data["role_name"] = next(iter(VEHICLE_LIST)) # Assigns the name of your vehicle to the first vehicle in VEHICLE_LIST    
+    object_data["object_type"] = "LandVehicle" # Sets the object_type as LandVehicle, used by the JSON packaging function to determine which JSON template to use
+    return [object_data] # Return object_data in a list
 
 def get_object_data_from_api(vehicle_list, trafficSignalController_list):
     """
@@ -207,30 +235,44 @@ def get_object_data_from_api(vehicle_list, trafficSignalController_list):
     object_data_list = []
 
     # Retrieve vehicle object data via API - ensure to get all required fields
-    api_vehicle_data = fake_api.get_vehicles()
+    #----- TODO: RETRIEVE VEHICLE DATA FROM API LOGIC HERE -----
+
+    #----- Our Example Implementation -----
+    api_vehicle_data = fake_api.get_vehicles() #Returns a list of dictionaries containing vehicle data
     
     # Modify vehicle object data to match the format expected by json_templates
+    # Additionally, modify values based on alternative coordinate systems (i.e. converting into EastNorthUp)
+    #----- TODO: TRANSFORM DATA RECEIVED BY API LOGIC HERE ------
+
+    #----- Our Example Implementation -----
     for vehicle in api_vehicle_data:
         if vehicle["vehicle_name"] in vehicle_list:
-            vehicle["role_name"] = vehicle.pop("vehicle_name")
+            vehicle["role_name"] = vehicle.pop("vehicle_name") # Renames the keys of the vehicle dictionary in place to what is expected by the JSON packaging function
             vehicle["x"] = vehicle.pop("xPosition")
             vehicle["y"] = vehicle.pop("yPosition")
             vehicle["z"] = vehicle.pop("zPosition")
-            vehicle["yaw"] = math.radians(vehicle.pop("yawDeg"))
+            vehicle["yaw"] = math.radians(vehicle.pop("yawDeg")) # Renames the keys in place and converts degrees to radians
             vehicle["pitch"] = math.radians(vehicle.pop("pitchDeg"))
-            vehicle["roll"] = math.radians(vehicle.pop("rollDeg")) + math.pi
+            vehicle["roll"] = math.radians(vehicle.pop("rollDeg")) + math.pi # We added math.pi to roll to ensure the vehicle appears upright and facing forward in CARLA
             vehicle["object_type"] = "LandVehicle"
+
             object_data_list.append(vehicle)
-            # print(str(vehicle["role_name"]) + " current location: " + str(vehicle))
 
     # Retrieve traffic signal controller object data via API - ensure to get all required fields
+    #----- TODO: RETRIEVE TRAFFIC SIGNAL CONTROLLER DATA FROM API LOGIC HERE -----
+
+    #----- Our Example Implementation -----
     api_tsc_data = fake_api.get_trafficSignalControllers()
 
     # Modify traffic signal controller data to match the format expected by json_templates
+    #----- TODO: TRANSFORM DATA RECEIVED BY API LOGIC HERE -----
+
+    #----- Our Example Implementation
     for tsc in api_tsc_data: 
-        if tsc.id in trafficSignalController_list:
+        if tsc["id"] in trafficSignalController_list:
             tsc["object_type"] = "TrafficSignalController"
             object_data_list.append(tsc)
+
 
     return object_data_list
 
@@ -313,22 +355,31 @@ def transmit_object_json(object_json_list, EntityMap):
     for object_json in object_json_list:
         # Pulls the EntityName from the object
         EntityName = object_json["attributes"]["identifier"]
-        tena_publisher_url = f"http://{PUBLISHER_IP}/v1/objects/{OBJECT_TYPE}/{ENTITY_TYPE}" # TODO: Adjust script to support for transmitting both vehicles and traffic signal controllers
-        print('Sending '+str(EntityName)+' JSON:\n'+str(object_json))
-        print()
+
+        # Set the object and entity type for the publisher url
+        if object_json.get("attributes",{}).get("landVehicleData") is not None:
+            object_type = 'VUG-LandVehicle-v1.1.0'
+            entity_type = 'VUG::Entities::LandVehicle' 
+        elif object_json.get("attributes",{}).get("trafficSignalPhases") is not None:
+            object_type = 'VUG-TrafficSignalController-v1.3.4'
+            entity_type = 'VUG::Entities::TrafficSignalController'
+        
+        tena_publisher_url = f"http://{PUBLISHER_IP}/v1/objects/{object_type}/{entity_type}"
+        # print('Sending '+str(EntityName)+' JSON:\n'+str(object_json))
+        # print()
         # Determines whether a new object (PUSH) request is being sent or update to existing object (PUT)
-        if EntityName not in EntityMap.keys():
+        if "url" not in EntityMap[EntityName].keys():
             initial_response = requests.post(tena_publisher_url, json=object_json)
             sdo_index = (ast.literal_eval(initial_response.text)).get("sdo_index")
             tena_publisher_url += "/" + str(sdo_index)
-            EntityMap[EntityName] = tena_publisher_url
+            EntityMap[EntityName]["url"] = tena_publisher_url
         else:
-            update_response = requests.put(EntityMap[EntityName], json=object_json)
+            update_response = requests.put(EntityMap[EntityName]["url"], json=object_json)
 
         # this will send to a speficied REST endpoint
     return
 
-def transmit_main():
+def transmit_main(mapOrigin_queue):
     """
         Main loop for transmitting object SDOs to the JSON Publisher
 
@@ -336,6 +387,12 @@ def transmit_main():
         converts it into JSON messages using the appropriate template, and transmits those SDOs to the Publisher REST API.
         It maintains an internal mapping ('EntityMap') of object IDs to publisher entity URLs so that new objects are 
         created with POST and existing objects are updated with PUT.
+
+        Parameters
+        ----------
+        mapOrigin_queue : queue
+            This queue acts as a shared storage space between the receive thread and the send thread. It is used to
+            store map origin data that is received via Scenario JSON and used in object JSON creation.
 
         Globals Used
         ------------
@@ -350,8 +407,10 @@ def transmit_main():
             List of traffic signal controllers to pull object data from the API
         COORDINATE_FORMAT : str
             Coordinate system used for packaging object SDOs. Must be "geocentric" or "ltpENU"
-        SOURCE_ID : str
+        ENTITY_ID : str
             Identifier for the site and application ID sending the object SDOs
+        DATA_UPDATE_PERIOD : float
+            Period of time in seconds the transmitter will wait between gathering information to create and send object
 
         Notes
         -----
@@ -359,47 +418,83 @@ def transmit_main():
     """
 
     # Hashmap of vehicle ID to entity ID and publisher URL
-    EntityMap = {}
+    EntityMap = {**VEHICLE_LIST, **TRAFFICSIGNALCONTROLLER_LIST}
 
-    # Period for retrieval of data (in seconds)
-    data_update_period = 1
-
-    # Set how object data will be retrieved, waypoints or api
+    # Creates the list of waypoints if needed
     if GET_OBJECT_TYPE == "waypoints":
-        object_json_list = waypoint(SELECTED_WAYPOINT_CSV)
-        selectMethod = get_object_data_from_waypoints
-        args = (object_json_list,) # always just one vehicle when using waypoints
-    elif GET_OBJECT_TYPE == "api":
-        selectMethod = get_object_data_from_api
-        args = (VEHICLE_LIST,TRAFFICSIGNALCONTROLLER_LIST) # can be multiple vehicles and traffic signals when using API
-    else:
-        # print("Invalid getObjectDataType, must be 'waypoints' or 'api'")
-        return
+        waypoint_list = waypoint(SELECTED_WAYPOINT_CSV)
 
+    # Wait for map origin to be placed in queue from receive thread
+    print("Waiting for Map Origin from Scenario...")
+    mapOrigin = mapOrigin_queue.get()
+    print(f"Map Origin received: {mapOrigin}")
+    
+    # Begin loop of retrieving vehicle information
     while True: 
 
         ##### Step 1: Get object data
         # This can be from either
         #   - an application API or 
         #   - a list of waypoints
-        object_data_list = selectMethod(*args)
+
+        if GET_OBJECT_TYPE == "waypoints":
+            object_data_list = get_object_data_from_waypoints(waypoint_list)
+        elif GET_OBJECT_TYPE == "api":
+            object_data_list = get_object_data_from_api(VEHICLE_LIST, TRAFFICSIGNALCONTROLLER_LIST)
+        else:
+            print("Invalid Object Type, must be 'waypoints' or 'api'")
 
         ##### Step 2: pack data into JSON
-        object_json_list = json_templates.pack_object_data_into_json(object_data_list, COORDINATE_FORMAT, SOURCE_ID)
+        object_json_list = json_templates.pack_object_data_into_json(object_data_list, EntityMap, mapOrigin, COORDINATE_FORMAT, ENTITY_ID)
         
         ##### Step 3: transmit the JSON 
         transmit_object_json(object_json_list, EntityMap)
 
         ##### Step 4: wait for update period and repeat
-        time.sleep(data_update_period)
+        time.sleep(DATA_UPDATE_PERIOD)
 
-def receive_main():
+def get_count_of_objects(type_counts, type_name):
+    """
+        Example function for processing received objects.
+
+        This function serves as a simple example of some processing that can be done on received JSON objects.
+        This function prints a running count of the number of messages received for each entity type.
+
+        Parameters:
+        -----------
+        - type_counts: dict
+            dictionary containing the number of JSONs received per entity type
+        - type_name: string
+            entity type to be added to the count
+    """
+     # Keeps count of each type_name
+    if type_name not in type_counts:
+        type_counts[type_name] = 0
+    type_counts[type_name] += 1
+                
+    # Build display string
+    display_types = []
+    for name, count in type_counts.items():
+        short_name = name.split("::")[-1]  # Get last part of each type_name after the "::" (ex. VUG::Entities::LandVehicle)
+        display_types.append(f"{short_name}: {count}")
+                
+    # Update the same line with current counts
+    sys.stdout.write(f"\r{' | '.join(display_types)}  ")
+    sys.stdout.flush() # Ensure it prints immediately
+
+def receive_main(mapOrigin_queue):
     """
         Start a TCP server to receive object SDOs in JSON format
 
-        This function creates a TCP socket, binds it to a configurable host and port, and listens for incoming connections.
-        When a client connects, it receives up to 1024 bytes of data, decodes it as UTF-8, and prints it to the console.
+        This function creates a UDP socket, binds it to a configurable host and port, and listens for incoming connections.
+        When a client connects, it receives up to 8192 bytes of data, decodes it as UTF-8, and prints it to the console.
 
+        Parameters
+        ----------
+        mapOrigin_queue : queue
+            This queue acts as a shared storage space between the receive thread and the send thread. It is used to
+            store map origin data that is received via Scenario JSON and used in object JSON creation.
+        
         Notes
         -----
         - Runs indefinitely until the script is terminated
@@ -413,39 +508,34 @@ def receive_main():
 
     # Define host and port
     HOST = '127.0.0.1'  # Listen on localhost
-    PORT = 8004  # Choose an unused port
+    PORT = 8005  # Choose an unused port
 
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 
     sock.bind((HOST, PORT))
     print(f"Server listening on {HOST}:{PORT} for UDP data...")
 
-    # Listen for incoming connections (max 5 queued connections)
-    print(f"Server listening on {HOST}:{PORT}")
+    # Initialize counters - dictionary to track all types
+    type_counts = {}
 
-    try:
-        while True:
-            # Accept a client connection
-            client_socket, client_address = server_socket.accept()
-            print(f"Connected to client: {client_address}")
+    while True:
+        data, addr = sock.recvfrom(8192)
+        try: 
+            json_data = json.loads(data.decode('utf-8'))
 
-            # Receive data (up to 1024 bytes)
-            data = client_socket.recv(1024).decode('utf-8')  # Assuming text data
-            print(f"Connected to client: {client_address}")
-            if not data:
-                print("No data received, closing connection")
-                client_socket.close()
-                continue
+            # Pulls the EntityType from the received json
+            type_name = json_data["metadata"]["type_name"]
 
-            print(f"Received data: {data}")
+            # Gets the map origin from the scenario json and puts it in a queue for the send thread to use
+            if type_name == "VUG::Configuration::Scenario":
+                map_origin = json_templates.get_map_origin_from_scenario(json_data)
+                mapOrigin_queue.put(map_origin)
 
-
-    except KeyboardInterrupt:
-        print("Shutting down server")
-    finally:
-        server_socket.close()
-
-    ### INSERT YOUR CUSTOM PROCESSING CODE HERE ###
+            #----- Our Example Implementation -----
+            get_count_of_objects(type_counts, type_name)                            
+                         
+        except json.JSONDecodeError:
+            print(f"\nReceived non-JSON data from {addr}")
 
 def main():
     """
@@ -457,15 +547,16 @@ def main():
 
         Both threads are started and run concurrently. This function does not return until the script is terminated.
     """
+    # Create a queue for the receive thread to send map origin data from the scenario to the send thread
+    mapOrigin_queue = queue.Queue()
 
     # Link the receive_thread to run the code in the receive_main() function
-    #receive_thread = threading.Thread(target=receive_main)
-
+    receive_thread = threading.Thread(target=receive_main, args=(mapOrigin_queue,))
     # Link the send_thread to run the code in the transmit_main() function
-    send_thread = threading.Thread(target=transmit_main)
-
+    send_thread = threading.Thread(target=transmit_main, args=(mapOrigin_queue,))
+    
     # Start both threads
-    #receive_thread.start()
+    receive_thread.start()
     send_thread.start()
 
 
