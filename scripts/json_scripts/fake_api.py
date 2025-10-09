@@ -13,8 +13,6 @@
 
 import random
 
-#TODO just have distance travel returned as some number in meters (0<x<2)
-
 def vehicle_algorithm():
     """
         Simulates a total distance traveled by a vehicle.
@@ -87,4 +85,30 @@ def get_trafficSignalControllers():
             Example list of traffic signal controller objects
     """
     trafficSignalController_list = []
+    if not hasattr(get_trafficSignalControllers,"call_count"):
+        get_trafficSignalControllers.call_count = 0
+
+        get_trafficSignalControllers.tsc = [
+            {"id": 0, "state": "Red", "time_to_state_change":3},
+            {"id": 1, "state": "Green", "time_to_state_change":2},
+            {"id": 2, "state": "Yellow", "time_to_state_change":1}
+        ]
+
+    get_trafficSignalControllers.call_count += 1
+
+    for tsc in get_trafficSignalControllers.tsc:
+        tsc["time_to_state_change"] -= 1
+        
+        if tsc["time_to_state_change"] <=0:
+            tsc["time_to_state_change"] = 3
+            if tsc["state"] == "Red":
+                tsc["state"] = "Green"
+            elif tsc["state"] == "Green":
+                tsc["state"] = "Yellow"
+                tsc["time_to_state_change"] = 2
+            elif tsc["state"] == "Yellow":
+                tsc["state"] = "Red"
+
+        trafficSignalController_list.append(tsc)
+    
     return trafficSignalController_list
