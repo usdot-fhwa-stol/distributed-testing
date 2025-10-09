@@ -62,10 +62,11 @@ import json_templates
 # Global configuration
 # =================================
 SELECTED_WAYPOINT_CSV = "Town04_waypoints.csv" # CSV file containing waypoint data
-GET_OBJECT_TYPE = "waypoints"  # options are "waypoints" or "api"
+GET_OBJECT_TYPE = "api"  # options are "waypoints" or "api"
 COORDINATE_FORMAT = "ltpENU" # options are "geocentric" or "ltpENU"
 PUBLISHER_IP = "127.0.0.1:8004" #IP for TENA Publisher connection
-DATA_UPDATE_PERIOD = 0.2 # Period for retrieval of data (in seconds)
+DATA_UPDATE_PERIOD = 0.1 # Period for retrieval of data (in seconds)
+INDIVIDUAL_TRANSMIT_DELAY = 0.002 # Period between transmission of individual entities to the REST API
 
 ENTITY_ID = "03:05" # Unique identifier used to determine entityID of the object JSON
 VEHICLE_LIST = {    # List of vehicles you will be providing updates for
@@ -316,7 +317,7 @@ def wait_for_port(host, port, timeout=30):
             time.sleep(1)
     return False
 
-def transmit_object_json(object_json_list, EntityMap):
+def transmit_object_json(object_json_list, EntityMap, session: requests.Session):
     """
         Transmit object SDOs to the Publisher REST API.
 
@@ -343,13 +344,6 @@ def transmit_object_json(object_json_list, EntityMap):
         None
 
     """
-
-    # Connection check to ensure REST API is available
-    if not wait_for_port("127.0.0.1", 8004):
-        # print("Server never came up")
-        return
-    else:
-        time.sleep(1)
     
 
     for object_json in object_json_list:
@@ -365,16 +359,17 @@ def transmit_object_json(object_json_list, EntityMap):
             entity_type = 'VUG::Entities::TrafficSignalController'
         
         tena_publisher_url = f"http://{PUBLISHER_IP}/v1/objects/{object_type}/{entity_type}"
-        # print('Sending '+str(EntityName)+' JSON:\n'+str(object_json))
-        # print()
+        
         # Determines whether a new object (PUSH) request is being sent or update to existing object (PUT)
         if "url" not in EntityMap[EntityName].keys():
-            initial_response = requests.post(tena_publisher_url, json=object_json)
-            sdo_index = (ast.literal_eval(initial_response.text)).get("sdo_index")
-            tena_publisher_url += "/" + str(sdo_index)
-            EntityMap[EntityName]["url"] = tena_publisher_url
+            initial_response = session.post(tena_publisher_url, json=object_json)
+            # initial_response.raise_for_status()
+            sdo_index = initial_response.json().get("sdo_index")
+            EntityMap[EntityName]["url"] = f"{tena_publisher_url}/{sdo_index}"
         else:
-            update_response = requests.put(EntityMap[EntityName]["url"], json=object_json)
+            update_response = session.put(EntityMap[EntityName]["url"], json=object_json)
+            # update_response.raise_for_status()
+        time.sleep(INDIVIDUAL_TRANSMIT_DELAY)
 
         # this will send to a speficied REST endpoint
     return
@@ -428,10 +423,18 @@ def transmit_main(mapOrigin_queue):
     print("Waiting for Map Origin from Scenario...")
     mapOrigin = mapOrigin_queue.get()
     print(f"Map Origin received: {mapOrigin}")
+
+    # Connection check to ensure REST API is available
+    if not wait_for_port("127.0.0.1", 8004):
+        # print("Server never came up")
+        return
     
+    session = requests.Session()
+    
+    next_t = time.monotonic()
     # Begin loop of retrieving vehicle information
     while True: 
-
+        
         ##### Step 1: Get object data
         # This can be from either
         #   - an application API or 
@@ -448,10 +451,11 @@ def transmit_main(mapOrigin_queue):
         object_json_list = json_templates.pack_object_data_into_json(object_data_list, EntityMap, mapOrigin, COORDINATE_FORMAT, ENTITY_ID)
         
         ##### Step 3: transmit the JSON 
-        transmit_object_json(object_json_list, EntityMap)
+        transmit_object_json(object_json_list, EntityMap, session)
 
         ##### Step 4: wait for update period and repeat
-        time.sleep(DATA_UPDATE_PERIOD)
+        next_t += DATA_UPDATE_PERIOD
+        time.sleep(max(0, next_t - time.monotonic()))
 
 def get_count_of_objects(type_counts, type_name):
     """
