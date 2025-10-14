@@ -2,7 +2,12 @@
 set -euo pipefail
 
 # Usage: ./fetch-assets.sh [path/to/env]
-ENV_FILE="${1:-./build-assets.env}"
+# If no argument provided, prompt user
+if [[ $# -eq 0 ]]; then
+  read -rp "Enter path to env file: " ENV_FILE
+else
+  ENV_FILE="$1"
+fi
 
 if [[ ! -f "$ENV_FILE" ]]; then
   echo "env file not found: $ENV_FILE" >&2
