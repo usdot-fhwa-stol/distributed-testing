@@ -16,14 +16,18 @@
         2. geocentric_field_mappings: maps object data keys to paths in geocentric_tspi_template.
         3. geodetic_field_mappings: maps object data keys to paths in geodetic_tspi_template
     - Helper functions:
-        1. set_nested(d, path, value): safely sets a value in a nested dict.
-        2. pack_object_data_into_json(object_data_list, coordinate_format, entity_id): populates templates using a list
+        1. set_nested(): safely sets a value in a nested dictionary.
+        2. get_value_at_nested(): retrieves a nested value from a dictionary.
+        3. validate_object(): verifies that all required keys are present in the object_data dictionary
+        4. remove_null_fields(): removes velocity and acceleration from the object json if they are still at default values
+        5. pack_object_data_into_json(): populates templates using a list
             of objects and your specified coordinate format.
-        3. get_map_origin_from_scenario(scenario_json): returns the map origin from the passed in scenario JSON object
+        6. get_map_origin_from_scenario(): returns the map origin from the passed in scenario JSON object
 """
 
 import time
 import copy
+import logging
 
 # ================
 # Templates
@@ -397,6 +401,94 @@ def set_nested(d, path, value):
     # Set the final key to the given value
     d[path[-1]] = value
 
+def get_value_at_nested(data, path):
+    """
+        Retrieves a nested value from a JSON using a list of keys.
+
+        Traverses the passed in object JSON "data" using "path" to retrieve a value.
+
+        Parameters
+        ----------
+        data : JSON (dictionary)
+            object data
+        path : list[string]
+            the path to the desired value
+
+        Returns
+        -------
+        data
+            value at the specified path
+    """
+    for key in path:
+        if isinstance(data, dict) and key in data:
+            data = data[key]
+        else:
+            return None
+    return data
+
+def validate_object(object_data):
+    """
+        Validates that each object passed in for JSON creation contains the minimum amount of information needed to create the object JSON.
+
+        Verifies that every object the user wants to create an object JSON for contains the minimum required fields of:
+            - "role_name" : the name of the object
+            - "x" : the X value of the object's position
+            - "y" : the Y value of the object's position
+            - "z" : the Z value of the object's position
+            - "yaw" : the yaw of the object's orientation
+            - "pitch" : the pitch of the object's orientation
+            - "roll" : the roll of the object's orientation
+
+        Further improvements can be made to this function to verify fields based on coordinate_format or object type, as well as value and type validations.
+
+        Parameters
+        ----------
+        object_data : dict
+            The object being validated
+
+        Returns
+        -------
+        Boolean
+            True if the object contains all required fields
+
+    """
+    required_fields = ["role_name", "x", "y", "z", "yaw", "pitch", "roll"]
+
+    object_keys = list(object_data.keys())
+
+    for field in required_fields:
+        if field not in object_keys:
+            logging.error(f"Validation failed. '{field}' is missing from object: {object_data}")
+            return False
+
+    return True
+
+def remove_null_fields(object_json, field_map):
+    """
+        Removes velocity and acceleration from the object JSON when values are default.
+
+        Checks the x,y,z velocity and acceleration values in the object_json. If all of these values are still at their default value of 0,
+        this function removes those sections from the JSON
+
+        Paramters
+        ---------
+        object_json : JSON (dictionary)
+            JSON of the object being evaluated
+        field_map : dict
+            key mappings used to get the path to a desired field of the JSON object
+
+    """
+
+    velocities = (get_value_at_nested(object_json, field_map["vx"]), get_value_at_nested(object_json, field_map["vy"]), get_value_at_nested(object_json, field_map["vz"]))
+    accelerations = (get_value_at_nested(object_json, field_map["ax"]), get_value_at_nested(object_json, field_map["ay"]), get_value_at_nested(object_json, field_map["az"]))
+    
+    if velocities == (0.0, 0.0, 0.0):
+        object_json["attributes"]["tspi"]["attributes"].pop("velocity", None)
+    if accelerations == (0.0, 0.0, 0.0):
+        object_json["attributes"]["tspi"]["attributes"].pop("acceleration", None)
+
+    return
+
 def pack_object_data_into_json(object_data_list, entityMap, map_origin, coordinate_format, entity_id):
     """
         Create JSON messages for a list of objects using the templates defined above
@@ -430,6 +522,7 @@ def pack_object_data_into_json(object_data_list, entityMap, map_origin, coordina
     object_data_json_list = []
 
     # Determines which tspi template to use based on 'coordinate_format'
+    logging.debug(f"Using {coordinate_format} tspi template and field mappings for all objects")
     if coordinate_format == "ltpENU":
         tspi_template = ltpENU_tspi_template
         tspi_field_map = ltpENU_field_mappings
@@ -444,11 +537,15 @@ def pack_object_data_into_json(object_data_list, entityMap, map_origin, coordina
 
     # Create a JSON for each object in 'object_data_list', then appends it to our list
     for object_data in object_data_list:
+        # Validate object has all required fields - skip if not valid
+        if not validate_object(object_data):
+            continue
         # Add map origin to the object_data, and determine the type of object
         object_data = {**object_data, **map_origin}
         object_type = object_data["object_type"]
         
         # Determines which object template to use for the current object
+        logging.debug(f"Using {object_type} base template")
         if object_type == "LandVehicle":
             object_data_json = copy.deepcopy(base_landVehicle_template)
         elif object_type == "TrafficSignalController":
@@ -471,8 +568,12 @@ def pack_object_data_into_json(object_data_list, entityMap, map_origin, coordina
             if key in object_data:
                 set_nested(object_data_json, path, object_data[key])
 
+        # Removes velocity and acceleration fields from tspi if they are the default values of 0
+        remove_null_fields(object_data_json, tspi_field_map)
+
         # Add the current object JSON to the list
         object_data_json_list.append(object_data_json)
+        logging.debug(f"Added JSON to list: {object_data_json}")
 
     return object_data_json_list
 
