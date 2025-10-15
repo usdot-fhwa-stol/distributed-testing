@@ -425,7 +425,7 @@ def transmit_object_json(object_json_list, EntityMap, session: requests.Session)
 
         # Set the object and entity type for the publisher url
         if object_json.get("attributes",{}).get("landVehicleData") is not None:
-            object_type = 'DOT_OSTR-LandVehicle-v1.1.0'
+            object_type = 'DOT_OSTR-LandVehicle-v1.1.2'
             entity_type = 'DOT_OSTR::Entities::LandVehicle' 
         elif object_json.get("attributes",{}).get("trafficSignalPhases") is not None:
             object_type = 'DOT_OSTR-TrafficSignalController-v1.3.4'
