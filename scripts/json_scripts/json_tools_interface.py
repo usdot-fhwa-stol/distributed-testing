@@ -293,9 +293,12 @@ def get_object_data_from_api(vehicle_list, trafficSignalController_list):
             vehicle["z"] = vehicle.pop("zPosition")
             vehicle["yaw"] = math.radians(vehicle.pop("yawDeg")) # Renames the keys in place and converts degrees to radians
             vehicle["pitch"] = math.radians(vehicle.pop("pitchDeg"))
-            vehicle["roll"] = math.radians(vehicle.pop("rollDeg")) + math.pi # We added math.pi to roll to ensure the vehicle appears upright and facing forward in CARLA
+            vehicle["roll"] = math.radians(vehicle.pop("rollDeg"))
+            # The below line is an example of converting data from a left hand 3d coordinate space into a right hand 3d coordinate space
+            # vehicle["roll"] = math.radians(vehicle.pop("rollDeg")) + math.pi 
+            
+            # The below line is needed to ensure that the correct template is used during JSON creation
             vehicle["object_type"] = "LandVehicle"
-
             object_data_list.append(vehicle)
 
     logging.debug("Vehicle data transformed")
