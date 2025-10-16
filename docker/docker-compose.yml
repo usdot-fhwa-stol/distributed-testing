@@ -1,7 +1,7 @@
 services:
   dt-carla:
     container_name: dt-carla
-    image: usdotfhwastoldev/dt-carla:latest
+    image: harbor.saxtonlab.duckdns.org/distributed-testing/dt-carla:latest
     privileged: true
     network_mode: "host"
     environment:
@@ -17,17 +17,11 @@ services:
       - /tmp/.X11-unix:/tmp/.X11-unix:rw
       - ${VUG_LOCAL_DT_PATH}:/home/carla/distributed-testing
     stop_grace_period: 30s
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - driver: nvidia
-              count: 1
-              capabilities: [gpu]
+    gpus: all
 
   dt-core:
     container_name: dt-core
-    image: usdotfhwastoldev/dt-core:latest
+    image: harbor.saxtonlab.duckdns.org/distributed-testing/dt-core:latest
     tty: true 
     depends_on:
       - dt-carla
@@ -46,10 +40,4 @@ services:
       - /tmp/.X11-unix:/tmp/.X11-unix:rw
       - ${VUG_LOCAL_DT_PATH}:/home/dt_user/distributed-testing
     stop_grace_period: 30s
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - driver: nvidia
-              count: 1
-              capabilities: [gpu]
+    gpus: all
