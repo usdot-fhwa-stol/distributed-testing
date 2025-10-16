@@ -307,7 +307,7 @@ else
 fi
 
 echo
-if [[ $VUG_DOCKER_START_CARLA == true ]]; then
+if [[ $VUG_DOCKER_START_CARLA == 'local' ]]; then
     echo "Using CARLA docker-compose"
     docker_compose_file='docker-compose.yml'
 else
@@ -318,6 +318,6 @@ fi
 
 trap stopDocker SIGINT
 
-$docker_compose_cmd -f $docker_compose_file pull
+# $docker_compose_cmd -f $docker_compose_file pull
 
 $docker_compose_cmd -f $docker_compose_file up "${EXTRA_ARGS[@]}"

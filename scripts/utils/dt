@@ -203,14 +203,21 @@ dt-config__create() {
             fi
         done
 
+        echo
+        echo "Next, we will setup how you are using CARLA."
+        echo "Choose from the following options:"
+        echo "  - 'local': Choose this option if you will run CARLA via the DT Docker Environment"
+        echo "  - 'remote': Choose this option if you're running CARLA from a different host that your DT Environment. (Windows Users use this option)"
+        echo "  - 'off': Choose this option if you're not using CARLA"
+        echo
 
         local VUG_DOCKER_START_CARLA=""
         while true; do
-            read -p "Would you be using CARLA? (true/false): " VUG_DOCKER_START_CARLA
-            if [[ "$VUG_DOCKER_START_CARLA" =~ ^(true|false)$ ]]; then
+            read -p "Would you be using CARLA? (local/remote/off): " VUG_DOCKER_START_CARLA
+            if [[ "$VUG_DOCKER_START_CARLA" =~ ^('local'|'remote'|'off')$ ]]; then
                 break
             else
-                echo "Invalid input. Use 'true' or 'false'."
+                echo "Invalid input. Use 'local', 'remote', or 'off'."
             fi
         done
         
@@ -470,6 +477,12 @@ Please enter one of the following commands:
         - Pulls the docker containers from the docker compose
         - Containers can be downloaded individually by specifying the container name in the 
           docker pull args
+
+    connect <path-to-openvpn-config>
+        - Starts an OpenVPN session using the specified configuration file
+
+    disconnect
+        - Disconnects the user from their current OpenVPN session      
 
     ps
         - List all running CARMA docker containers

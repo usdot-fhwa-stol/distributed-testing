@@ -1,8 +1,9 @@
 #
-# BUILD COMMAND: VERSION=0.0.1 && sudo DOCKER_BUILDKIT=1 docker build --build-arg version=$VERSION -t usdotfhwastoldev/dt-core:$VERSION . --progress=plain -f dt-core_Dockerfile
+# BUILD COMMAND: VERSION=0.0.1 && source build-assets.env && DOCKER_BUILDKIT=1 docker build --build-arg version=$VERSION --build-context assets="$BUILD_DIR" -t harbor.saxtonlab.duckdns.org/distributed-testing/dt-core:$VERSION . --progress=plain -f dt-core_Dockerfile
 #
 
-FROM usdotfhwastoldev/dt-base:latest AS build
+# ----------------------- BUILD STAGE ----------------------- #
+FROM harbor.saxtonlab.duckdns.org/distributed-testing/dt-base:dev-latest AS build
 
 SHELL ["/bin/bash", "-ec"]
 
@@ -19,66 +20,60 @@ USER root
 RUN apt update && \
     apt install -y python3-pip rsync zstd unzip
 
-RUN pip3 install gdown
-
 USER dt_user
 
-RUN mkdir /home/$USER/INSTALL && mkdir /home/$USER/INSTALL/TDCS && mkdir /home/$USER/INSTALL/DV
+RUN mkdir /home/$USER/INSTALL && mkdir /home/$USER/INSTALL/TDCS && mkdir /home/$USER/INSTALL/DV && mkdir /home/$USER/INSTALL/JSON
 
-# VUG-Combined-DataCollectionDistribution-v1.2.2@Product@u2204-gcc11-64-vbe110466.deb
-WORKDIR /home/$USER/INSTALL/TDCS
-RUN gdown 1PslNz9EdCHpuqUN_oV6E48cQqRNhKDW2
-
-# TDCS-DataView-v1.5.4@Product@u2204-gcc11-64-vall
-WORKDIR /home/$USER/INSTALL/DV
-RUN gdown 1UojRtJBZHgS9U17hwq653sH2VjqRbOzq
-
-# VUG-Combined-JSONstreamerDistribution-v1.2.2@Product@u2204-gcc11-64
-# WORKDIR /home/$USER/INSTALL/JSON
-# RUN gdown 1YDy_ry-ColFa1AiuQb1RNxwhMfDvsbIA
-
+ARG DV_VERSION="v1.5.4"
 # INSTALL TENA DataView
 WORKDIR /home/$USER/INSTALL/DV
-RUN dpkg -x --force-overwrite ./TDCS-DataView-v1.5.4@Product@u2204-gcc11-64-*.deb .
-RUN ar -x ./TDCS-DataView-v1.5.4@Product@u2204-gcc11-64-*.deb
-RUN tar xf control.tar.*
-# move the postinst script into TENA dir to make it easier to copy and run later on final container
-RUN mv ./postinst ./opt/TENA/postinst-DV
+RUN --mount=type=bind,from=assets,source=.,target=/mnt/build,readonly \
+    set -euo pipefail; \
+    dpkg -x --force-overwrite /mnt/build/TDCS-DataView-${DV_VERSION}*u2204-gcc11-64*.deb . && \
+    ar -x /mnt/build/TDCS-DataView-${DV_VERSION}*u2204-gcc11-64*.deb && \
+    tar xf control.tar.* && \
+    # move the postinst script into TENA dir to make it easier to copy and run later on final container
+    mv ./postinst ./opt/TENA/postinst-DV
 
 # INSTALL TENA Data Collection System
+ARG TDCS_VERSION="v1.2.2"
 WORKDIR /home/$USER/INSTALL/TDCS
-RUN dpkg -x --force-overwrite ./VUG-Combined-DataCollectionDistribution-*.deb .
-RUN ar -x ./VUG-Combined-DataCollectionDistribution-*.deb
-RUN tar xf control.tar.*
-# move the postinst script into TENA dir to make it easier to copy and run later on final container
-RUN mv ./postinst ./opt/TENA/postinst-TDCS
+RUN --mount=type=bind,from=assets,source=.,target=/mnt/build,readonly \
+    set -euo pipefail; \
+    dpkg -x --force-overwrite /mnt/build/VUG-Combined-DataCollectionDistribution-${TDCS_VERSION}*u2204-gcc11-64*.deb . && \
+    ar -x /mnt/build/VUG-Combined-DataCollectionDistribution-${TDCS_VERSION}*.deb && \
+    tar xf control.tar.* && \
+    # move the postinst script into TENA dir to make it easier to copy and run later on final container
+    mv ./postinst ./opt/TENA/postinst-TDCS
 
-# # INSTALL TENA JSON Tools
-# WORKDIR /home/$USER/INSTALL/JSON
-# RUN dpkg -x --force-overwrite ./VUG-Combined-JSONstreamerDistribution-*.deb .
-# RUN ar -x ./VUG-Combined-JSONstreamerDistribution-*.deb
-# RUN tar xf control.tar.*
-# # move the postinst script into TENA dir to make it easier to copy and run later on final container
-# RUN ls -la .
-# RUN mv ./postinst ./opt/TENA/postinst-JSON
+# INSTALL TENA JSON Tools
+ARG JSON_VERSION="v1.2.2"
+WORKDIR /home/$USER/INSTALL/JSON
+RUN --mount=type=bind,from=assets,source=.,target=/mnt/build,readonly \
+    export ; \    
+    set -euo pipefail; \
+    dpkg -x --force-overwrite /mnt/build/VUG-Combined-JSONstreamerDistribution-${JSON_VERSION}*u2204-gcc11-64*.deb . && \
+    ar -x /mnt/build/VUG-Combined-JSONstreamerDistribution-${JSON_VERSION}*u2204-gcc11-64*.deb && \
+    tar xf control.tar.* && \
+    # move the postinst script into TENA dir to make it easier to copy and run later on final container
+    mv ./postinst ./opt/TENA/postinst-JSON
 
 WORKDIR /home/$USER
 
 USER root
-# RUN rsync -a /home/$USER/INSTALL/TDCS/opt/TENA/ /home/$USER/INSTALL/DV/opt/TENA/ /home/$USER/INSTALL/JSON/opt/TENA/ /home/$USER/TENA
-RUN rsync -a /home/$USER/INSTALL/TDCS/opt/TENA/ /home/$USER/INSTALL/DV/opt/TENA/ /home/$USER/TENA
+RUN rsync -a /home/$USER/INSTALL/TDCS/opt/TENA/ /home/$USER/INSTALL/DV/opt/TENA/ /home/$USER/INSTALL/JSON/opt/TENA/ /home/$USER/TENA
 
 RUN chown -R $USER:$USER /home/$USER/TENA
 USER $USER
 ENV USER="dt_user"
 
 # CARLA_0.9.15 (contains just the PythonAPI folder for CARLA PythonAPI capabilities)
-RUN gdown 1Q9BSeTI8INUKsaTSqLsAC2u8NAzph0V4
-RUN unzip CARLA_0.9.15.zip && \
-    mv CARLA_0.9.15 CARLA && \
-    rm -f CARLA_0.9.15.zip
+RUN --mount=type=bind,from=assets,source=.,target=/mnt/build,readonly \
+    unzip /mnt/build/CARLA_0.9.15.zip && \
+    mv CARLA_0.9.15 $HOME/CARLA
 
-FROM usdotfhwastoldev/dt-base:latest
+# ----------------------- RUNTIME STAGE ----------------------- #
+FROM harbor.saxtonlab.duckdns.org/distributed-testing/dt-base:dev-latest
 
 ARG VERSION=dev
 LABEL version=${VERSION}
@@ -106,10 +101,8 @@ RUN apt clean && \
     apt install -y \
     # install apt utils for installing packages (mostly for TENA console)
     apt-utils \
-    # install boost
-    libboost-all-dev \
     # install qt packages
-    libxcb-xinerama0 libfreetype6 libfontconfig libsm6 libxi6 libx11-xcb-dev libxcb-icccm4 libxcb-image0 libxcb-keysyms1 libxcb-randr0 libxcb-render-util0 libxcb-shape0 libxcb-sync1 libxcb-xfixes0 libxcb-xkb1 libxkbcommon-x11-0 libjpeg8 libtiff5 \
+    libxcb-xinerama0 libfreetype6 libfontconfig libsm6 libxi6 libx11-xcb1 libxcb-cursor0 libxcb-icccm4 libxcb-image0 libxcb-keysyms1 libxcb-randr0 libxcb-render-util0 libxcb-shape0 libxcb-sync1 libxcb-xfixes0 libxcb-xkb1 libxkbcommon-x11-0 libjpeg8 libtiff5 \
     # install debug tools
     iputils-ping nano tshark git tcpdump nethogs rsync \
     # install sumo tools
@@ -117,9 +110,16 @@ RUN apt clean && \
     # install iproute2
     iproute2 \
     # install dumb init to enable gracefully stopping container processes
-    dumb-init && \
+    dumb-init \
+    # install locales and set to UTF-8 for JSON Streamer 
+    locales && \
+    locale-gen en_US.UTF-8 && \
+    update-locale LANG=en_US.UTF-8 && \
     # cleanup apt lists
     rm -rf /var/lib/apt/lists/*
+
+# Set ENV for locales to UTF-8
+ENV LANG=en_US.UTF-8 LC_ALL=en_US.UTF-8
 
 # Install Python 3.7 and clean NumPy
 RUN apt-get clean && \
@@ -131,6 +131,7 @@ RUN apt-get clean && \
         python3.7 \
         python3.7-dev \
         python3.7-distutils \
+        libevdev-dev gcc g++\
         curl && \
     update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.7 100 && \
     update-alternatives --set python3 /usr/bin/python3.7 && \
@@ -147,13 +148,14 @@ RUN python3 -m pip install --no-cache-dir --user --force-reinstall "numpy<=1.21.
         "pygame==2.1.3" \
         pycrate \
         traci \
-        lxml==4.9.4 \
+        pynput \
+        requests \
+        "lxml==4.9.4" \
         "networkx==2.6.3" \
         "matplotlib<=3.5.3" && \
     python3 -m pip install --no-cache-dir --user "pandas==1.3.5" && \
     rm -rf /home/dt_user/.cache
 
-USER root
 RUN rm -rf /home/$USER/TENA
 USER $USER
 
@@ -161,7 +163,8 @@ COPY --chown=dt_user:dt_user --from=build /home/$USER/TENA /home/$USER/TENA
 
 RUN DSTROOT=/home/dt_user ./TENA/postinst-DV
 RUN DSTROOT=/home/dt_user ./TENA/postinst-TDCS
-# RUN DSTROOT=/home/dt_user ./TENA/postinst-JSON
+RUN sed -i '/^chown -R root/d;/^chgrp -R root/d' ./TENA/postinst-JSON
+RUN DSTROOT=/home/dt_user ./TENA/postinst-JSON
 
 COPY --chown=dt_user:dt_user --from=build /home/$USER/CARLA /home/$USER/CARLA
 

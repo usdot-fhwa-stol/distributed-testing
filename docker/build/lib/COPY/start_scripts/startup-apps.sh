@@ -38,7 +38,7 @@ if [[ $VUG_DOCKER_START_CONSOLE == true ]]; then
 fi
 
 # try to change carla map 
-if [[ $VUG_DOCKER_START_CARLA == true ]]; then
+if [[ $VUG_DOCKER_START_CARLA == "local" ]] || [[ $VUG_DOCKER_START_CARLA == "remote" ]]; then
    echo "CHANGING CARLA MAP TO: $VUG_CARLA_MAP_NAME"
 	python3 $HOME/distributed-testing/scripts/carla_python_scripts/config.py -m $VUG_CARLA_MAP_NAME --weather ClearNoon --host $VUG_CARLA_ADDRESS &
 
@@ -114,6 +114,20 @@ fi
 if [[ $VUG_DOCKER_START_TENA_CARLA_ADAPTER == true ]]; then
    echo "STARTING TENA CARLA ADAPTER"
    $HOME/distributed-testing/scripts/run_scripts/start-carla-tena-adapter.sh &
+
+   sleep 5s
+fi
+
+if [[ $VUG_DOCKER_START_JSON_STREAMER == true ]]; then
+   echo "STARTING JSON STREAMER"
+   $HOME/distributed-testing/scripts/run_scripts/start-json-streamer.sh &
+
+   sleep 5s
+fi
+
+if [[ $VUG_DOCKER_START_JSON_PUBLISHER == true ]]; then
+   echo "STARTING JSON PUBLISHER"
+   $HOME/distributed-testing/scripts/run_scripts/start-json-publisher.sh &
 
    sleep 5s
 fi

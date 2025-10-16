@@ -73,13 +73,13 @@ def on_press(key):
         print("Adding waypoint")
         follow_vehicle = get_veh_with_name(args.follow_vehicle)
 
-        event2_spawn["waypoints"].append(follow_vehicle.get_location())
+        spawn_data["waypoints"].append(follow_vehicle.get_location())
     elif key == Key.delete:
-        print("Adding waypoint")
+        print("Removing waypoint")
         follow_vehicle = get_veh_with_name(args.follow_vehicle)
 
-        if len(event2_spawn["waypoints"]) > 0:
-            event2_spawn["waypoints"].pop()
+        if len(spawn_data["waypoints"]) > 0:
+            spawn_data["waypoints"].pop()
         else:
             print("No waypoints to remove")
 
@@ -170,8 +170,13 @@ def draw_waypoints(world,map,waypoints,draw_arrows,veh_name):
         else:
             carma_route.append(f'{end_point_geo.longitude},{end_point_geo.latitude},0,{veh_name}_route_waypoint_{i_sp}')
         
-        
-        segment_waypoints = grp.trace_route(start_point, end_point) # there are other funcations can be used to generate a route in GlobalRoutePlanner.
+        try:
+            segment_waypoints = grp.trace_route(start_point, end_point) # there are other funcations can be used to generate a route in GlobalRoutePlanner.
+        except Exception as errMsg:
+            print(f"Error generating route: {errMsg}")
+            segment_waypoints = []
+
+            
 
         num_segment_waypoints = len(segment_waypoints)
         print(f"Added {num_segment_waypoints} points")
@@ -353,11 +358,25 @@ try:
     # }
 
     #loop
-    event2_spawn = {
-            "veh_in_order" : ["MCITY","FHWA", "ORNL", "ANL", "UCLA"],
+    # event2_spawn = {
+    #         "veh_in_order" : ["MCITY","FHWA", "ORNL", "ANL", "UCLA"],
+    #         "wp_btwn_veh" : 5,
+    #         "waypoints" : [
+    #             carla.Location(x=149.985428, y=-228.668350, z=244),          # start
+    #             carla.Location(x=109.453369, y=-60.563061, z=238.563339),   # mid 1
+    #             carla.Location(x=100.363297, y=63.378155, z=236.299454),    # mid 2
+    #             carla.Location(x=55.186951, y=42.167976, z=236.767197),     # mid 3
+    #             carla.Location(x=56.355728, y=-10.193906, z=237.101028),    # mid 4
+    #             carla.Location(x=57.891472, y=-66.892288, z=238.003296),    # mid 5
+    #             # carla.Location(x=78.490326, y=-120.598251, z=240.014816),   # mid 6
+    #             carla.Location(104.506683, y=-130.960526, z=241.668213),    # end
+    #         ],
+    # }
+    energy_campaign = {
+            "veh_in_order" : ["UCLA"],
             "wp_btwn_veh" : 5,
             "waypoints" : [
-                carla.Location(x=149.985428, y=-228.668350, z=244),          # start
+                carla.Location(x=38.990860, y=716.867981, z=-0.019051),          # start
                 carla.Location(x=109.453369, y=-60.563061, z=238.563339),   # mid 1
                 carla.Location(x=100.363297, y=63.378155, z=236.299454),    # mid 2
                 carla.Location(x=55.186951, y=42.167976, z=236.767197),     # mid 3
@@ -367,6 +386,8 @@ try:
                 carla.Location(104.506683, y=-130.960526, z=241.668213),    # end
             ],
     }
+
+    spawn_data = energy_campaign
 
     drawing_lifetime = args.lifetime
     draw_loop_sleep = args.lifetime
@@ -392,7 +413,7 @@ try:
         listener.start()
         print("Keyboard listener started")
         
-        event2_spawn["waypoints"] = []
+        spawn_data["waypoints"] = []
 
         while True:
             world = client.get_world()
@@ -402,15 +423,15 @@ try:
             
 
             
-            if len(event2_spawn["waypoints"]) > 0:
+            if len(spawn_data["waypoints"]) > 0:
                 # add vehicle as final dest
-                event2_spawn["waypoints"].append(follow_vehicle.get_location())
-                # try:
-                draw_waypoints(world,map,event2_spawn["waypoints"],True,"")
-                # except Exception as errMsg:
-                #     print("UNABLE TO FIND ROUTE")
-                #     print(errMsg)
-                event2_spawn["waypoints"].pop()
+                spawn_data["waypoints"].append(follow_vehicle.get_location())
+                try:
+                    draw_waypoints(world,map,spawn_data["waypoints"],True,"")
+                except Exception as errMsg:
+                    print("UNABLE TO FIND ROUTE")
+                    print(errMsg)
+                spawn_data["waypoints"].pop()
             else:
                 print("No waypoints added. Add a new waypoint by pressing SPACE")
 
@@ -419,15 +440,15 @@ try:
             time.sleep(draw_loop_sleep)
     else:
         
-        waypoint_data = draw_waypoints(world,map,event2_spawn["waypoints"],False,"")
+        waypoint_data = draw_waypoints(world,map,spawn_data["waypoints"],False,"")
         num_waypoints = len(waypoint_data["x"])
         print("num_waypoints: " + str(num_waypoints))
-        new_event2_spawns = []
+        new_spawns = []
 
-        for i_v,veh_name in enumerate(event2_spawn["veh_in_order"]):
+        for i_v,veh_name in enumerate(spawn_data["veh_in_order"]):
             
             start_waypoint_index = 0 + (start_vehicle_wp_spacing * i_v)
-            end_waypoint_index = (num_waypoints -1) - (end_vehicle_wp_spacing * (len(event2_spawn["veh_in_order"]) - 1 - i_v))
+            end_waypoint_index = (num_waypoints -1) - (end_vehicle_wp_spacing * (len(spawn_data["veh_in_order"]) - 1 - i_v))
 
             print(veh_name + " start_waypoint_index: " + str(start_waypoint_index))
             print(veh_name + " end_waypoint_index: " + str(end_waypoint_index))
@@ -438,7 +459,7 @@ try:
                 "waypoints" : []
             }
 
-            for i_sp,this_waypoint in enumerate(event2_spawn["waypoints"]):
+            for i_sp,this_waypoint in enumerate(spawn_data["waypoints"]):
                 if i_sp == 0:
                     new_waypoint = carla.Location(
                         x=waypoint_data["x"][start_waypoint_index], 
@@ -446,7 +467,7 @@ try:
                         z=waypoint_data["z"][start_waypoint_index]
                     )
 
-                elif i_sp == (len(event2_spawn["waypoints"]) -1):
+                elif i_sp == (len(spawn_data["waypoints"]) -1):
                     new_waypoint = carla.Location(
                         x=waypoint_data["x"][end_waypoint_index], 
                         y=waypoint_data["y"][end_waypoint_index], 
@@ -460,10 +481,10 @@ try:
                 
             print(f'this_spawn: {this_spawn}')    
 
-            new_event2_spawns.append(this_spawn)
+            new_spawns.append(this_spawn)
 
 
-        for test_spawn in new_event2_spawns:
+        for test_spawn in new_spawns:
             # world.debug.draw_string(test_spawn["spawn_point"], "o", draw_shadow=False,color = carla.Color(r=255, g=255, b=0), life_time=drawing_lifetime,persistent_lines=True)
             print("\nDrawing: " + test_spawn["name"])
             # world.debug.draw_string(test_spawn["spawn_point"], "     " + test_spawn["name"], draw_shadow=False,color = carla.Color(r=255, g=255, b=0), life_time=drawing_lifetime,persistent_lines=True)

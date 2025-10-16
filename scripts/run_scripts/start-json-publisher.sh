@@ -1,7 +1,7 @@
-#/bin/bash
+#!/bin/bash
 
 #  *
-#  * Copyright (C) 2022 LEIDOS.
+#  * Copyright (C) 2025 LEIDOS.
 #  *
 #  * Licensed under the Apache License, Version 2.0 (the "License"); you may not
 #  * use this file except in compliance with the License. You may obtain a copy o\
@@ -16,7 +16,6 @@
 #  * License for the specific language governing permissions and limitations under
 #  * the License.
 #  *
-
 
 dt_site_config=$HOME/.dt_site_config
 dt_scenario_config=$HOME/.dt_scenario_config
@@ -65,18 +64,18 @@ else
     exit 1
 fi
 
-adapterVerbosity='4'
+adapterVerbosity='1'
 
 mkdir -p $VUG_ADAPTER_LOG_PATH
 
-adapterLogFile=$VUG_ADAPTER_LOG_PATH/tdcs_terminal_out.log
+adapterLogFile=$VUG_ADAPTER_LOG_PATH/json_publisher_terminal_out.log
 
 useBestEffort=''
 if [[ $VUG_USE_BEST_EFFORT == true ]]; then
     useBestEffort='-bestEffort'
 fi
 
-echo "<< ***** Adapter Started **** >>" > $adapterLogFile
+echo "<< ***** Adapter Started ***** >>" > $adapterLogFile
 date >> $adapterLogFile
 
 # open a new file descriptor for logging
@@ -87,17 +86,4 @@ BASH_XTRACEFD=4
 
 set -x
 
-if [ -d "$VUG_LOG_FILES_ROOT/tdcs_data" ]; then
-   echo "TDCS Log directory exists"
-else
-   echo "Creating TDCS Log directory"
-   mkdir -p $VUG_LOG_FILES_ROOT/tdcs_data
-fi
-
-cd $VUG_LOG_FILES_ROOT/tdcs_data
-
-timestamp=$(date -d "today" +"%Y%m%d%H%M%S")
-
-tdcs_file_name=$VUG_SIM_ID'_'$timestamp
-
-$VUG_TDCS_PATH/start.sh $useBestEffort -emEndpoints $VUG_EM_ADDRESS:$VUG_EM_PORT -listenEndpoints $VUG_LOCAL_ADDRESS -databaseName $tdcs_file_name.sqlite -dbFolder .
+$VUG_JSON_PUBLISHER_PATH/start.sh $useBestEffort -emEndpoints $VUG_EM_ADDRESS:$VUG_EM_PORT -listenEndpoints $VUG_LOCAL_ADDRESS -serverEndpoint $VUG_LOCAL_ADDRESS:8004 -verbosity $adapterVerbosity -printSDOs | awk -v adapter="[$VUG_JSON_PUBLISHER_VERSION]" '{print adapter, $0, fflush(); }' | tee -a $adapterLogFile

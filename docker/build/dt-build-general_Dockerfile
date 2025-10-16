@@ -1,11 +1,12 @@
-FROM usdotfhwastoldev/dt-base:latest
+FROM harbor.saxtonlab.duckdns.org/distributed-testing/dt-base:dev-latest
 
 # Make sure that the docker container gets enough memory or the compiler will crash building the CppClient
 # On macos I increased the memory available from 2.0GB to 6.0GB.  I didn't try lower than this yet.
 # The settings are for the VM that runs the containers and can be accessed through the Docker UI settings.
 # Click on the gear icon (Setting) | Resoures then increase the memory.
 
-# VERSION=P-0.0.3 && sudo docker build --secret id=usdotfhwastol_token,src=usdotfhwastol_token --build-arg VERSION=$VERSION -t usdotfhwastoldev/dt-build-general:$VERSION . --progress=plain -f build-general_Dockerfile
+# VERSION=0.0.2 && sudo docker build --secret id=usdotfhwastol_token,src=usdotfhwastol_token --build-arg VERSION=$VERSION -t harbor.saxtonlab.duckdns.org/distributed-testing/dt-build-general:$VERSION . --progress=plain -f dt-build-general_Dockerfile
+# VERSION=0.0.2 && docker tag harbor.saxtonlab.duckdns.org/distributed-testing/dt-build-general:$VERSION harbor.saxtonlab.duckdns.org/distributed-testing/dt-build-general:latest
 
 ARG DEBIAN_FRONTEND="noninteractive" 
 ARG TZ="America/New_York"
@@ -17,8 +18,9 @@ WORKDIR /home/dt_user
 
 USER root
 
+# libboost-all-dev
 RUN apt update && apt-get install -y \
-    cmake cmake-data git build-essential libboost-all-dev clang g++ lld ninja-build \
+    cmake cmake-data git build-essential clang gcc-11 g++-11 lld ninja-build \
     libvulkan1 libpng-dev libtiff5-dev libjpeg-dev tzdata sed curl openssl unzip autoconf libtool rsync libxml2-dev
 
 RUN --mount=type=secret,id=usdotfhwastol_token \
@@ -26,6 +28,6 @@ RUN --mount=type=secret,id=usdotfhwastol_token \
     git clone https://${USDOTFHWASTOL_TOKEN}@github.com/usdot-fhwa-stol/vug-cmake-package.git cmake_temp && \
     chown -R dt_user:dt_user cmake_temp && \
 	mv cmake_temp/cmake/ /home/dt_user/TENA/lib/ && \
-	rm -rf cmake_temp   
+	rm -rf cmake_temp
 
 USER dt_user

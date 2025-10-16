@@ -1,5 +1,5 @@
 #
-# BUILD COMMAND: VERSION=0.0.1 && sudo DOCKER_BUILDKIT=1 docker build --build-arg version=$VERSION -t usdotfhwastoldev/dt-carla:0-9-15-$VERSION . --progress=plain -f dt-carla-0-9-15_Dockerfile
+# BUILD COMMAND: VERSION=0.0.1 && sudo DOCKER_BUILDKIT=1 docker build --build-arg version=$VERSION -t harbor.saxtonlab.duckdns.org/distributed-testing/dt-carla:0-9-15-$VERSION . --progress=plain -f dt-carla-0-9-15_Dockerfile
 #
 
 FROM carlasim/carla:0.9.15
@@ -14,9 +14,10 @@ SHELL ["/bin/bash", "-ec"]
 ARG DEBIAN_FRONTEND="noninteractive" 
 ARG TZ="America/New_York"
 
-# RUN --mount=type=bind,target=./Import,readonly,source=./lib/MAPS \
-#     sed -i 's/--keep-newer-files/--skip-old-files/' ImportAssets.sh && \
-#     ./ImportAssets.sh 
+RUN --mount=type=bind,target=./Import,readonly,source=./lib/MAPS_915 \
+    ls ./Import && \
+    # sed -i 's/--keep-newer-files/--skip-old-files/' ImportAssets.sh && \
+    ./ImportAssets.sh 
 
 # COPY ./lib/CARLA_TFHRC /home/CARLA_TFHRC
 
@@ -38,7 +39,7 @@ USER carla
 COPY ./lib/COPY/start_scripts /home/carla/start_scripts
 COPY ./lib/COPY/.dt_site_config_docker /home/carla/.dt_site_config_docker
 COPY ./lib/COPY/.dt_scenario_config_docker /home/carla/.dt_scenario_config_docker
-COPY ./lib/COPY/VOICES_Limited_License_V0.2.pdf /home/carla/VOICES_Limited_License_V0.2.pdf
+# COPY ./lib/COPY/VOICES_Limited_License_V0.2.pdf /home/carla/VOICES_Limited_License_V0.2.pdf
 
 USER root
 
