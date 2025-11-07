@@ -192,18 +192,26 @@ if [[ $VUG_DOCKER_START_TENA_CARLA_ADAPTER == true ]]; then
    sleep 5s
 fi
 
-if [[ $VUG_DOCKER_START_JSON_STREAMER == true ]]; then
-   echo "STARTING JSON STREAMER"
-   $HOME/distributed-testing/scripts/run_scripts/start-json-streamer.sh &
+if [[ $VUG_DOCKER_START_JSON_PUBLISHER == true]] || [[ $VUG_DOCKER_START_JSON_STREAMER == true]]; then
 
-   sleep 5s
-fi
+   if [[ $VUG_DOCKER_START_JSON_STREAMER == true ]]; then
+      echo "test"
+      echo "STARTING JSON STREAMER"
+      $HOME/distributed-testing/scripts/run_scripts/start-json-streamer.sh &
 
-if [[ $VUG_DOCKER_START_JSON_PUBLISHER == true ]]; then
-   echo "STARTING JSON PUBLISHER"
-   $HOME/distributed-testing/scripts/run_scripts/start-json-publisher.sh &
+      sleep 5s
+   fi
 
-   sleep 5s
+   if [[ $VUG_DOCKER_START_JSON_PUBLISHER == true ]]; then
+      echo "STARTING JSON PUBLISHER"
+      $HOME/distributed-testing/scripts/run_scripts/start-json-publisher.sh &
+
+      sleep 5s
+   fi
+
+   echo "STARTING JSON TOOLS INTERFACE"
+      python3 $HOME/distributed-testing/scripts/json_scripts/json_tools_interface.py
+
 fi
 
 if [[ $VUG_DOCKER_START_V2X_ADAPTER == true ]]; then
