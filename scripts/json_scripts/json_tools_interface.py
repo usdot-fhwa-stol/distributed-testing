@@ -432,11 +432,11 @@ def transmit_object_json(object_json_list, EntityMap, session: requests.Session)
 
         # Set the object and entity type for the publisher url
         if object_json.get("attributes",{}).get("landVehicleData") is not None:
-            object_type = 'VUG-LandVehicle-v1.1.2'
-            entity_type = 'VUG::Entities::LandVehicle' 
+            object_type = 'DOT_OSTR-LandVehicle-v1.1.2'
+            entity_type = 'DOT_OSTR::Entities::LandVehicle' 
         elif object_json.get("attributes",{}).get("trafficSignalPhases") is not None:
-            object_type = 'VUG-TrafficSignalController-v1.1.2'
-            entity_type = 'VUG::Entities::TrafficSignalController'
+            object_type = 'DOT_OSTR-TrafficSignalController-v1.3.4'
+            entity_type = 'DOT_OSTR::Entities::TrafficSignalController'
         
         tena_publisher_url = f"http://{PUBLISHER_ENDPOINT}/v1/objects/{object_type}/{entity_type}"
         
@@ -571,7 +571,7 @@ def get_count_of_objects(type_counts, type_name, stdout_lock):
     # Build display string
     display_types = []
     for name, count in type_counts.items():
-        short_name = name.split("::")[-1]  # Get last part of each type_name after the "::" (ex. VUG::Entities::LandVehicle)
+        short_name = name.split("::")[-1]  # Get last part of each type_name after the "::" (ex. DOT_OSTR::Entities::LandVehicle)
         display_types.append(f"{short_name}: {count}")
                 
     # Update the same line with current counts
@@ -626,7 +626,7 @@ def receive_main(mapOrigin_queue, stdout_lock):
             type_name = json_data["metadata"]["type_name"]
 
             # Gets the map origin from the scenario json and puts it in a queue for the send thread to use
-            if type_name == "VUG::Configuration::Scenario":
+            if type_name == "DOT_OSTR::Configuration::Scenario":
                 map_origin = json_templates.get_map_origin_from_scenario(json_data)
                 logging.info(f"Map Origin received from Scenario: {map_origin}")
                 mapOrigin_queue.put(map_origin)
