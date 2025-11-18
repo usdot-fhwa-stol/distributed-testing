@@ -151,7 +151,7 @@ class LocalPlanner(object):
 
     def follow_speed_limits(self, value=True):
         """
-        Activates a flag that makes the max speed dynamically vary according to the spped limits
+        Activates a flag that makes the max speed dynamically vary according to the speed limits
 
         :param value: bool
         :return:

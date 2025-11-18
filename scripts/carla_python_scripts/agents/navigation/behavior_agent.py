@@ -77,12 +77,16 @@ class BehaviorAgent(BasicAgent):
         vehicle based on the surrounding world.
         """
         self._speed = get_speed(self._vehicle)
-        if manual_speed_limit:
+        if manual_speed_limit != None:
             self._speed_limit = manual_speed_limit
         else:
             self._speed_limit = self._vehicle.get_speed_limit()
-            print(f"speedLimit: {self._speed_limit}")
-        self._local_planner.set_speed(self._speed_limit)
+            # print(f"speedLimit: {self._speed_limit}")
+
+        # self._speed_limit = self._vehicle.get_speed_limit()
+        # self._speed_limit = 50
+        # print(f"speedLimit: {self._speed_limit}")
+        self._local_planner.set_speed(self._speed_limit) 
         self._direction = self._local_planner.target_road_option
         if self._direction is None:
             self._direction = RoadOption.LANEFOLLOW
@@ -250,14 +254,14 @@ class BehaviorAgent(BasicAgent):
 
         return control
 
-    def run_step(self, debug=False):
+    def run_step(self, debug=False, manual_speed_limit=None):
         """
         Execute one step of navigation.
 
             :param debug: boolean for debugging
             :return control: carla.VehicleControl
         """
-        self._update_information()
+        self._update_information(manual_speed_limit=manual_speed_limit)
         
 
         control = None
@@ -317,6 +321,7 @@ class BehaviorAgent(BasicAgent):
             self._local_planner.set_speed(target_speed)
             control = self._local_planner.run_step(debug=debug)
 
+        # print(f'Target speed: {target_speed}')
         return control
 
     def emergency_stop(self):
