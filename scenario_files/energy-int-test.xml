@@ -21,6 +21,16 @@
         </initialTSPI>
     </vehicle>
 
+    <vehicle name="ORNL-M-1" bsmid="f03ad638" type="vehicle.toyota.prius" owner="CARLA-ORNL-1" material="Aluminum" lvcIndicator="Virtual">
+        <userData>
+             <CARMA CARLAcosimulationIdentifier="CARLA-ORNL-1" roleName="ORNL-M-1" generate_bsms="true"/>
+        </userData>
+        <initialTSPI>
+            <GeodeticPosition latitudeInDegrees="0.001800" longitudeInDegrees="0.001122" heightAboveEllipsoidInMeters="1"> </GeodeticPosition>
+            <Heading>21.85235</Heading>
+        </initialTSPI>
+    </vehicle>
+
     <vehicle name="SWRI-AUTO-1" bsmid="f03ad627" type="vehicle.toyota.prius" owner="JSON-SWRI-1" material="Aluminum" lvcIndicator="Constructive">
         <userData>
              <CARMA CARLAcosimulationIdentifier="JSON-SWRI-1" roleName="SWRI-AUTO-1" generate_bsms="true"/>
@@ -44,6 +54,16 @@
     <vehicle name="ANL-AUTO-1" bsmid="f03ad626" type="vehicle.toyota.prius" owner="JSON-ANL-1" material="Aluminum" lvcIndicator="Constructive">
         <userData>
              <CARMA CARLAcosimulationIdentifier="JSON-ANL-1" roleName="ANL-AUTO-1" generate_bsms="true"/>
+        </userData>
+        <initialTSPI>
+            <GeodeticPosition latitudeInDegrees="0.001906" longitudeInDegrees="0.000843" heightAboveEllipsoidInMeters="1"> </GeodeticPosition>
+            <Heading>21.85235</Heading>
+        </initialTSPI>
+    </vehicle>
+
+    <vehicle name="ANL-M-1" bsmid="f03ad636" type="vehicle.toyota.prius" owner="CARLA-ANL-1" material="Aluminum" lvcIndicator="Virtual">
+        <userData>
+             <CARMA CARLAcosimulationIdentifier="CARLA-ANL-1" roleName="ANL-M-1" generate_bsms="true"/>
         </userData>
         <initialTSPI>
             <GeodeticPosition latitudeInDegrees="0.001906" longitudeInDegrees="0.000843" heightAboveEllipsoidInMeters="1"> </GeodeticPosition>
@@ -101,7 +121,7 @@
           <controllers>
           <!--     this is spat linking, we only use ID as name isnt required  -->
           <!--   in future, maybe we try to check for both, but just ID for now-->
-            <controller name="" id="100"/>
+            <controller name="" id="1"/>
           </controllers>      
         </CARLA>
       </userData>
@@ -110,23 +130,23 @@
 
   <phaseSignalMappings>
   <!-- name of config doesnt matter, match controllerName with intersectionSignalController name  -->
-    <controllerMapping name="DelAve_01 Configuration" controllerName="DelAve_01">
-
-        <trafficSignalPhase phase="2" >
-            <trafficSignalHead signalHeadID="1629"/>
-        </trafficSignalPhase>
-        <trafficSignalPhase phase="6" >
-            <trafficSignalHead signalHeadID="1629"/>
-        </trafficSignalPhase>
-        <trafficSignalPhase phase="4" >
-            <trafficSignalHead signalHeadID="1629"/>
-        </trafficSignalPhase>
-        <trafficSignalPhase phase="8" >
-            <trafficSignalHead signalHeadID="1629"/>
-        </trafficSignalPhase>
-
-    </controllerMapping>
-
+    <configuration name="DelAve_01 Configuration" controllerName="DelAve_01">
+      <controller name="" id="">
+        <control signalId="102" type=""> <!-- SB, Actor 135 -->
+          <userData><phase>2</phase></userData>
+        </control>
+      </controller>
+      <controller name="" id="">
+        <control signalId="100" type=""> <!-- NB, Actor 122 -->
+          <userData><phase>4</phase></userData>
+        </control>
+      </controller>
+      <controller name="" id="">
+        <control signalId="101" type=""> <!-- WB, Actor 124 -->
+          <userData><phase>8</phase></userData>
+        </control>
+      </controller>
+    </configuration>
 
   </phaseSignalMappings>
 
@@ -148,6 +168,10 @@
       <WeatherState>ClearNoon</WeatherState>
     </simulation>
 
+    <simulation name="CARLA-SWRI-1" type="CARLA">
+      <WeatherState>ClearNoon</WeatherState>
+    </simulation>
+
     <simulation name="JSON-SWRI-1" type="JSON">
       <WeatherState>ClearNoon</WeatherState>
     </simulation>
@@ -157,6 +181,10 @@
     </simulation>
 
     <simulation name="JSON-ANL-1" type="JSON">
+      <WeatherState>ClearNoon</WeatherState>
+    </simulation>
+
+    <simulation name="CARLA-ANL-1" type="CARLA">
       <WeatherState>ClearNoon</WeatherState>
     </simulation>
 
