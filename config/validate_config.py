@@ -20,6 +20,7 @@ def parse_config(path):
     """
 
     exports = {}
+    invalid_lines = []
     inside_if_block = False
 
     with open(path, 'r') as f:
@@ -47,12 +48,14 @@ def parse_config(path):
             if match:
                 var, val = match.groups()
                 exports[var] = val.strip()
+            else:
+                invalid_lines.append(stripped)
     
-    return exports
+    return exports, invalid_lines
 
 def compare_config(default_path, user_path):
-    default_vars = parse_config(default_path)
-    user_vars = parse_config(user_path)
+    default_vars, _ = parse_config(default_path)
+    user_vars, user_invalid = parse_config(user_path)
 
     default_keys = set(default_vars.keys())
     user_keys = set(user_vars.keys())
@@ -93,7 +96,14 @@ def compare_config(default_path, user_path):
 
     print()
 
-    if added or removed:
+    if user_invalid:
+        print("Found unrecognized lines in user config:")
+        for line in user_invalid:
+            print("  ", line)
+
+    print()
+
+    if added or removed or user_invalid:
         return True
     else:
         return False
@@ -106,8 +116,7 @@ def update_user_config(default_path, user_path):
     """
 
     # Read vars
-    default_vars = parse_config(default_path)
-    user_vars = parse_config(user_path)
+    user_vars, _ = parse_config(user_path)
 
     # Backup User Config
     backup_path = user_path + ".bak"
