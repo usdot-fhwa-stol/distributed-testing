@@ -260,6 +260,7 @@ dt-config__create() {
     fi
 
     echo "New $type config created at: $new_config_path"
+    chmod 664 $new_config_path
 }
 
 dt-config__validate() {
