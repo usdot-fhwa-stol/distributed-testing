@@ -54,3 +54,6 @@ docker/build/lib/OLD
 docker/build/lib/CARLA_TFHRC
 
 # ignore SUMO pycache
+
+# ignore jsonl log files
+*.jsonl

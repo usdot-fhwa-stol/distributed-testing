@@ -2,6 +2,7 @@
 import time
 import json
 import socket
+import os
 from datetime import datetime
 import argparse
 from argparse import RawTextHelpFormatter
@@ -95,6 +96,8 @@ def build_spat_for_intersection(
     intersection_id,
     moy,
     time_mark,
+    main_phase_groups,
+    side_phase_groups,
     main_state,
     main_rem,
     side_state,
@@ -134,11 +137,11 @@ def build_spat_for_intersection(
         }
 
     states = []
-    # Main street: groups 2 and 6
-    for sg in (2, 6):
+    # Main street phase groups
+    for sg in main_phase_groups:
         states.append(make_state(sg, main_state, main_rem))
-    # Side street: groups 4 and 8
-    for sg in (4, 8):
+    # Side street phase groups
+    for sg in side_phase_groups:
         states.append(make_state(sg, side_state, side_rem))
 
     spat = {
@@ -194,9 +197,69 @@ def print_frame_log(intersection_id, debug_info, hex_str):
         f"[SPaT] Int {intersection_id} | "
         f"{debug_info['timestamp']} | "
         f"Main: {debug_info['main_state']} ({debug_info['main_remaining']}s) | "
-        f"Side: {debug_info['side_state']} ({debug_info['side_remaining']}s)\n"
+        f"Side: {debug_info['side_state']} ({debug_info['side_remaining']}s) | "
+        f"Groups main={debug_info['main_groups']}, side={debug_info['side_groups']}\n"
         f"   HEX: {hex_str}\n"
     )
+
+
+def load_phase_config(path):
+    """
+    Load phase group configuration from JSON.
+
+    Expected JSON formats (choose one):
+      {
+        "defaults": {"main_phase_groups": [2,6], "side_phase_groups": [4,8]},
+        "intersections": [
+          {"id": 100, "main_phase_groups": [10,12], "side_phase_groups": [14,16]},
+          {"id": 101, "main_phase_groups": [2,6], "side_phase_groups": [4,8]}
+        ]
+      }
+
+    or a simple mapping:
+      {
+        "100": {"main_phase_groups": [10,12], "side_phase_groups": [14,16]},
+        "defaults": {"main_phase_groups": [2,6], "side_phase_groups": [4,8]}
+      }
+    """
+    if not path:
+        raise ValueError("A config file is required; provide --config <path>")
+
+    path = os.path.expanduser(path)
+    with open(path, "r", encoding="utf-8") as f:
+        data = json.load(f)
+
+    # Hard defaults if not specified in the file
+    default_main = [2, 6]
+    default_side = [4, 8]
+
+    def extract_phase_groups(entry):
+        return (
+            entry.get("main_phase_groups", default_main),
+            entry.get("side_phase_groups", default_side),
+        )
+
+    overrides = {}
+
+    if isinstance(data, dict):
+        if "intersections" in data and isinstance(data["intersections"], list):
+            for item in data["intersections"]:
+                if not isinstance(item, dict) or "id" not in item:
+                    continue
+                main_groups, side_groups = extract_phase_groups(item)
+                overrides[int(item["id"])] = {"main": main_groups, "side": side_groups}
+        else:
+            for key, val in data.items():
+                if key == "defaults" or not isinstance(val, dict):
+                    continue
+                main_groups, side_groups = extract_phase_groups(val)
+                try:
+                    overrides[int(key)] = {"main": main_groups, "side": side_groups}
+                except ValueError:
+                    continue
+
+    defaults = {"main": default_main, "side": default_side, "intersections": list(overrides.keys())}
+    return defaults, overrides
 
 
 def main():
@@ -218,10 +281,11 @@ def main():
             "    - Ensure every intersection ID you send exists in the scenario XML under \n"
             "      intersectionSignalControllers and phaseSignalMappings\n\n"
             "Examples:\n"
-            "  - Single intersection to a local receiver:\n"
-            "      ./spat_generator.py --intersection-ids 100 --ip 127.0.0.1 --port 1516\n\n"
-            "  - Multiple intersections with custom timings and slower rate:\n"
-            "      ./spat_generator.py --intersection-ids 100 101 --hz 5 \\\n"
+            "Examples:\n"
+            "  - Config-driven intersections to a local receiver:\n"
+            "      ./spat_generator.py --config ./spat_config.json --ip 127.0.0.1 --port 1516\n\n"
+            "  - Multiple intersections with custom timings and slower rate (IDs come from config):\n"
+            "      ./spat_generator.py --config ./spat_config.json --hz 5 \\\n"
             "        --green-main 25 --yellow-main 4 --red-main 3 \\\n"
             "        --green-side 15 --yellow-side 4 --red-side 3\n\n"
             "Press Ctrl+C to stop the generator."
@@ -235,13 +299,14 @@ def main():
         help="Print raw SPaT JER payloads before encoding",
     )
 
-    # Multiple intersection IDs
     parser.add_argument(
-        "--intersection-ids",
-        type=int,
-        nargs="+",
-        default=[100],
-        help="Space-separated list of intersection IDs to emit (default: 100)",
+        "--config",
+        type=str,
+        required=True,
+        help=(
+            "Path to JSON config with per-intersection phase group IDs. "
+            "Intersections emitted are derived from the config; no default intersection IDs."
+        ),
     )
 
     parser.add_argument(
@@ -319,17 +384,29 @@ def main():
     interval = 1.0 / args.hz
     sim_start_time = time.time()
 
+    defaults, intersection_overrides = load_phase_config(args.config)
+    intersection_ids = defaults.get("intersections", [])
+    if not intersection_ids:
+        raise ValueError("No intersections defined in config; add entries with IDs and phase groups.")
+
+    def get_phase_groups(intersection_id):
+        groups = intersection_overrides.get(intersection_id)
+        if groups:
+            return groups["main"], groups["side"]
+        return defaults["main"], defaults["side"]
+
     # UDP socket
     sk = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     target = (args.ip, args.port)
 
     print("Press Ctrl+C to stop\n")
     print(
-        f"Intersections: {args.intersection_ids} | "
+        f"Intersections: {intersection_ids} | "
         f"Main G/Y/R = {cfg['green_main']}/{cfg['yellow_main']}/{cfg['red_main']} s | "
         f"Side G/Y/R = {cfg['green_side']}/{cfg['yellow_side']}/{cfg['red_side']} s | "
         f"Rate: {args.hz} Hz | "
-        f"UDP target: {args.ip}:{args.port}\n"
+        f"UDP target: {args.ip}:{args.port} | "
+        f"Default groups main={defaults['main']}, side={defaults['side']}\n"
     )
 
     try:
@@ -351,11 +428,17 @@ def main():
             }
 
             # Build, encode, log, and send for each intersection
-            for intersection_id in args.intersection_ids:
+            for intersection_id in intersection_ids:
+                main_groups, side_groups = get_phase_groups(intersection_id)
+                debug_info["main_groups"] = main_groups
+                debug_info["side_groups"] = side_groups
+
                 spat_jer = build_spat_for_intersection(
                     intersection_id,
                     moy,
                     time_mark,
+                    main_groups,
+                    side_groups,
                     main_state,
                     main_rem,
                     side_state,

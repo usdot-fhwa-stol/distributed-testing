@@ -5,7 +5,7 @@
   </identifier>
   <OpenDrive>
     <MapFileName name="DelaveV21.xodr">
-      <MapOrigin latitudeInDegrees="0.00841723681631434" longitudeInDegrees="0.00773563408642701" heightAboveEllipsoidInMeters="0"> </MapOrigin>
+      <MapOrigin latitudeInDegrees="39.68854712116352" longitudeInDegrees="-75.74805413881644" heightAboveEllipsoidInMeters="0"> </MapOrigin>
     </MapFileName>
   </OpenDrive>
 
@@ -184,15 +184,6 @@
       </userData>
     </intersectionSignalController>
 
-    <intersectionSignalController name="DelAve_08" adapterType="spat-adapter" adapterName="SPAT-1" lvcIndicator="Live">
-      <userData>
-        <CARLA>
-          <controllers>
-            <controller name="" id="8"/>
-          </controllers>      
-        </CARLA>
-      </userData>
-    </intersectionSignalController>
 
     <intersectionSignalController name="DelAve_09" adapterType="spat-adapter" adapterName="SPAT-1" lvcIndicator="Live">
       <userData>
@@ -225,12 +216,12 @@
       </controller>
       <controller name="" id="">
         <control signalId="100" type=""> 
-          <userData><phase>4</phase></userData>
+          <userData><phase>3</phase></userData>
         </control>
       </controller>
       <controller name="" id="">
         <control signalId="101" type=""> 
-          <userData><phase>8</phase></userData>
+          <userData><phase>4</phase></userData>
         </control>
       </controller>
     </configuration>
@@ -343,7 +334,7 @@
       </controller>
       <controller name="" id="">
         <control signalId="901" type=""> 
-          <userData><phase>8</phase></userData>
+          <userData><phase>3</phase></userData>
         </control>
       </controller>
     </configuration>
