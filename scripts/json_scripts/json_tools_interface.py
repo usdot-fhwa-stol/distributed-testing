@@ -587,10 +587,10 @@ def get_count_of_objects(type_counts, type_name, stdout_lock):
 
 def receive_main(mapOrigin_queue, stdout_lock):
     """
-        Start a UDP server to receive object SDOs in JSON format
+        Start a TCP server to receive object SDOs in JSON format
 
-        This function creates a UDP socket, binds it to a configurable host and port, and listens for incoming connections.
-        When a client connects, it receives up to 8192 bytes of data, decodes it as UTF-8, and prints it to the console.
+        This function creates a TCP socket, binds it to a configurable host and port, and listens for incoming connections.
+        When a client connects, it receives up to 16 KB bytes of data, decodes it as UTF-8, and prints it to the console.
 
         Parameters
         ----------
@@ -616,7 +616,7 @@ def receive_main(mapOrigin_queue, stdout_lock):
 
     sock.bind((HOST, PORT))
     sock.listen(1)
-    print(f"Server listening on {HOST}:{PORT} for UDP data...")
+    print(f"Server listening on {HOST}:{PORT} for TCP data...")
 
     conn, addr = sock.accept()
     buffer = b""
