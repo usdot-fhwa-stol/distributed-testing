@@ -63,16 +63,19 @@ import json_templates
 # Global Configurations
 # =================================
 LOCAL_ADDRESS = os.environ['VUG_LOCAL_ADDRESS']
+# LISTEN_IP = '0.0.0.0'
+# WSL_IP = '172.xx.xx.xx'
 SELECTED_WAYPOINT_CSV = "/home/dt_user/distributed-testing/scripts/json_scripts/delave_waypoints.csv" # CSV file containing waypoint data
 GET_OBJECT_TYPE = "waypoints"  # options are "waypoints" or "api"
 COORDINATE_FORMAT = "ltpENU" # options are "geocentric" or "ltpENU"
-PUBLISHER_IP = LOCAL_ADDRESS
-PUBLISHER_ENDPOINT = LOCAL_ADDRESS + ":8004" #IP for TENA Publisher connection
-STREAMER_IP = LOCAL_ADDRESS
-STREAMER_DATA_ENDPOINT = LOCAL_ADDRESS + ":8005"
+PUBLISHER_IP = LOCAL_ADDRESS # WSL_IP when running script from Windows (not in WSL)
+PUBLISHER_ENDPOINT = PUBLISHER_IP + ":8004" #IP for TENA Publisher connection
+STREAMER_IP = LOCAL_ADDRESS # LISTEN_IP when running script from Windows (not in WSL)
+STREAMER_DATA_ENDPOINT = STREAMER_IP + ":8005"
 DATA_UPDATE_PERIOD = 0.1 # Period for retrieval of data (in seconds)
 INDIVIDUAL_TRANSMIT_DELAY = 0.002 # Period between transmission of individual entities to the REST API
 LOGGING_LEVEL = logging.DEBUG # sets the minimum level to log [DEBUG, INFO, WARNING, ERROR, CRITICAL]
+LOG_PATH = os.getenv("VUG_LOCAL_DT_PATH") # Path to where logs should be stored
 
 ENTITY_ID = "03:05" # Unique identifier used to determine entityID of the object JSON
 VEHICLE_LIST = {    # List of vehicles you will be providing updates for
@@ -111,13 +114,13 @@ def setup_logging(level=logging.INFO):
             Minimum level of logging that will be captured in the log file. Default is INFO
     """
 
-    # Gets the path to save your logs to, creates it if it doesn't already exist. ".../distributed-testing/logs/json_script_logs/"
-    dt_path = os.getenv("VUG_LOCAL_DT_PATH")
+    # Gets the path to save your logs to, creates it if it doesn't already exist. "LOG_PATH/logs/json_script_logs/"
+    dt_path = LOG_PATH
     if not dt_path:
-        raise ValueError("Environment variable VUG_LOCAL_DT_PATH not set")
+        raise ValueError("LOG PATH not valid")
     log_folder = os.path.join(dt_path, "logs/json_script_logs/")
     os.makedirs(log_folder, exist_ok=True)
-    os.chmod(log_folder, 0o777) # Modifies permission on the ../distributed-testing/logs/json_script_logs folder to rwxrwxrwx
+    os.chmod(log_folder, 0o777) # Modifies permission on the LOG_PATH/logs/json_script_logs folder to rwxrwxrwx
 
     timestamp = time.strftime("%Y%m%d_%H%M%S")
     logging.basicConfig(
@@ -609,33 +612,50 @@ def receive_main(mapOrigin_queue, stdout_lock):
     HOST = STREAMER_IP  # Listen on localhost
     PORT = 8005  # Choose an unused port
 
-    sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
     sock.bind((HOST, PORT))
+    sock.listen(1)
     print(f"Server listening on {HOST}:{PORT} for UDP data...")
+
+    conn, addr = sock.accept()
+    buffer = b""
+    decoder = json.JSONDecoder()
 
     # Initialize counters - dictionary to track all types
     type_counts = {}
 
-    while True:
-        data, addr = sock.recvfrom(8192)
-        try: 
-            json_data = json.loads(data.decode('utf-8'))
+    try:
+        while True:
+            data = conn.recv(16384)
+            if not data:
+                break
+            buffer += data
 
-            # Pulls the EntityType from the received json
-            type_name = json_data["metadata"]["type_name"]
+            s = buffer.decode('utf-8').strip()
 
-            # Gets the map origin from the scenario json and puts it in a queue for the send thread to use
-            if type_name == "DOT_OSTR::Configuration::Scenario":
-                map_origin = json_templates.get_map_origin_from_scenario(json_data)
-                logging.info(f"Map Origin received from Scenario: {map_origin}")
-                mapOrigin_queue.put(map_origin)
+            try:
+                json_data, index = decoder.raw_decode(s)
 
-            #----- Our Example Implementation -----
-            get_count_of_objects(type_counts, type_name, stdout_lock)                            
-                         
-        except json.JSONDecodeError:
-            logging.error(f"Received non-JSON data from {addr}")
+                type_name = json_data["metadata"]["type_name"]
+                if type_name == "DOT_OSTR::Configuration::Scenario":
+                    map_origin = json_templates.get_map_origin_from_scenario(json_data)
+                    logging.info(f"Map Origin received from Scenario: {map_origin}")
+                    mapOrigin_queue.put(map_origin)
+
+                #----- Our Example Implementation -----
+                get_count_of_objects(type_counts, type_name, stdout_lock)
+
+                s = s[index:].lstrip()
+
+                buffer = s.encode('utf-8')
+
+            except json.JSONDecodeError as err:
+                logging.error(f"Error Decoding JSON Data from {addr}: {err}")
+
+    finally:
+        conn.close()
+        sock.close()
 
 def main():
     """
