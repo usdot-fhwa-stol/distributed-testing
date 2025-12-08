@@ -51,4 +51,8 @@ docker/build/lib/OLD
 docker/build/lib/CARLA_TFHRC
 
 # ignore config backups
-config/*.bak
+config/site_config/*.bak
+config/scenario_config/*.bak
+
+# ignore config validation logs
+config/*.log
