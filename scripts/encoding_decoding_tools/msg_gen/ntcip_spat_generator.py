@@ -22,13 +22,26 @@ class StrEnum(str, enum.Enum):
 
 class NTCIP1202:
     @enum.unique
-    class Phase(StrEnum):   # Indexed by groups of 8
-        StatusGroupGreens = '1.3.6.1.4.1.1206.4.2.1.1.4.1.4'
-        StatusGroupYellows = '1.3.6.1.4.1.1206.4.2.1.1.4.1.3'
-        StatusGroupReds = '1.3.6.1.4.1.1206.4.2.1.1.4.1.2'
-        StatusGroupWalks = '1.3.6.1.4.1.1206.4.2.1.1.4.1.7'
-        StatusGroupPedClears = '1.3.6.1.4.1.1206.4.2.1.1.4.1.6'
-        StatusGroupDontWalks = '1.3.6.1.4.1.1206.4.2.1.1.4.1.5'
+    class Phase(StrEnum):
+        MinimumGreen = '1.3.6.1.4.1.1206.4.2.1.1.2.1.4'
+        Maximum1 = '1.3.6.1.4.1.1206.4.2.1.1.2.1.6'
+        YellowChange = '1.3.6.1.4.1.1206.4.2.1.1.2.1.8'
+        RedClear = '1.3.6.1.4.1.1206.4.2.1.1.2.1.9'
+        @enum.unique
+        class StatusGroup(StrEnum):
+            Greens = '1.3.6.1.4.1.1206.4.2.1.1.4.1.4'
+            Yellows = '1.3.6.1.4.1.1206.4.2.1.1.4.1.3'
+            Reds = '1.3.6.1.4.1.1206.4.2.1.1.4.1.2'
+            Walks = '1.3.6.1.4.1.1206.4.2.1.1.4.1.7'
+            PedClears = '1.3.6.1.4.1.1206.4.2.1.1.4.1.6'
+            DontWalks = '1.3.6.1.4.1.1206.4.2.1.1.4.1.5'
+    class Coord(StrEnum):
+        @enum.unique
+        class Split(StrEnum):
+            Time = '1.3.6.1.4.1.1206.4.2.1.4.9.1.3'
+        @enum.unique
+        class Pattern(StrEnum):
+            Status = '1.3.6.1.4.1.1206.4.2.1.4.10'
 
 class McCain:
     @enum.unique
