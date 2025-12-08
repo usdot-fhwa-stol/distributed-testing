@@ -3,6 +3,7 @@ import re
 import os
 import sys
 import shutil
+from datetime import datetime
 
 DT_PATH = os.environ['VUG_LOCAL_DT_PATH']
 DEFAULT_SITE_CONFIG = os.path.join(DT_PATH, "config/site_config/default_site.config")
@@ -26,6 +27,11 @@ def parse_config(path):
     with open(path, 'r') as f:
         for line in f:
             stripped = line.strip()
+
+            # Any semicolon is considered invalid content; record and skip
+            if ';' in stripped:
+                invalid_lines.append(stripped)
+                continue
 
             # Skip comments and blank lines
             if not stripped or stripped.startswith('#'):
@@ -70,7 +76,8 @@ def compare_config(default_path, user_path):
     print("=== Differences Between Configs ===\n")
 
     if added:
-        print("Variables added by user:")
+        print("Variables added by user (found in user config but not default):")
+        print("\t[---] THESE LINES WILL BE REMOVED\n")
         for k in sorted(added):
             print(f"  + {k}={user_vars[k]}")
     else:
@@ -79,7 +86,8 @@ def compare_config(default_path, user_path):
     print()
 
     if removed:
-        print("Variables removed (found in default but not user config):")
+        print("Variables not found (found in default but not user config):")
+        print("\t[+++] THESE LINES WILL BE ADDED\n")
         for k in sorted(removed):
             print(f"  - {k}={default_vars[k]}")
     else:
@@ -89,6 +97,7 @@ def compare_config(default_path, user_path):
 
     if modified:
         print("Variables with modified values:")
+        print("\t[   ] THESE LINES WILL NOT BE CHANGED\n")
         for k in sorted(modified):
             print(f"  * {k}: default='{default_vars[k]}' -> user='{user_vars[k]}'")
     else:
@@ -98,6 +107,7 @@ def compare_config(default_path, user_path):
 
     if user_invalid:
         print("Found unrecognized lines in user config:")
+        print("\t[---] THESE LINES WILL BE REMOVED\n")
         for line in user_invalid:
             print("  ", line)
 
@@ -118,8 +128,11 @@ def update_user_config(default_path, user_path):
     # Read vars
     user_vars, _ = parse_config(user_path)
 
-    # Backup User Config
-    backup_path = user_path + ".bak"
+    # Backup User Config with timestamp
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    orig_name = os.path.basename(user_path)
+    backup_filename = f"{timestamp}-{orig_name}.bak"
+    backup_path = os.path.join(os.path.dirname(user_path), backup_filename)
     shutil.copy2(user_path, backup_path)
     print(f"Backup created: {backup_path}")
 
@@ -171,7 +184,7 @@ if __name__ == "__main__":
     print("=== Comparing Scenario Configuration to Default ===")
     changed_scenario = compare_config(DEFAULT_SCENARIO_CONFIG, USER_SCENARIO_CONFIG)
 
-    if changed_site or changed_scenario:
+    if (changed_site or changed_scenario) and not UPDATE_MODE:
         print(f"WARNING: Your configuration file(s) have additional and/or missing required environment variables. Update them using 'dt config update' ")
 
     if UPDATE_MODE:
