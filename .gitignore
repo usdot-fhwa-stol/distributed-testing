@@ -56,3 +56,6 @@ config/scenario_config/*.bak
 
 # ignore config validation logs
 config/*.log
+
+# ignore jsonl log files
+*.jsonl

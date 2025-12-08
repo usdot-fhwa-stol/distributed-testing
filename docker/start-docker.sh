@@ -74,7 +74,9 @@ CONFIG_VALIDATION_LOG="$VUG_LOCAL_DT_PATH/config/validate_config.log"
 "$VUG_LOCAL_DT_PATH/config/validate_config.py" >"$CONFIG_VALIDATION_LOG" 2>&1
 STATUS=$?
 
-if [[ $STATUS -eq 1 ]]; then
+if [[ $STATUS -eq 0 ]]; then
+    echo "Configuration check passed"
+elif [[ $STATUS -eq 1 ]]; then
     if [[ "$VUG_FORMAL_EVENT" == "true" ]]; then
         echo "ERROR: Configuration differences detected in formal event. Update your config with 'dt config update'. Aborting dt startup..."
         exit 1
@@ -82,11 +84,12 @@ if [[ $STATUS -eq 1 ]]; then
         echo "WARNING: Configuration differences detected in non-formal event. Update your config with 'dt config update'. Continuing dt startup..."
     fi
 elif [[ $STATUS -eq 2 ]]; then
-    echo "FATAL ERROR: Could not check configurations."
+    echo "ERROR: Path to site and/or scenario are invalid. See $CONFIG_VALIDATION_LOG for more details"
     exit 2
+else
+    echo "ERROR: Error occurred while validating configuration. See $CONFIG_VALIDATION_LOG for more details"
 fi
 
-echo "Config check passed or warnings only. Continuing dt startup..."
 
 # Check if openvpn3 is installed
 if ! command -v openvpn3 &> /dev/null

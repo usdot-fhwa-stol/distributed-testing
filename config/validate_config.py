@@ -179,26 +179,30 @@ if __name__ == "__main__":
 
     UPDATE_MODE = ("--update" in sys.argv) or ("-u" in sys.argv)
 
-    print("=== Comparing Site Configuration to Default ===")
-    changed_site = compare_config(DEFAULT_SITE_CONFIG, USER_SITE_CONFIG)
-    print("=== Comparing Scenario Configuration to Default ===")
-    changed_scenario = compare_config(DEFAULT_SCENARIO_CONFIG, USER_SCENARIO_CONFIG)
+    try:
+        print("=== Comparing Site Configuration to Default ===")
+        changed_site = compare_config(DEFAULT_SITE_CONFIG, USER_SITE_CONFIG)
+        print("=== Comparing Scenario Configuration to Default ===")
+        changed_scenario = compare_config(DEFAULT_SCENARIO_CONFIG, USER_SCENARIO_CONFIG)
 
-    if (changed_site or changed_scenario) and not UPDATE_MODE:
-        print(f"WARNING: Your configuration file(s) have additional and/or missing required environment variables. Update them using 'dt config update' ")
+        if UPDATE_MODE:
+            if changed_site:
+                print("=== Updating Site Configuration ===")
+                update_user_config(DEFAULT_SITE_CONFIG, USER_SITE_CONFIG)
+            if changed_scenario:
+                print("=== Updating Scenario Configuration ===")
+                update_user_config(DEFAULT_SCENARIO_CONFIG, USER_SCENARIO_CONFIG)
+            if not changed_site and not changed_scenario:
+                print("No updates required")
 
-    if UPDATE_MODE:
-        if changed_site:
-            print("=== Updating Site Configuration ===")
-            update_user_config(DEFAULT_SITE_CONFIG, USER_SITE_CONFIG)
-        if changed_scenario:
-            print("=== Updating Scenario Configuration ===")
-            update_user_config(DEFAULT_SCENARIO_CONFIG, USER_SCENARIO_CONFIG)
-        if not changed_site and not changed_scenario:
-            print("No updates required")
+        if (changed_site or changed_scenario) and not UPDATE_MODE:
+            print("WARNING: Your Configuration file(s) have additional and/or missing required environment variables. Update them using 'dt config update' ")
+            sys.exit(1)
 
-    if changed_site or changed_scenario:
-        sys.exit(1)
+    except Exception as e:
+        print(f"ERROR: Error occurred while validating/updating configuration file: {e}")
+        sys.exit(3)
+
     sys.exit(0)
     
     
