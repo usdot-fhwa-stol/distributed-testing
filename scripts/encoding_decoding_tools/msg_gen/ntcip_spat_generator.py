@@ -94,32 +94,72 @@ async def send_snmp_get_command(ip, community, oid, port=161):
         return [ip, oid, var_binds[0][1]]
 
 
-async def get_phase_colors(ip, community, port=161):
-    greens = []
-    yellows = []
-    reds = []
-    phase_list = [16, 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1]    # reversed phase list order due to endianness of phase green values
-    for index in [2, 1]:                        # retrieve phase green states for phases 16-9, then phases 8-1
-        greens.append(bin(asyncio.run(send_snmp_get_command(ip, community, NTCIP1202.Phase.StatusGroup.Greens + '.' + str(index), port))[2]))
-        yellows.append(bin(asyncio.run(send_snmp_get_command(ip, community, NTCIP1202.Phase.StatusGroup.Yellows + '.' + str(index), port))[2]))
-        reds.append(bin(asyncio.run(send_snmp_get_command(ip, community, NTCIP1202.Phase.StatusGroup.Reds + '.' + str(index), port))[2]))
-    greens = [val[2:].zfill(8) for val in greens]  # zero-pad binary phase green values to be 8 bits
-    yellows = [val[2:].zfill(8) for val in yellows]  # zero-pad binary phase green values to be 8 bits
-    reds = [val[2:].zfill(8) for val in reds]  # zero-pad binary phase green values to be 8 bits
-    greens_array = [i for val in greens for i in val]  # convert binary values to individual boolean array e.g. '0001' becomes ['0', '0', '0', '1']
-    yellows_array = [i for val in yellows for i in val]  # convert binary values to individual boolean array e.g. '0001' becomes ['0', '0', '0', '1']
-    reds_array = [i for val in reds for i in val]  # convert binary values to individual boolean array e.g. '0001' becomes ['0', '0', '0', '1']
-    signal_states = []
-    for item in greens_array:
-        if item == '1':
-            signal_states.append('protected-Movement-Allowed')
-    for item in yellows_array:
-        if item == '1':
-            signal_states.append('protected-clearance')
-    for item in reds_array:
-        if item == '1':
-            signal_states.append('stop-And-Remain')
-    return dict(zip(phase_list, signal_states))  # merge list of phase numbers and phase green states into a dict
+# Assumes you have:
+# - send_snmp_get_command(ip, community, oid, port) -> [ip, oid, value]
+# - NTCIP1202.Phase.StatusGroup.{Greens, Yellows, Reds} base OIDs
+
+async def get_phase_colors(ip: str, community: str, port: int = 161) -> dict[int, str]:
+    """
+    Returns a dict mapping phase -> state for phases 1..16.
+    States (priority): 'stop-And-Remain' > 'protected-clearance' > 'protected-Movement-Allowed' > 'dark'
+
+    Implementation details:
+    - Performs all 6 SNMP GETs concurrently.
+    - Uses bit operations (LSB-first) instead of string/bin conversions.
+    - Always returns 16 keys (1..16). If you need reversed key order (16..1),
+      see the final section below.
+    """
+    async def get_int(oid_base: str, index: int) -> int:
+        """
+        Fetch a single SNMP integer (e.g., Greens.1, Yellows.2).
+        Robustly converts PySNMP values or strings to int. Returns 0 on error.
+        """
+        try:
+            res = await send_snmp_get_command(ip, community, f"{oid_base}.{index}", port)
+            if res is None:
+                return 0
+            val = res[2]
+            # Handle PySNMP types or plain Python types
+            if hasattr(val, "prettyPrint"):
+                val = val.prettyPrint()
+            return int(val)  # works for int-ish strings as well
+        except Exception:
+            return 0
+
+    # Fetch all 6 octets concurrently:
+    # Index 1: phases 1..8, Index 2: phases 9..16
+    g1, g2, y1, y2, r1, r2 = await asyncio.gather(
+        get_int(NTCIP1202.Phase.StatusGroup.Greens, 1),
+        get_int(NTCIP1202.Phase.StatusGroup.Greens, 2),
+        get_int(NTCIP1202.Phase.StatusGroup.Yellows, 1),
+        get_int(NTCIP1202.Phase.StatusGroup.Yellows, 2),
+        get_int(NTCIP1202.Phase.StatusGroup.Reds, 1),
+        get_int(NTCIP1202.Phase.StatusGroup.Reds, 2),
+    )
+
+    def bits_lsb_first(byte_val: int) -> list[int]:
+        # Return 8 bits least-significant-bit first: bit 0 -> phase 1 (or 9), bit 7 -> phase 8 (or 16)
+        return [(byte_val >> i) & 1 for i in range(8)]
+
+    # Build per-phase bit arrays for phases 1..16 (not strings)
+    g_bits = bits_lsb_first(g1) + bits_lsb_first(g2)  # [phase1..phase16]
+    y_bits = bits_lsb_first(y1) + bits_lsb_first(y2)
+    r_bits = bits_lsb_first(r1) + bits_lsb_first(r2)
+
+    # Map each phase (1..16) to exactly one state, with priority Red > Yellow > Green
+    states: dict[int, str] = {}
+    for phase in range(1, 17):
+        i = phase - 1  # 0-based index
+        if r_bits[i]:
+            states[phase] = "stop-And-Remain"
+        elif y_bits[i]:
+            states[phase] = "protected-clearance"
+        elif g_bits[i]:
+            states[phase] = "protected-Movement-Allowed"
+        else:
+            states[phase] = "dark"
+
+    return states  # keys 1..16 guaranteed
 
 
 def compute_moy_and_time_mark():
