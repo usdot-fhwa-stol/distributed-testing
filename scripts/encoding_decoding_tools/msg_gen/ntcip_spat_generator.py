@@ -6,10 +6,79 @@ import os
 from datetime import datetime
 import argparse
 from argparse import RawTextHelpFormatter
+import asyncio
+from pysnmp.hlapi.v3arch.asyncio import *
+import logging
+import enum
 
 import j2735_202409
 
 MessageFrame = j2735_202409.MessageFrame.MessageFrame
+
+module_logger = logging.getLogger('main.snmp_getsetter')
+
+class StrEnum(str, enum.Enum):
+    pass
+
+class NTCIP1202:
+    @enum.unique
+    class Phase(StrEnum):   # Indexed by groups of 8
+        StatusGroupGreens = '1.3.6.1.4.1.1206.4.2.1.1.4.1.4'
+        StatusGroupYellows = '1.3.6.1.4.1.1206.4.2.1.1.4.1.3'
+        StatusGroupReds = '1.3.6.1.4.1.1206.4.2.1.1.4.1.2'
+        StatusGroupWalks = '1.3.6.1.4.1.1206.4.2.1.1.4.1.7'
+        StatusGroupPedClears = '1.3.6.1.4.1.1206.4.2.1.1.4.1.6'
+        StatusGroupDontWalks = '1.3.6.1.4.1.1206.4.2.1.1.4.1.5'
+
+class McCain:
+    @enum.unique
+    class DetectorControlState(StrEnum):
+        Vehicle = '1.3.6.1.4.1.1206.3.21.2.13.4.1.1'
+        Pedestrian = '1.3.6.1.4.1.1206.3.21.2.14.4.1.1'
+
+
+async def send_snmp_set_command(ip, community, oid, value, port=161):
+    snmp_engine = SnmpEngine()
+    error_indication, error_status, error_index, var_binds = await set_cmd(
+        snmp_engine,
+        CommunityData(community, mpModel=0),
+        await UdpTransportTarget.create((ip, port)),
+        ContextData(),
+        ObjectType(ObjectIdentity(tuple(map(int, oid.split('.')))), value)
+        # ObjectType(ObjectIdentity(oid), Integer(int(value)))
+    )
+    # error_indication, error_status, error_index, var_binds = await iterator
+    module_logger.debug(f"send_snmp_set_command: {error_indication}, {error_status}, {error_index}, {var_binds}")
+    snmp_engine.close_dispatcher()
+    time.sleep(0.1)
+    if error_indication:
+        return module_logger.error(f"Error: {error_indication}")
+    elif error_status:
+        return module_logger.error(f"Error: {error_status.prettyPrint()}")
+    else:
+        module_logger.debug(f"{ip}: SET {oid} {var_binds[0][1]}")
+        return [ip, oid, var_binds[0][1]]
+
+
+async def send_snmp_get_command(ip, community, oid, port=161):
+    snmp_engine = SnmpEngine()
+    iterator = get_cmd(
+        snmp_engine,
+        CommunityData(community, mpModel=0),
+        await UdpTransportTarget.create((ip, port)),
+        ContextData(),
+        ObjectType(ObjectIdentity(oid))
+    )
+    error_indication, error_status, error_index, var_binds = await iterator
+    snmp_engine.close_dispatcher()
+    time.sleep(0.1)
+    if error_indication:
+        return module_logger.error(f"Error: {error_indication}")
+    elif error_status:
+        return module_logger.error(f"Error: {error_status.prettyPrint()}")
+    else:
+        module_logger.debug(f"{ip}: GET {oid} {var_binds[0][1]}")
+        return [ip, oid, var_binds[0][1]]
 
 
 def compute_moy_and_time_mark():
