@@ -94,6 +94,34 @@ async def send_snmp_get_command(ip, community, oid, port=161):
         return [ip, oid, var_binds[0][1]]
 
 
+async def get_phase_colors(ip, community, port=161):
+    greens = []
+    yellows = []
+    reds = []
+    phase_list = [16, 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1]    # reversed phase list order due to endianness of phase green values
+    for index in [2, 1]:                        # retrieve phase green states for phases 16-9, then phases 8-1
+        greens.append(bin(asyncio.run(send_snmp_get_command(ip, community, NTCIP1202.Phase.StatusGroup.Greens + '.' + str(index), port))[2]))
+        yellows.append(bin(asyncio.run(send_snmp_get_command(ip, community, NTCIP1202.Phase.StatusGroup.Yellows + '.' + str(index), port))[2]))
+        reds.append(bin(asyncio.run(send_snmp_get_command(ip, community, NTCIP1202.Phase.StatusGroup.Reds + '.' + str(index), port))[2]))
+    greens = [val[2:].zfill(8) for val in greens]  # zero-pad binary phase green values to be 8 bits
+    yellows = [val[2:].zfill(8) for val in yellows]  # zero-pad binary phase green values to be 8 bits
+    reds = [val[2:].zfill(8) for val in reds]  # zero-pad binary phase green values to be 8 bits
+    greens_array = [i for val in greens for i in val]  # convert binary values to individual boolean array e.g. '0001' becomes ['0', '0', '0', '1']
+    yellows_array = [i for val in yellows for i in val]  # convert binary values to individual boolean array e.g. '0001' becomes ['0', '0', '0', '1']
+    reds_array = [i for val in reds for i in val]  # convert binary values to individual boolean array e.g. '0001' becomes ['0', '0', '0', '1']
+    signal_states = []
+    for item in greens_array:
+        if item == '1':
+            signal_states.append('protected-Movement-Allowed')
+    for item in yellows_array:
+        if item == '1':
+            signal_states.append('protected-clearance')
+    for item in reds_array:
+        if item == '1':
+            signal_states.append('stop-And-Remain')
+    return dict(zip(phase_list, signal_states))  # merge list of phase numbers and phase green states into a dict
+
+
 def compute_moy_and_time_mark():
     """
     Compute:
