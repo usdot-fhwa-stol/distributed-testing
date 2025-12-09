@@ -57,25 +57,37 @@ class SnmpGetError(Exception):
 
 async def send_snmp_set_command(ip, community, oid, value, port=161):
     snmp_engine = SnmpEngine()
-    error_indication, error_status, error_index, var_binds = await set_cmd(
-        snmp_engine,
-        CommunityData(community, mpModel=0),
-        await UdpTransportTarget.create((ip, port)),
-        ContextData(),
-        ObjectType(ObjectIdentity(tuple(map(int, oid.split('.')))), value)
-        # ObjectType(ObjectIdentity(oid), Integer(int(value)))
-    )
-    # error_indication, error_status, error_index, var_binds = await iterator
-    module_logger.debug(f"send_snmp_set_command: {error_indication}, {error_status}, {error_index}, {var_binds}")
-    snmp_engine.close_dispatcher()
-    time.sleep(0.1)
-    if error_indication:
-        return module_logger.error(f"Error: {error_indication}")
-    elif error_status:
-        return module_logger.error(f"Error: {error_status.prettyPrint()}")
-    else:
-        module_logger.debug(f"{ip}: SET {oid} {var_binds[0][1]}")
-        return [ip, oid, var_binds[0][1]]
+    try:
+        error_indication, error_status, error_index, var_binds = await set_cmd(
+            snmp_engine,
+            CommunityData(community, mpModel=0),
+            await UdpTransportTarget.create((ip, port)),
+            ContextData(),
+            ObjectType(ObjectIdentity(tuple(map(int, oid.split('.')))), value)
+        )
+        module_logger.debug(f"send_snmp_set_command: {error_indication}, {error_status}, {error_index}, {var_binds}")
+
+        if error_indication:
+            msg = f"{ip}: SNMP GET {oid} transport error: {error_indication}"
+            module_logger.error(msg)
+            raise SnmpGetError(msg)
+
+        elif error_status:
+            bad_var = (
+                var_binds[int(error_index) - 1][0] if error_index else "unknown"
+            )
+            msg = (f"{ip}: SNMP GET {oid} agent error: "
+                   f"{error_status.prettyPrint()} at {bad_var}")
+            module_logger.error(msg)
+            raise SnmpGetError(msg)
+
+        value = var_binds[0][1]  # PySNMP type (e.g., Integer, OctetString)
+        module_logger.debug(f"{ip}: SET {oid} {value.prettyPrint()}")
+        return [ip, oid, value]
+
+    finally:
+        snmp_engine.close_dispatcher()
+        await asyncio.sleep(0.1)
 
 
 async def send_snmp_get_command(ip, community, oid, port=161):
@@ -112,10 +124,6 @@ async def send_snmp_get_command(ip, community, oid, port=161):
         snmp_engine.close_dispatcher()
         await asyncio.sleep(0.1)
 
-
-# Assumes you have:
-# - send_snmp_get_command(ip, community, oid, port) -> [ip, oid, value]
-# - NTCIP1202.Phase.StatusGroup.{Greens, Yellows, Reds} base OIDs
 
 async def get_phase_j2735_states_ntcip(ip: str, community: str, port: int = 161) -> list:
     async def get_int(oid_base: str, index: int) -> int:
