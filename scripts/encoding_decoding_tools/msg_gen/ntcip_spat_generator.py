@@ -21,12 +21,13 @@ class StrEnum(str, enum.Enum):
     pass
 
 class NTCIP1202:
-    @enum.unique
-    class Phase(StrEnum):
-        MinimumGreen = '1.3.6.1.4.1.1206.4.2.1.1.2.1.4'
-        Maximum1 = '1.3.6.1.4.1.1206.4.2.1.1.2.1.6'
-        YellowChange = '1.3.6.1.4.1.1206.4.2.1.1.2.1.8'
-        RedClear = '1.3.6.1.4.1.1206.4.2.1.1.2.1.9'
+    class Phase:
+        @enum.unique
+        class Timing(StrEnum):
+            MinimumGreen = '1.3.6.1.4.1.1206.4.2.1.1.2.1.4'
+            Maximum1 = '1.3.6.1.4.1.1206.4.2.1.1.2.1.6'
+            YellowChange = '1.3.6.1.4.1.1206.4.2.1.1.2.1.8'
+            RedClear = '1.3.6.1.4.1.1206.4.2.1.1.2.1.9'
         @enum.unique
         class StatusGroup(StrEnum):
             Greens = '1.3.6.1.4.1.1206.4.2.1.1.4.1.4'
@@ -35,7 +36,7 @@ class NTCIP1202:
             Walks = '1.3.6.1.4.1.1206.4.2.1.1.4.1.7'
             PedClears = '1.3.6.1.4.1.1206.4.2.1.1.4.1.6'
             DontWalks = '1.3.6.1.4.1.1206.4.2.1.1.4.1.5'
-    class Coord(StrEnum):
+    class Coord:
         @enum.unique
         class Split(StrEnum):
             Time = '1.3.6.1.4.1.1206.4.2.1.4.9.1.3'
@@ -48,6 +49,10 @@ class McCain:
     class DetectorControlState(StrEnum):
         Vehicle = '1.3.6.1.4.1.1206.3.21.2.13.4.1.1'
         Pedestrian = '1.3.6.1.4.1.1206.3.21.2.14.4.1.1'
+
+class SnmpGetError(Exception):
+    """Custom exception to signal SNMP GET failures."""
+    pass
 
 
 async def send_snmp_set_command(ip, community, oid, value, port=161):
@@ -75,47 +80,47 @@ async def send_snmp_set_command(ip, community, oid, value, port=161):
 
 async def send_snmp_get_command(ip, community, oid, port=161):
     snmp_engine = SnmpEngine()
-    iterator = get_cmd(
-        snmp_engine,
-        CommunityData(community, mpModel=0),
-        await UdpTransportTarget.create((ip, port)),
-        ContextData(),
-        ObjectType(ObjectIdentity(oid))
-    )
-    error_indication, error_status, error_index, var_binds = await iterator
-    snmp_engine.close_dispatcher()
-    time.sleep(0.1)
-    if error_indication:
-        return module_logger.error(f"Error: {error_indication}")
-    elif error_status:
-        return module_logger.error(f"Error: {error_status.prettyPrint()}")
-    else:
-        module_logger.debug(f"{ip}: GET {oid} {var_binds[0][1]}")
-        return [ip, oid, var_binds[0][1]]
+    try:
+        iterator = get_cmd(
+            snmp_engine,
+            CommunityData(community, mpModel=0),
+            await UdpTransportTarget.create((ip, port)),
+            ContextData(),
+            ObjectType(ObjectIdentity(oid))
+        )
+        error_indication, error_status, error_index, var_binds = await iterator
+
+        if error_indication:
+            msg = f"{ip}: SNMP GET {oid} transport error: {error_indication}"
+            module_logger.error(msg)
+            raise SnmpGetError(msg)
+
+        if error_status:
+            bad_var = (
+                var_binds[int(error_index) - 1][0] if error_index else "unknown"
+            )
+            msg = (f"{ip}: SNMP GET {oid} agent error: "
+                   f"{error_status.prettyPrint()} at {bad_var}")
+            module_logger.error(msg)
+            raise SnmpGetError(msg)
+
+        value = var_binds[0][1]  # PySNMP type (e.g., Integer, OctetString)
+        module_logger.debug(f"{ip}: GET {oid} -> {value.prettyPrint()}")
+        return [ip, oid, value]
+
+    finally:
+        snmp_engine.close_dispatcher()
+        await asyncio.sleep(0.1)
 
 
 # Assumes you have:
 # - send_snmp_get_command(ip, community, oid, port) -> [ip, oid, value]
 # - NTCIP1202.Phase.StatusGroup.{Greens, Yellows, Reds} base OIDs
 
-async def get_phase_colors(ip: str, community: str, port: int = 161) -> dict[int, str]:
-    """
-    Returns a dict mapping phase -> state for phases 1..16.
-    States (priority): 'stop-And-Remain' > 'protected-clearance' > 'protected-Movement-Allowed' > 'dark'
-
-    Implementation details:
-    - Performs all 6 SNMP GETs concurrently.
-    - Uses bit operations (LSB-first) instead of string/bin conversions.
-    - Always returns 16 keys (1..16). If you need reversed key order (16..1),
-      see the final section below.
-    """
+async def get_phase_j2735_states_ntcip(ip: str, community: str, port: int = 161) -> list:
     async def get_int(oid_base: str, index: int) -> int:
-        """
-        Fetch a single SNMP integer (e.g., Greens.1, Yellows.2).
-        Robustly converts PySNMP values or strings to int. Returns 0 on error.
-        """
         try:
-            res = await send_snmp_get_command(ip, community, f"{oid_base}.{index}", port)
+            res = await send_snmp_get_command(ip, community, oid_base + '.' + str(index), port)
             if res is None:
                 return 0
             val = res[2]
@@ -123,8 +128,8 @@ async def get_phase_colors(ip: str, community: str, port: int = 161) -> dict[int
             if hasattr(val, "prettyPrint"):
                 val = val.prettyPrint()
             return int(val)  # works for int-ish strings as well
-        except Exception:
-            return 0
+        except Exception as e:
+            raise e
 
     # Fetch all 6 octets concurrently:
     # Index 1: phases 1..8, Index 2: phases 9..16
@@ -146,20 +151,19 @@ async def get_phase_colors(ip: str, community: str, port: int = 161) -> dict[int
     y_bits = bits_lsb_first(y1) + bits_lsb_first(y2)
     r_bits = bits_lsb_first(r1) + bits_lsb_first(r2)
 
-    # Map each phase (1..16) to exactly one state, with priority Red > Yellow > Green
-    states: dict[int, str] = {}
+    states = []
     for phase in range(1, 17):
         i = phase - 1  # 0-based index
         if r_bits[i]:
-            states[phase] = "stop-And-Remain"
+            states.append("stop-And-Remain")
         elif y_bits[i]:
-            states[phase] = "protected-clearance"
+            states.append("protected-clearance")
         elif g_bits[i]:
-            states[phase] = "protected-Movement-Allowed"
+            states.append("protected-Movement-Allowed")
         else:
-            states[phase] = "dark"
+            states.append("dark")
 
-    return states  # keys 1..16 guaranteed
+    return states
 
 
 def compute_moy_and_time_mark():
@@ -202,129 +206,8 @@ def build_spat_for_intersection(
     """
     get signal group states from TSC
     """
-    def get_signal_group_state(signal_group):
-        
-        ### configure your OIDs and port here
-        SIGNAL_GROUP_STATE_OID = "0.1.2.3.4.5"
-        MIN_END_TIME_OID = "0.1.2.3.4.5"
-        MAX_END_TIME_OID = "0.1.2.3.4.5"
-        NTCIP_PORT = 1000
 
-        # event_state = fake_ntcip.get(intersection_ip,NTCIP_PORT,SIGNAL_GROUP_STATE_OID)
-        # min_end_time = fake_ntcip.get(intersection_ip,NTCIP_PORT,SIGNAL_GROUP_STATE_OID)
-        # max_end_time = fake_ntcip.get(intersection_ip,NTCIP_PORT,SIGNAL_GROUP_STATE_OID)
-
-        event_state = "permissive-Movement-Allowed"
-        min_end_time = 5000
-        max_end_time = 5000
-
-        ### IF THERE IS ANY CONVERSION THAT NEEDS TO BE DONE TO GO FROM NTCIP TO J2725 FORMAT, DO IT HERE
-        # 
-        # TimeMark ::= INTEGER (0..36111)
-        # -- In units of 1/10th second from UTC time in the current or next hour
-        # -- A range of 0~35999 covers one hour
-        # -- The values 36000..36009 are used when a leap second occurs
-        # -- The values 36010..36110 are reserved for future use
-        # -- 36111 is to be used when the value is undefined or unknown
-        # -- Note that this is NOT expressed in GPS time or in local time
-        # 3:40
-        # MovementPhaseState ::= ENUMERATED {
-        # -- Note that based on the regions and the operating mode not every 
-        # -- phase will be used in all transportation modes and that not 
-        # -- every phase will be used in all transportation modes
-        
-        # unavailable (0), 
-        # -- This state is used for unknown or error 
-        # dark (1), 
-        # -- The signal head is dark (unlit)
-        # -- Reds
-        # stop-Then-Proceed (2), 
-        # -- Often called 'flashing red' in US
-        # -- Driver Action: 
-        # -- Stop vehicle at stop line. 
-        # -- Do not proceed unless it is safe.
-        # -- Note that the right to proceed either right or left when 
-        # -- it is safe may be contained in the lane description to 
-        # -- handle what is called a 'right on red' 
-        # stop-And-Remain (3),
-        # -- e.g., called 'red light' in US
-        # -- Driver Action: 
-        # -- Stop vehicle at stop line. 
-        # -- Do not proceed. 
-        # -- Note that the right to proceed either right or left when 
-        # -- it is safe may be contained in the lane description to 
-        # -- handle what is called a 'right on red' 
-        
-        # -- Greens
-        # pre-Movement (4), 
-        # -- Not used in the US, red+yellow partly in EU
-        # -- Driver Action: 
-        # -- Stop vehicle. 
-        # -- Prepare to proceed (pending green)
-        # -- (Prepare for transition to green/go)
-        # permissive-Movement-Allowed (5), 
-        # -- Often called 'permissive green' in US
-        # -- Driver Action: 
-        # -- Proceed with caution, 
-        # -- must yield to all conflicting traffic 
-        # -- Conflicting traffic may be present
-        # -- in the intersection conflict area
-        # protected-Movement-Allowed (6), 
-        # -- Often called 'protected green' in US
-        # -- Driver Action: 
-        # -- Proceed, tossing caution to the wind, 
-        # -- in indicated (allowed) direction.
-        
-        # -- Yellows/Ambers
-        # -- The vehicle is not allowed to cross the stop bar if it is possible 
-        # -- to stop without danger. 
-        # permissive-clearance (7), 
-        # -- Often called 'permissive yellow' in US
-        # -- Driver Action: 
-        # -- Prepare to stop.
-        # Downloaded from SAE International by Andrew Loughran, Friday, December 15, 2023
-        # SAE INTERNATIONAL J2735® SEP2023 Page 170 of 275
-        # -- Proceed if unable to stop,
-        # -- Clear Intersection.
-        # -- Conflicting traffic may be present
-        # -- in the intersection conflict area
-        # protected-clearance (8), 
-        # -- Often called 'protected yellow' in US
-        # -- Driver Action: 
-        # -- Prepare to stop.
-        # -- Proceed if unable to stop,
-        # -- in indicated direction (to connected lane)
-        # -- Clear Intersection.
-        
-        # caution-Conflicting-Traffic (9)
-        # -- Often called 'flashing yellow' in US
-        # -- Often used for extended periods of time
-        # -- Driver Action: 
-        # -- Proceed with caution, 
-        # -- Conflicting traffic may be present
-        # -- in the intersection conflict area
-        # } 
-        # -- The above number assignments are not used with UPER encoding
-        # -- and are only to be used with DER or implicit encoding
-
-        return {
-            "signalGroup": signal_group,
-            "state-time-speed": [
-                {
-                    "eventState": event_state,
-                    "timing": {
-                        # Both are INTEGER TimeMark values
-                        "minEndTime": min_end_time,
-                        "maxEndTime": max_end_time,
-                    },
-                }
-            ],
-        }
-
-    states = []
-    # Signal groups
-    for sg in signal_groups:
-        states.append(get_signal_group_state(sg))
+    states = get_phase_j2735_states_ntcip(intersection_ip, 'administrator', 10000 + intersection_id)
 
     ### this gets time from the local clock, if you want to get time from the controller, 
     #   you will need to change the time stamps here to get from NTCIP 
