@@ -215,7 +215,7 @@ def build_spat_for_intersection(
     get signal group states from TSC
     """
 
-    states = get_phase_j2735_states_ntcip(intersection_ip, 'administrator', 10000 + intersection_id)
+    states = asyncio.run(get_phase_j2735_states_ntcip(intersection_ip, 'administrator', 10000 + intersection_id))
 
     ### this gets time from the local clock, if you want to get time from the controller, 
     #   you will need to change the time stamps here to get from NTCIP 
