@@ -22,7 +22,7 @@ sys.path.append(carla_egg_file)
 import carla
 
 from agents.navigation.global_route_planner import GlobalRoutePlanner
-from agents.navigation.global_route_planner_dao import GlobalRoutePlannerDAO
+# from agents.navigation.global_route_planner_dao import GlobalRoutePlannerDAO
 
 argparser = argparse.ArgumentParser(
     description=__doc__)
@@ -171,9 +171,9 @@ def draw_waypoints(world,map,waypoints,draw_arrows,veh_name):
 
     print("SETTING UP MAP")
     sampling_resolution = 2
-    dao = GlobalRoutePlannerDAO(map, sampling_resolution)
-    grp = GlobalRoutePlanner(dao)
-    grp.setup()
+    # dao = GlobalRoutePlannerDAO(map, sampling_resolution)
+    grp = GlobalRoutePlanner(map, sampling_resolution)
+    # grp.setup()
     print("FINISHED SETTING UP MAP")
 
     route_waypoints = []
