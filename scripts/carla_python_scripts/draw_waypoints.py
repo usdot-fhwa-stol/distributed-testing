@@ -265,7 +265,8 @@ def draw_waypoints(world,map,waypoints,draw_arrows,veh_name):
     debug = world.debug
 
     final_segment_list = []
-    roads_to_exclude = [131,281,382,328]
+    # roads_to_exclude = [131,281,382,328]
+    roads_to_exclude = [438,318,368,143]
     for segment in segment_list:
         
         if segment["ending_waypoint"].road_id in roads_to_exclude:
