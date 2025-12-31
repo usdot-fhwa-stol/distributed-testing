@@ -618,7 +618,7 @@ def receive_main(mapOrigin_queue, stdout_lock):
     type_counts = {}
 
     while True:
-        data, addr = sock.recvfrom(8192)
+        data, addr = sock.recvfrom(55555)
         try: 
             json_data = json.loads(data.decode('utf-8'))
 

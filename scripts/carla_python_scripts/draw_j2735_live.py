@@ -9,6 +9,8 @@ import J2735_201603_2023_06_22 as J2735
 import binascii as ba
 import pyproj
 
+from pyproj import CRS, Transformer
+
 from find_carla_egg import find_carla_egg
 
 carla_egg_file = find_carla_egg()
@@ -16,6 +18,12 @@ carla_egg_file = find_carla_egg()
 sys.path.append(carla_egg_file)
 
 import carla
+
+LANE_COLORS = {
+    "Vehicle": carla.Color(0, 255, 0),
+    "Bike": carla.Color(0, 150, 255),
+    "Pedestrian": carla.Color(255, 200, 0)
+}
 
 argparser = argparse.ArgumentParser(
     description=__doc__)
@@ -37,6 +45,15 @@ argparser.add_argument(
     help='Import file to read crossing data')
 args = argparser.parse_args()
 
+def setup_transformer():
+    CRS_TMerc = CRS.from_proj4(
+        "+proj=tmerc +lat_0=39.68854712116352 +lon_0=-75.748054413881644 "
+        "+k=1 +x_0=0 +y_0=0 +datum=WGS84 +units=m +no_defs"
+    )
+
+    CRS_WGS84 = CRS.from_epsg(4326)
+
+    return Transformer.from_crs(CRS_WGS84, CRS_TMerc, always_xy=True)
 
 def decode_j2735(input_hex):
     print(f'input_hex:  {input_hex}')
@@ -55,10 +72,98 @@ def decode_j2735(input_hex):
 
         return decoded_msg_json
     except Exception as err:
-        print(f"Unexpected {err=}, {type(err)=}")
+        print(f"Unexpected error: {err}")
         return "ERROR"
-    
 
+def get_coordinates_from_j2735(j2735):
+    intersections = j2735["value"]["intersections"]
+    intersection = intersections[0]
+
+    ref_lat = intersection["refPoint"]["lat"] * 1e-7
+    ref_lon = intersection["refPoint"]["long"] * 1e-7
+
+    vectors = {
+        "features": [{
+            "geometry": {
+                "type": "Point",
+                "coordinates": [0, 0]
+            },
+            "properties": {
+                "LonLat": {
+                    "lat": ref_lat,
+                    "lon": ref_lon
+                },
+                "marker": {
+                    "name": "Reference Point Marker"
+                }
+            }
+        }]
+    }
+
+    lanes = {"features": []}
+    boxes = {"features": []}
+
+    approach_polygons = {}
+
+    for lane in intersection.get("laneSet", []):
+        coords = []
+
+        for node in lane["nodeList"]["nodes"]:
+            lat = node["delta"]["node-LatLon"]["lat"] * 1e-7
+            lon = node["delta"]["node-LatLon"]["lon"] * 1e-7
+            coords.append([lat, lon])
+
+        if not coords:
+            continue
+
+        # -------------------------
+        # Lane feature
+        # -------------------------
+        lanes["features"].append({
+            "geometry": {
+                "type": "LineString",
+                "coordinates": coords
+            },
+            "properties": {
+                "laneType": "Vehicle",
+                "laneNumber": lane.get("laneID", "?"),
+                "maneuvers": lane.get("maneuvers"),
+                "elevation": [{
+                    "latlon": {"lat": lat, "lon": lon},
+                    "value": float(intersection["refPoint"].get("elevation", 0))
+                } for lat, lon in coords]
+            }
+        })
+
+        # -------------------------
+        # Boxes (approach polygons)
+        # -------------------------
+        approach_id = (
+            lane.get("ingressApproach")
+            or lane.get("egressApproach")
+            or "unknown"
+        )
+
+        approach_polygons.setdefault(approach_id, [])
+        approach_polygons[approach_id].extend(coords)
+
+    # Build box features per approach
+    for approach_id, polygon in approach_polygons.items():
+        if len(polygon) >= 3:
+            boxes["features"].append({
+                "geometry": {
+                    "type": "Polygon",
+                    "coordinates": [polygon]
+                },
+                "properties": {
+                    "approaches": [{
+                        "approachType": approach_id,
+                        "selected": True
+                    }]
+                }
+            })
+
+    return vectors, boxes, lanes
 
 def lat_lon_alt_to_xyz(latitude, longitude, altitude):
     # Earth radius in meters (average value)
@@ -93,6 +198,10 @@ def lat_long_to_xyz_better(latitude, longitude, altitude):
     z = ((1 - flattening)**2 * N + altitude) * math.sin(lat_rad)
 
     return { "x":x, "y": y, "z": z }
+
+def latlon_to_carla(transformer, lat, lon):
+    x, y = transformer.transform(lon, lat)
+    return x, -y
 
 def GeodeticToEcef( latitude, longitude,altitude):
         # WGS-84 geodetic constants
@@ -267,8 +376,6 @@ def draw_tcm(tcm_json):
     for segment_start,segment_end in zip(tcm_nodes,tcm_nodes[1:]):
         draw_box_from_two_points_and_width(segment_start["x"],segment_start["y"],segment_start["z"],segment_end["x"],segment_end["y"],segment_end["z"],msg_content["geometry"]["refwidth"]/100)
         
-
-
 def draw_box_from_two_points_and_width(start_point_x,start_point_y,start_point_z,end_point_x,end_point_y,end_point_z,box_width): 
     tcm_segment_bearing = calculate_bearing(start_point_x,start_point_y,end_point_x,end_point_y)
 
@@ -304,7 +411,6 @@ def draw_box_from_two_points_and_width(start_point_x,start_point_y,start_point_z
         color=carla.Color(r=255, g=0, b=0),
         life_time=draw_lifetime,
         persistent_lines=True)
-
 
 def draw_tcr(tcr_json):
 
@@ -365,7 +471,66 @@ def draw_tcr(tcr_json):
 
     draw_box_from_opposite_corners(tcr_nodes[0],tcr_nodes[2])
 
+def draw_intersection_center(dbg, transformer, vectors):
     
+    ref_feature = next(
+        f for f in vectors["features"]
+        if f["properties"].get("marker", {}).get("name") == "Reference Point Marker"
+    )
+
+    lat, lon = float(ref_feature["properties"]["LonLat"]["lat"]), float(ref_feature["properties"]["LonLat"]["lon"])
+    x, y = latlon_to_carla(transformer, lat, lon)
+    merc_x, merc_y = ref_feature["geometry"]["coordinates"]
+
+    offset=0.3
+    dbg.draw_line(
+        carla.Location(x - offset, y, 0.5),
+        carla.Location(x + offset, y, 0.5),
+        thickness=0.2, color=carla.Color(100, 0, 0), life_time=10.0
+    )
+    dbg.draw_line(
+        carla.Location(x, y - offset, 0.5),
+        carla.Location(x, y + offset, 0.5),
+        thickness=0.2, color=carla.Color(100, 0, 0), life_time=10.0
+    )
+
+    return x, y, merc_x, merc_y
+
+def draw_lanes(dbg, transformer, lanes):
+    for feature in lanes["features"]:
+        geom = feature["geometry"]
+        if geom["type"] != "LineString":
+            continue
+
+        props = feature.get("properties", {})
+        lane_type = props.get("laneType", "Vehicle")
+        lane_num = props.get("laneNumber", "?")
+        color = LANE_COLORS.get(lane_type, carla.Color(200,200,200))
+
+        coords_latlon = [ (node['latlon']['lat'], node['latlon']['lon'])
+                         for node in props.get('elevation',[]) ]
+        
+        if not coords_latlon:
+            coords_latlon = geom["coordinates"]
+
+        for i in range (len(coords_latlon) - 1):
+            x1, y1 = latlon_to_carla(transformer, *coords_latlon[i])
+            x2, y2 = latlon_to_carla(transformer, *coords_latlon[i+1])
+            dbg.draw_line(
+                carla.Location(x1, y1, 0.35),
+                carla.Location(x2, y2, 0.35),
+                thickness=0.12,
+                color=color,
+                life_time=15.0
+            )
+
+        lx, ly = latlon_to_carla(transformer, *coords_latlon[0])
+        dbg.draw_string(
+            carla.Location(lx, ly, 0.8),
+            f"Lane {lane_num}",
+            color=color,
+            life_time=15.0
+        )
 
 def draw_box_from_opposite_corners(zero_corner,opposite_corner):
 
@@ -401,6 +566,8 @@ try:
     client = carla.Client(args.host, args.port)
     client.set_timeout(5.0)
     world = client.get_world()
+    dbg = world.debug
+    transformer = setup_transformer()
     # map = world.get_map()
 
     draw_z_height = 39
@@ -416,8 +583,8 @@ try:
     
     print("mcity_origin: " + str(mcity_origin))
 
-    receive_ip = "192.168.55.236"
-    receive_port = 5397
+    receive_ip = "192.168.55.237"
+    receive_port = 5398
 
     sock = socket.socket(   socket.AF_INET, # Internet
                             socket.SOCK_DGRAM) # UDP
@@ -446,6 +613,14 @@ try:
         #     print("\nReceived BSM")
         #     decoded_tcm = decode_j2735(hex_data)
         #     print(decoded_tcm)
+
+        elif hex_data.lower().startswith("00128"):
+            print("\nReceived MAP")
+            decoded_map = decode_j2735(hex_data)
+            print(decoded_map)
+            vectors, boxes, lanes = get_coordinates_from_j2735(decoded_map)
+            int_center = draw_intersection_center(dbg, transformer, vectors)
+            draw_lanes(dbg, transformer, lanes)
 
 finally:
     print('\nDone!')
