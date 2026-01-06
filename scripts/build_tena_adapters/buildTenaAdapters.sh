@@ -158,6 +158,7 @@ if [[ $tenaAppIndex == 1 ]]; then
 	requiresProtocolio=false
 	useMasterDefaultBranch=false
 	noBuildVersion=true
+	applicationFolderName=vug-threads
 
 elif [[ $tenaAppIndex == 2 ]]; then
 	tenaApp=vug-udp-protocolio
@@ -168,6 +169,7 @@ elif [[ $tenaAppIndex == 2 ]]; then
 	requiresProtocolio=false
 	useMasterDefaultBranch=false
 	noBuildVersion=true
+	applicationFolderName=vug-udp-protocolio
 
 elif [[ $tenaAppIndex == 3 ]]; then
 	tenaApp=vug-scenario-publisher
@@ -178,6 +180,7 @@ elif [[ $tenaAppIndex == 3 ]]; then
 	requiresProtocolio=false
 	useMasterDefaultBranch=false
 	noBuildVersion=false
+	applicationFolderName=scenario-publisher
 
 elif [[ $tenaAppIndex == 4 ]]; then
 	tenaApp=$vug_carla_adapter_name
@@ -188,6 +191,7 @@ elif [[ $tenaAppIndex == 4 ]]; then
 	requiresProtocolio=false
 	useMasterDefaultBranch=false
 	noBuildVersion=false
+	applicationFolderName=CARLAtenaAdapter
 
 elif [[ $tenaAppIndex == 5 ]]; then
 	tenaApp=vug-v2x-adapter
@@ -198,6 +202,7 @@ elif [[ $tenaAppIndex == 5 ]]; then
 	requiresProtocolio=false
 	useMasterDefaultBranch=false
 	noBuildVersion=false
+	applicationFolderName=TENAV2XMessageAdapter
 
 elif [[ $tenaAppIndex == 6 ]]; then
 	tenaApp=vug-entity-generator
@@ -208,6 +213,7 @@ elif [[ $tenaAppIndex == 6 ]]; then
 	requiresProtocolio=false
 	useMasterDefaultBranch=false
 	noBuildVersion=false
+	applicationFolderName=tena-entity-generator
 
 elif [[ $tenaAppIndex == 7 ]]; then
 	tenaApp=vug-v2xhub-v2x-plugin
@@ -218,11 +224,15 @@ elif [[ $tenaAppIndex == 7 ]]; then
 	requiresProtocolio=false
 	useMasterDefaultBranch=false
 	noBuildVersion=false
+	applicationFolderName=v2xhub-bsm-plugin # Need to find actual name
 
 else
 	echo "Invalid selection, try again..."
 	exit
 fi
+
+echo "Removing existing adapter build"
+sudo rm -rf $localInstallDir/$applicationFolderName*
 
 localAppDir=$VUG_LOCAL_TENADEV_DIR/$tenaApp	#location of git directory of application to be built
 			
@@ -422,12 +432,12 @@ fi
 #sudo docker run --rm -v /home/ejslattery/dev/carlaadapter:/home/CarlaAdapter -v /home/ejslattery/dev/tenadev/u1804-gcc75-64/TENA:/home/TENA harbor.distributedtesting.org/distributed-testing/dt-build-carla:latest bash -c "cd /home/CarlaAdapter/build; export TENA_PLATFORM=u1804-gcc75-64; export TENA_HOME=/home/TENA; export TENA_VERSION=6.0.7; export CARLA_HOME=/home/carla; cmake -D CMAKE_EXPORT_COMPILE_COMMANDS=ON -D CMAKE_PREFIX_PATH=/home/TENA/lib/cmake -D BOOST_INCLUDEDIR=/home/TENA/TENA_boost_1.70.0.2_Library/u1804-gcc75-64/include -D VUG_INSTALL_DIR=/home/CarlaAdapter/INSTALL ../"
 #-- Cmake
 
-if [[ ! -d $localAppDir/build ]]; then
-	mkdir $localAppDir/build
-else 
+if [[ -d $localAppDir/build ]]; then
 	sudo rm -rf $localAppDir/build
-	mkdir $localAppDir/build
 fi
+
+mkdir $localAppDir/build
+sudo chmod a+rw $localAppDir/build
 
 echo
 echo "#### Running CMAKE ####"
@@ -507,6 +517,9 @@ if [[ "$skipMake" == true ]]
 					echo "[!!!] MAKE INSTALL FAILED"
 					exit
 				fi
+
+				sudo chown -R $USER:$USER $localInstallDir
+				sudo chmod -R a+rwx $localInstallDir
 
 				echo
 				echo "#### Make Install Complete ####"
