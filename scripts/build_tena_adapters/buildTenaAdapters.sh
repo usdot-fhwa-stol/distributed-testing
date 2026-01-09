@@ -119,6 +119,7 @@ numBuildJobs=4    # number of build jobs to speed up compilation
 
 # Ensure the install directory exists so Docker doesn't create it as root
 mkdir -p "$localInstallDir"
+chmod 777 "$localInstallDir"
 
 #-------------------| TENA VARIABLES |-------------------#
 tenaVersion=6.0.9
@@ -566,8 +567,11 @@ if [[ "$skipMake" == true ]]
 					exit 1
 				fi
 
-				chown -R $USER:$USER $localInstallDir
-				chmod -R a+rwx $localInstallDir
+				echo
+				echo "Changing permissions for built applications"
+				sudo chown -R $USER:$USER $localInstallDir
+				sudo chmod -R a+rwx $localInstallDir
+				sudo -k
 
 				echo
 				echo "#### Make Install Complete ####"

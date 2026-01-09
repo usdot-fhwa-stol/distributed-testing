@@ -24,16 +24,16 @@ BRANCH_APP_1="develop"
 BRANCH_APP_2="develop"
 
 # [3] scenario-publisher
-BRANCH_APP_3="tsc-position"
+BRANCH_APP_3="develop"
 
 # [4] vug-carla-adapter
-BRANCH_APP_4="fix/print-statement"
+BRANCH_APP_4="develop"
 
 # [5] tena-v2x-adapter
 BRANCH_APP_5="develop"
 
 # [6] tena-entity-generator
-BRANCH_APP_6="minEndTime"
+BRANCH_APP_6="develop"
 
 # [7] v2xhub-tena-v2x-plugin
 BRANCH_APP_7="develop"
@@ -62,12 +62,12 @@ run_build() {
 }
 
 # Execute builds in order
-# run_build 1 "$BRANCH_APP_1" "vug-threads-library"
-# run_build 2 "$BRANCH_APP_2" "vug-udp-protocolio"
-# run_build 3 "$BRANCH_APP_3" "scenario-publisher"
+run_build 1 "$BRANCH_APP_1" "vug-threads-library"
+run_build 2 "$BRANCH_APP_2" "vug-udp-protocolio"
+run_build 3 "$BRANCH_APP_3" "scenario-publisher"
 run_build 4 "$BRANCH_APP_4" "vug-carla-adapter"
-# run_build 5 "$BRANCH_APP_5" "tena-v2x-adapter"
-# run_build 6 "$BRANCH_APP_6" "tena-entity-generator"
+run_build 5 "$BRANCH_APP_5" "tena-v2x-adapter"
+run_build 6 "$BRANCH_APP_6" "tena-entity-generator"
 # run_build 7 "$BRANCH_APP_7" "v2xhub-tena-v2x-plugin"
 
 echo "================================================================================"
