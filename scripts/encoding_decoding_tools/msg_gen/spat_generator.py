@@ -463,7 +463,6 @@ def main():
             sleep_time = interval - (time.time() - loop_start)
             if sleep_time > 0:
                 time.sleep(sleep_time)
-            exit()
 
     except KeyboardInterrupt:
         print("\nStopped SPaT generator.")
