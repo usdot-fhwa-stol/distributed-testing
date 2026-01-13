@@ -63,10 +63,9 @@ import json_templates
 # Global Configurations
 # =================================
 LOCAL_ADDRESS = os.environ['VUG_LOCAL_ADDRESS']
-# LISTEN_IP = '0.0.0.0'
-# WSL_IP = '172.xx.xx.xx'
-SELECTED_WAYPOINT_CSV = "/home/dt_user/distributed-testing/scripts/json_scripts/delave_waypoints.csv" # CSV file containing waypoint data
-GET_OBJECT_TYPE = "waypoints"  # options are "waypoints" or "api"
+STREAMER_BIND_IP = os.getenv("VUG_STREAMER_BIND_IP", "0.0.0.0")  # IP to bind the UDP listener to; defaults to all interfaces
+SELECTED_WAYPOINT_CSV = "/home/dt_user/distributed-testing/scripts/json_scripts/delave_waypoints_v3.csv" # CSV file containing waypoint data
+GET_OBJECT_TYPE = "waypoints" # options are "waypoints" or "api"
 COORDINATE_FORMAT = "ltpENU" # options are "geocentric" or "ltpENU"
 PUBLISHER_IP = LOCAL_ADDRESS # WSL_IP when running script from Windows (not in WSL)
 PUBLISHER_ENDPOINT = PUBLISHER_IP + ":8004" #IP for TENA Publisher connection
@@ -609,8 +608,8 @@ def receive_main(mapOrigin_queue, stdout_lock):
     """
 
     # Define host and port
-    HOST = STREAMER_IP  # Listen on localhost
-    PORT = 8005  # Choose an unused port
+    HOST = STREAMER_BIND_IP  # Bind to all interfaces by default so loopback/physical NIC traffic is received
+    PORT = 8005
 
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
@@ -624,6 +623,8 @@ def receive_main(mapOrigin_queue, stdout_lock):
 
     # Initialize counters - dictionary to track all types
     type_counts = {}
+
+    log_file = open("received_data.jsonl", "w")
 
     try:
         while True:
