@@ -63,14 +63,16 @@ import json_templates
 # Global Configurations
 # =================================
 LOCAL_ADDRESS = os.environ['VUG_LOCAL_ADDRESS']
-STREAMER_BIND_IP = os.getenv("VUG_STREAMER_BIND_IP", "0.0.0.0")  # IP to bind the UDP listener to; defaults to all interfaces
+VUG_STREAMER_BIND_IP = os.getenv("VUG_STREAMER_BIND_IP", "0.0.0.0")  # IP to bind the TCP listener to; defaults to all interfaces
+VUG_STREAMER_BIND_PORT = int(os.getenv("VUG_STREAMER_BIND_PORT","8005")) # Port to bind the TCP listener to; defaults to 8005
+VUG_PUBLISHER_REST_IP = os.getenv("VUG_PUBLISHER_REST_IP", "0.0.0.0") # IP of the JSON Publisher's REST API; defaults to 0.0.0.0
+VUG_PUBLISHER_REST_PORT = int(os.getenv("VUG_PUBLISHER_REST_PORT", "8004")) # Port of the JSON Publisher's REST API; defaults to 8004
 SELECTED_WAYPOINT_CSV = "/home/dt_user/distributed-testing/scripts/json_scripts/delave_waypoints_v3.csv" # CSV file containing waypoint data
+
 GET_OBJECT_TYPE = "waypoints" # options are "waypoints" or "api"
 COORDINATE_FORMAT = "ltpENU" # options are "geocentric" or "ltpENU"
-PUBLISHER_IP = LOCAL_ADDRESS # WSL_IP when running script from Windows (not in WSL)
-PUBLISHER_ENDPOINT = PUBLISHER_IP + ":8004" #IP for TENA Publisher connection
-STREAMER_IP = LOCAL_ADDRESS # LISTEN_IP when running script from Windows (not in WSL)
-STREAMER_DATA_ENDPOINT = STREAMER_IP + ":8005"
+PUBLISHER_ENDPOINT = VUG_PUBLISHER_REST_IP + ":" + str(VUG_PUBLISHER_REST_PORT) #Endpoint for JSON Publisher REST API
+STREAMER_DATA_ENDPOINT = VUG_STREAMER_BIND_IP + ":" + str(VUG_STREAMER_BIND_PORT)
 DATA_UPDATE_PERIOD = 0.1 # Period for retrieval of data (in seconds)
 INDIVIDUAL_TRANSMIT_DELAY = 0.002 # Period between transmission of individual entities to the REST API
 LOGGING_LEVEL = logging.DEBUG # sets the minimum level to log [DEBUG, INFO, WARNING, ERROR, CRITICAL]
@@ -514,7 +516,7 @@ def transmit_main(mapOrigin_queue, stdout_lock):
     print(f"Map Origin received from receive_thread: {mapOrigin}")
 
     # Connection check to ensure REST API is available
-    if not wait_for_port(PUBLISHER_IP, 8004):
+    if not wait_for_port(VUG_PUBLISHER_REST_IP, VUG_PUBLISHER_REST_PORT):
         logging.error("REST API is not available")
         return
     
@@ -607,15 +609,11 @@ def receive_main(mapOrigin_queue, stdout_lock):
         - It is up to the user to implement further processing of the received SDOs
     """
 
-    # Define host and port
-    HOST = STREAMER_BIND_IP  # Bind to all interfaces by default so loopback/physical NIC traffic is received
-    PORT = 8005
-
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
-    sock.bind((HOST, PORT))
+    sock.bind((VUG_STREAMER_BIND_IP, VUG_STREAMER_BIND_PORT))
     sock.listen(1)
-    print(f"Server listening on {HOST}:{PORT} for TCP data...")
+    print(f"Server listening on {VUG_STREAMER_BIND_IP}:{VUG_STREAMER_BIND_PORT} for TCP data...")
 
     conn, addr = sock.accept()
     buffer = b""
@@ -628,7 +626,7 @@ def receive_main(mapOrigin_queue, stdout_lock):
 
     try:
         while True:
-            data = conn.recv(16384)
+            data = conn.recv(65536)
             if not data:
                 break
             buffer += data
