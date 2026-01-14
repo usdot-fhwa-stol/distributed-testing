@@ -67,7 +67,7 @@ VUG_STREAMER_BIND_IP = os.getenv("VUG_STREAMER_BIND_IP", "0.0.0.0")  # IP to bin
 VUG_STREAMER_BIND_PORT = int(os.getenv("VUG_STREAMER_BIND_PORT","8005")) # Port to bind the TCP listener to; defaults to 8005
 VUG_PUBLISHER_REST_IP = os.getenv("VUG_PUBLISHER_REST_IP", "0.0.0.0") # IP of the JSON Publisher's REST API; defaults to 0.0.0.0
 VUG_PUBLISHER_REST_PORT = int(os.getenv("VUG_PUBLISHER_REST_PORT", "8004")) # Port of the JSON Publisher's REST API; defaults to 8004
-SELECTED_WAYPOINT_CSV = "/home/dt_user/distributed-testing/scripts/json_scripts/delave_waypoints_v3.csv" # CSV file containing waypoint data
+SELECTED_WAYPOINT_CSV = "/home/dt_user/distributed-testing/scripts/json_scripts/delave_waypoints_v4.csv" # CSV file containing waypoint data
 
 GET_OBJECT_TYPE = "waypoints" # options are "waypoints" or "api"
 COORDINATE_FORMAT = "ltpENU" # options are "geocentric" or "ltpENU"
