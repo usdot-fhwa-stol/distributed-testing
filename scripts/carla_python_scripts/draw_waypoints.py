@@ -573,7 +573,13 @@ try:
         current_directory = os.getcwd()
         folder_path = os.path.join(current_directory, "waypoint_files")
         if not os.path.exists(folder_path):
-            os.makedirs(folder_path)
+            try: 
+                os.makedirs(folder_path)
+                os.chmod(folder_path,0o666)
+            except Exception as errMsg:
+                print("ERROR: Unable to make directory waypoint files. ")
+                print("\t\tCreate directory waypoint_files within carla_python_scripts with read and write permissions for all users")
+                sys.exit(1)
 
     if args.follow_vehicle:
         listener = keyboard.Listener(on_press=on_press)
@@ -671,8 +677,12 @@ try:
                 df["ltpENU_bearing_yaw"] = (-1 * df["carla_bearing_yaw"]) % 360.0
 
                 df.to_csv("waypoint_files/" + spawn["name"] + '_breadcrumbs.csv', index=False)
+                os.chmod("waypoint_files/" + spawn["name"] + '_breadcrumbs.csv', 0o666)
 
             time.sleep(draw_loop_sleep)
+
+except Exception as errMsg:
+    print(f"ERROR: Failed to draw waypoints: {errMsg}")
 
 finally:
     print('\nDone!')
