@@ -616,41 +616,55 @@ def receive_main(mapOrigin_queue, stdout_lock):
     print(f"Server listening on {VUG_STREAMER_BIND_IP}:{VUG_STREAMER_BIND_PORT} for TCP data...")
 
     conn, addr = sock.accept()
-    buffer = b""
+    buffer_str = ""
     decoder = json.JSONDecoder()
 
     # Initialize counters - dictionary to track all types
     type_counts = {}
 
-    log_file = open("received_data.jsonl", "w")
+    #log_file = open("received_data.jsonl", "w")
 
     try:
         while True:
+            # Read Network Data
             data = conn.recv(65536)
             if not data:
                 break
-            buffer += data
+            
+            # Add to string buffer
+            buffer_str += data.decode('utf-8')
 
-            s = buffer.decode('utf-8').strip()
+            # Process all data in buffer
+            while True:
+                try:
+                    # Clean whitespace to prevent decoding
+                    buffer_str = buffer_str.lstrip()
 
-            try:
-                json_data, index = decoder.raw_decode(s)
+                    # If buffer is emtpy, go read more data
+                    if not buffer_str:
+                        break
 
-                type_name = json_data["metadata"]["type_name"]
-                if type_name == "DOT_OSTR::Configuration::Scenario":
-                    map_origin = json_templates.get_map_origin_from_scenario(json_data)
-                    logging.info(f"Map Origin received from Scenario: {map_origin}")
-                    mapOrigin_queue.put(map_origin)
+                    # Decode one object from the front of the buffer
+                    json_data, index = decoder.raw_decode(buffer_str)
 
-                #----- Our Example Implementation -----
-                get_count_of_objects(type_counts, type_name, stdout_lock)
+                    # Process scenario message
+                    type_name = json_data["metadata"]["type_name"]
+                    if type_name == "DOT_OSTR::Configuration::Scenario":
+                        map_origin = json_templates.get_map_origin_from_scenario(json_data)
+                        logging.info(f"Map Origin received from Scenario: {map_origin}")
+                        mapOrigin_queue.put(map_origin)
 
-                s = s[index:].lstrip()
+                    # Process incoming messages
+                    #----- Our Example Implementation -----
+                    get_count_of_objects(type_counts, type_name, stdout_lock)
 
-                buffer = s.encode('utf-8')
+                    # Remove processed object from the buffer
+                    buffer_str = buffer_str[index:]
 
-            except json.JSONDecodeError as err:
-                logging.error(f"Error Decoding JSON Data from {addr}: {err}")
+                except json.JSONDecodeError:
+                    # We have data, but it's not a full JSON object yet. Break the inner loop and go back to recv() to get more
+                    logging.debug(f"Partial JSON data in buffer, returning to recv() for more")
+                    break
 
     finally:
         conn.close()
