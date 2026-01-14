@@ -337,6 +337,8 @@ def draw_waypoints(world,map,waypoints,draw_arrows,veh_name):
         
         f_c.close()
 
+        os.chmod(f'waypoint_files/{veh_name}_carma_route', 0o666)
+
         f_g = open(f'waypoint_files/{veh_name}_waypoints.csv', "w")
     
         print("\nGENERAL ROUTE:")
@@ -345,6 +347,7 @@ def draw_waypoints(world,map,waypoints,draw_arrows,veh_name):
             f_g.write(f'{route_line}\n')
         
         f_g.close()
+        os.chmod(f'waypoint_files/{veh_name}_waypoints.csv', 0o666)
 
 
     waypoint_data = {
@@ -575,7 +578,7 @@ try:
         if not os.path.exists(folder_path):
             try: 
                 os.makedirs(folder_path)
-                os.chmod(folder_path,0o666)
+                os.chmod(folder_path,0o777)
             except Exception as errMsg:
                 print("ERROR: Unable to make directory waypoint files. ")
                 print("\t\tCreate directory waypoint_files within carla_python_scripts with read and write permissions for all users")
