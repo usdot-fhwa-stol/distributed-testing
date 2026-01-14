@@ -90,11 +90,17 @@ def main(args):
 
     move_step = INITIAL_STEP
 
+    # Need to calculate geo_loc initially so 'P' works before moving
+    geo_loc = carla_map.transform_to_geolocation(curr_loc)
+
     print("\nStarting Loop. Press ESC to quit.")
     
     running = True
     while running:
         clock.tick(30) # Limit FPS
+
+        # Update geolocation based on current position
+        geo_loc = carla_map.transform_to_geolocation(curr_loc)
 
         # -----------------------------
         # Input Handling
@@ -130,12 +136,17 @@ def main(args):
 
                 # --- Camera Control (Manual) ---
                 elif event.key == pygame.K_c:
-                    # Move camera to point, Top Down (Pitch -90), Facing North (Yaw 0/270 depending on map)
-                    # Standard Unreal: X=North/Forward. Yaw=0 looks down +X.
-                    # Top down: Location Z+50.
+                    # Move camera to point, Top Down (Pitch -90), Facing North (Yaw 0)
                     cam_loc = carla.Location(curr_loc.x, curr_loc.y, curr_loc.z + 50.0)
                     cam_rot = carla.Rotation(pitch=-90, yaw=0, roll=0)
                     spectator.set_transform(carla.Transform(cam_loc, cam_rot))
+
+                # --- Print Coordinates (New) ---
+                elif event.key == pygame.K_p:
+                    print(f"\n--- Location Snapshot ---")
+                    print(f"CARLA (XYZ): {curr_loc.x:.4f}, {curr_loc.y:.4f}, {curr_loc.z:.4f}")
+                    print(f"GEO (Lat/Lon/Alt): {geo_loc.latitude:.8f}, {geo_loc.longitude:.8f}, {geo_loc.altitude:.4f}")
+                    print(f"-------------------------")
 
         # -----------------------------
         # Visuals
@@ -143,13 +154,9 @@ def main(args):
         # Draw axes at the current point
         draw_world_axes(world, curr_loc, length=2.0, thickness=0.08, arrow_size=0.15)
         
-        # NOTE: Spectator update removed from loop. 
-        # Only updates when 'C' is pressed.
-
         # -----------------------------
         # HUD / Data Display
         # -----------------------------
-        geo_loc = carla_map.transform_to_geolocation(curr_loc)
         
         screen.fill((20, 20, 20)) # Dark gray background
 
@@ -158,6 +165,7 @@ def main(args):
             f"  Move X/Y : WASD",
             f"  Move Z   : Q (Down) / E (Up)",
             f"  Camera   : 'C' (Snap Top-Down)",
+            f"  Print    : 'P' (to terminal)",
             f"  Step Size: UP / DOWN arrows",
             f"",
             f"SETTINGS",
