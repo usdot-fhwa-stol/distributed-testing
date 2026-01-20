@@ -41,6 +41,18 @@ def draw_world_axes(world, location, length=1.0, thickness=0.05, arrow_size=0.1,
     debug.draw_arrow(location, end_y, thickness=thickness, arrow_size=arrow_size, color=carla.Color(0, 255, 0), life_time=life_time)
     debug.draw_arrow(location, end_z, thickness=thickness, arrow_size=arrow_size, color=carla.Color(0, 0, 255), life_time=life_time)
 
+def draw_box(world, corners, thickness=0.1, life_time=0.1):
+    """
+    Draws lines between 4 corners creating a box
+    """
+    debug = world.debug
+
+    for i in range (len(corners)):
+        start = corners[i]
+        end = corners[(i+1)% len(corners)]
+        #print(f"Connecting: {start} and {end}")
+        debug.draw_line(start, end, life_time=life_time, thickness=thickness, color=carla.Color(0,255,0))
+
 def main(args):
     # -----------------------------
     # 2. Initialize CARLA
@@ -94,6 +106,8 @@ def main(args):
     geo_loc = carla_map.transform_to_geolocation(curr_loc)
 
     print("\nStarting Loop. Press ESC to quit.")
+
+    corners = []
     
     running = True
     while running:
@@ -116,6 +130,8 @@ def main(args):
 
                 # --- Step Size Control ---
                 elif event.key == pygame.K_UP:
+                    if move_step == 0.1:
+                        move_step = 0.0
                     move_step += STEP_INCREMENT
                 elif event.key == pygame.K_DOWN:
                     move_step = max(0.1, move_step - STEP_INCREMENT)
@@ -143,16 +159,28 @@ def main(args):
 
                 # --- Print Coordinates (New) ---
                 elif event.key == pygame.K_p:
-                    print(f"\n--- Location Snapshot ---")
-                    print(f"CARLA (XYZ): {curr_loc.x:.4f}, {curr_loc.y:.4f}, {curr_loc.z:.4f}")
-                    print(f"GEO (Lat/Lon/Alt): {geo_loc.latitude:.8f}, {geo_loc.longitude:.8f}, {geo_loc.altitude:.4f}")
+                    # print(f"\n--- Location Snapshot ---")
+                    # print(f"CARLA (XYZ): {curr_loc.x:.4f}, {curr_loc.y:.4f}, {curr_loc.z:.4f}")
+                    # print(f"GEO (Lat/Lon/Alt): {geo_loc.latitude:.8f}, {geo_loc.longitude:.8f}, {geo_loc.altitude:.4f}")
                     print(f"-------------------------")
+                    if len(corners) == 4:
+                        print(f"Clearing Corners")
+                        corners = []
+                        print(f"Corners: {corners}")
+                    else:
+                        corner = carla.Location(curr_loc.x, curr_loc.y, curr_loc.z)
+                        corners.append(corner)
+                        print(f"Current Corners: ")
+                        print(f"-----------------")
+                        for corner in corners:
+                            print(f"\tx: {corner.x} y:{corner.y}")
 
         # -----------------------------
         # Visuals
         # -----------------------------
         # Draw axes at the current point
         draw_world_axes(world, curr_loc, length=2.0, thickness=0.08, arrow_size=0.15)
+        draw_box(world,corners)
         
         # -----------------------------
         # HUD / Data Display

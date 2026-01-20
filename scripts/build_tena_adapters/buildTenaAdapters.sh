@@ -482,7 +482,8 @@ fi
 #-- Cmake
 
 if [[ -d $localAppDir/build ]]; then
-	rm -rf $localAppDir/build
+	sudo rm -rf $localAppDir/build
+	sudo -k
 fi
 
 mkdir $localAppDir/build
