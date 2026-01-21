@@ -107,6 +107,10 @@ def parse_args():
     parser.add_argument(
         '--yaw', type=float, default=0.0,
         help='Yaw angle in degrees for spawn transform; set heading when providing XYZ (default: 0.0)')
+    parser.add_argument(
+        '--show_route',
+        action='store_true',
+        help='Display the planned route waypoints on the HUD/World')
     return parser.parse_args()
 
 
@@ -232,6 +236,8 @@ def run_loop(world, vehicle, agent, autopilot_active, args):
     # Simple longitudinal control for train mode
     train_throttle = 0.0
     train_brake = 0.0
+    
+    INITIAL_PLAN = False
 
     try:
         while True:
@@ -321,7 +327,23 @@ def run_loop(world, vehicle, agent, autopilot_active, args):
                     continue
 
                 # Your modified BehaviorAgent.run_step(manual_speed_limit=...)
-                control = agent.run_step(manual_speed_limit=manual_speed_value)
+                control = agent.run_step(debug=args.show_route, manual_speed_limit=manual_speed_value)
+
+                if args.show_route:
+                    # Draw the next few waypoints from the local planner
+                    plan = agent.get_local_planner().get_plan()
+                    
+                    if not INITIAL_PLAN: 
+                        for i, (wp, _) in enumerate(plan):
+                            loc = wp.transform.location + carla.Location(z=0.5)
+                            world.debug.draw_point(loc, size=0.1, color=carla.Color(0, 255, 0), life_time=10)
+                            INITIAL_PLAN = True
+                    else: 
+                    
+                        for i, (wp, _) in enumerate(plan):
+                            if i >= 50: break # Limit to 50 points to avoid lag
+                            loc = wp.transform.location + carla.Location(z=0.5)
+                            world.debug.draw_point(loc, size=0.1, color=carla.Color(0, 255, 0), life_time=0.1)
 
                 if train_mode:
                     # Agent handles steering etc; user handles throttle/brake
