@@ -24,6 +24,11 @@ argparser.add_argument(
     default=2000,
     type=int,
     help='TCP port to listen to (default: 2000)')
+argparser.add_argument(
+    '-d', '--display',
+    action='store_true',
+    help='Indicates that the program should draw the detector loops into CARLA'
+)
 args = argparser.parse_args()
 
 LOOP_DETECTORS = {
@@ -456,7 +461,9 @@ try:
 
     try:
         while True:
-            draw_loop_detectors(dbg, LOOP_DETECTORS, 0.15)
+            if args.display:
+                draw_loop_detectors(dbg, LOOP_DETECTORS, 0.15)
+            
             update_loop_detectors(world,LOOP_DETECTORS)
 
             time.sleep(0.1)
