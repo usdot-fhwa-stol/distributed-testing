@@ -1159,9 +1159,9 @@ def performance_post_processing(results_file):
         
         print("\t" + str(column) + ": ")
         
-        column_min = results_only_dataset[column].min(numeric_only=True)
-        column_max = results_only_dataset[column].max(numeric_only=True)
-        column_mean = results_only_dataset[column].mean(numeric_only=True)
+        column_min = results_only_dataset[column].min()
+        column_max = results_only_dataset[column].max()
+        column_mean = results_only_dataset[column].mean()
         print("\t\tMin: " + str(column_min))
         print("\t\tMax: " + str(column_max))
         print("\t\tMean: " + str(column_mean))
@@ -1651,7 +1651,7 @@ def select_message_type_user_input():
 # specifies the number of match_keys defined in the params for each data source
 num_match_keys = 5
 
-J2735_message_types = ["J2735","J3224","J2735-BSM","J2735-SPAT","J2735-MAP","Vehicle","MAP","TrafficLight","BSM","Mobility_Request","Mobility_Response","Mobility_Path","Mobility_Operations-STATUS","Mobility_Operations-INFO","Traffic_Control_Request","Traffic_Control_Message"]
+J2735_message_types = ["J2735","J3224","J2735-BSM","J2735-SPAT","J2735-MAP","LandVehicle","MAP","TrafficLight","BSM","Mobility_Request","Mobility_Response","Mobility_Path","Mobility_Operations-STATUS","Mobility_Operations-INFO","Traffic_Control_Request","Traffic_Control_Message"]
 
 J2735_message_type_ids = {
     "BSM"   : "0014",
@@ -1686,7 +1686,7 @@ argparser.add_argument(
     dest='data_type',
     type=str,
     default=None,
-    help='Data type to be analyzed OPTIONS: [J2725,MAP,SPAT,BSM,Vehicle,Mobility_Request,Mobility_Response,Mobility_Path,Mobility_Operations-STATUS,Mobility_Operations-INFO,Traffic_Control_Request,Traffic_Control_Message]')
+    help='Data type to be analyzed OPTIONS: [J2725,MAP,SPAT,BSM,LandVehicle,Mobility_Request,Mobility_Response,Mobility_Path,Mobility_Operations-STATUS,Mobility_Operations-INFO,Traffic_Control_Request,Traffic_Control_Message]')
 argparser.add_argument(
     '-s', '--source_site',
     metavar='<source_site>',
@@ -1805,7 +1805,7 @@ if J2735_message_subtype_name:
 #     else:
         
 #         if args.source_vehicle_index > len(dt_vehicles):
-#             print("ERROR: Source Vehicle index out of bounds, try again")
+#             print("ERROR: Source LandVehicle index out of bounds, try again")
 #             print("\nValid Vehicles:")
 #             for vehicle_i,vehicle in enumerate(dt_vehicles):
 #                 print("\n[" + str(vehicle_i + 1) + "] \tHOST ID: " + vehicle["host_static_id"] + " \n\tTENA ID: " + vehicle["tena_host_id"] + " \n\tBSM ID: " + vehicle["bsm_id"])
@@ -1941,7 +1941,7 @@ data_params = {
                 }
             ]
         },
-        "Vehicle" : {
+        "LandVehicle" : {
             "skip_if_neqs"      : [
                 {
                 }
@@ -2336,7 +2336,7 @@ data_params = {
                 }
             ]
         },
-        "Vehicle" : {
+        "LandVehicle" : {
             "skip_if_neqs"      : [
                 {
                     "key"   : "const^Metadata,SDOid.hostIPaddress",
@@ -2936,4 +2936,3 @@ plot_latency(results_filename,results_base_dir)
 
 print("\n----- ANALYSIS COMPLETE -----")
 sys.exit()
-

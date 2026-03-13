@@ -332,7 +332,7 @@ def generate_all_dest_all_runs_hist_plot(plots_dir,data_type,run_data_frames,plo
             #     print(f'\t\tONLY ONE RUN, SKIPPING RUN PLOTS')
             #     continue
             
-            all_runs_concat_data = pd.Series()
+            all_runs_concat_data = pd.Series(dtype='float64')
             for run_number in sorted(run_data_frames.keys(), key=lambda x: int(float(x[1:]))):  # Sort run numbers in ascending order
                 print(f'\t\t run_number: {run_number}')
                 run_data = run_data_frames[run_number]
@@ -450,6 +450,9 @@ def generate_all_dest_all_runs_hist_plot(plots_dir,data_type,run_data_frames,plo
 
         print(f'hist_patches: {hist_patches}')
 
+        if len(list_of_all_dest_clipped) == 1:
+            hist_patches = [hist_patches]
+
         for i, patch_group in enumerate(hist_patches):  # Iterate over individual bar hist_patches directly
             print(f'patch_group: {patch_group}')
             for patch in patch_group:
@@ -550,14 +553,19 @@ def generate_all_dest_all_runs_hist_plot(plots_dir,data_type,run_data_frames,plo
 
         # Cumulative distributions.
         for i,data in enumerate(list_of_all_dest_clipped):
-            ecdf_line = ecdf_ax.ecdf(    data, 
-                        label=f'{list_of_all_dest_names_labels[i]} CDF', 
-                        # color=list_of_all_dest_colors[i],
+            if len(data) == 0:
+                continue
+            # Manual ECDF calculation for compatibility with older matplotlib versions
+            sorted_data = np.sort(data)
+            yvals = np.arange(1, len(sorted_data) + 1) / len(sorted_data)
+            
+            ecdf_line, = ecdf_ax.step(sorted_data, yvals, 
+                        label=f'{list_of_all_dest_names_labels[i]} CDF',
                         color=(0,0,0),
-                        linestyle=plot_styles["source_destination_linestyles"][list_of_all_dest_names[i]],                        
+                        linestyle=plot_styles["source_destination_linestyles"][list_of_all_dest_names[i]],
+                        where='post'
                     )
-            # Extract the x and y data from the Line2D object
-            ecdf_x, ecdf_y = ecdf_line.get_data()
+            ecdf_x, ecdf_y = sorted_data, yvals
 
             ecdf_n, ecdf_bins, ecdf_patches = ecdf_ax.hist( data, 
                                         bins=bins, 
@@ -669,7 +677,8 @@ def generate_all_dest_all_runs_hist_plot(plots_dir,data_type,run_data_frames,plo
 
 def main():
     # plot_performance_data("results","P2E2-RFR2-", "J2735-BSM",True)
-    plot_performance_data("results/P2E2-RFR2-DOWNLOAD","P2E2-RFR2-", "BSM",True)
+    # plot_performance_data("results/P2E2-RFR2-DOWNLOAD","P2E2-RFR2-", "BSM",True)
+    plot_performance_data("results","Energy-", "LandVehicle",True)
     # plot_performance_data("results", "SPAT")
     # plot_performance_data("results","P2E0-","Vehicle")
     # plot_performance_data("results","P2E0-","J2735-BSM")

@@ -57,10 +57,10 @@ data_types = {
     #     "pcap_file_pattern" : "J2735-Payload",
     #     "sdo_file_pattern"   : ["TJ2735Msg-J2735"]
     # },
-    "J2735-BSM": {
-        "pcap_file_pattern" : "J2735-Payload",
-        "sdo_file_pattern"   : ["TJ2735Msg-J2735"]
-    },
+    # "J2735-BSM": {
+    #     "pcap_file_pattern" : "J2735-Payload",
+    #     "sdo_file_pattern"   : ["TJ2735Msg-J2735"]
+    # },
     # "J2735-MAP": {
     #     "pcap_file_pattern" : "J2735-Payload",
     #     "sdo_file_pattern"   : ["TJ2735Msg-J2735"]
@@ -77,10 +77,10 @@ data_types = {
     #     "pcap_file_pattern" : "Mobility-Path",
     #     "sdo_file_pattern"   : "Mobility-Path"
     # },
-    # "Vehicle": {
-    #     "pcap_file_pattern" : "Vehicle-THIS-DOES-NOT-EXIST",
-    #     "sdo_file_pattern"   : ["Entities-Vehicle"]
-    # },
+    "LandVehicle": {
+        "pcap_file_pattern" : "LandVehicle-THIS-DOES-NOT-EXIST",
+        "sdo_file_pattern"   : ["Entities-LandVehicle"]
+    },
     # "Mobility_Request": {
     #     "pcap_file_pattern" : "Mobility-Request",
     #     "sdo_file_pattern"   : "Platoon"
@@ -109,9 +109,9 @@ data_types = {
     #     "pcap_file_pattern" : "MAP",
     #     "sdo_file_pattern"   : ["MAP"]
     # },
-    # "TrafficLight": {
+    # "TrafficSignalController": {
     #     "pcap_file_pattern" : "SPAT",
-    #     "sdo_file_pattern"   : ["TJ2735Msg-J2735","Entities-Signals-TrafficLight"]
+    #     "sdo_file_pattern"   : ["TJ2735Msg-J2735","Entities-TrafficSignalController"]
     # },
 }
 
@@ -332,11 +332,11 @@ def generate_import_files(source_data,v2xhub_data,dest_data,is_tcr_tcm,test_name
 
             # if there is a pcap out file (meaning this site generated udp messages for this) and it is one of the listed message types,
             # include a pcap out row
-            if all_data[source_data["site_name"]][data_type]["decoded_pcap_out_file"] and data_type in ["J2735-BSM","J2735-SPAT","J2735-MAP","SPAT","TrafficLight"]:
+            if all_data[source_data["site_name"]][data_type]["decoded_pcap_out_file"] and data_type in ["J2735-BSM","J2735-SPAT","J2735-MAP","SPAT","TrafficSignalController"]:
                 
                 # i dont think this is needed???
-                if data_type == "TrafficLight":
-                    import_data_type = "TrafficLight"
+                if data_type == "TrafficSignalController":
+                    import_data_type = "TrafficSignalController"
 
                 this_importfile_name_writer.writerow(["true",source_data["site_name"] + " J2735 pcap out",all_data[source_data["site_name"]][data_type]["decoded_pcap_out_file"],"pcap",import_data_type,None,source_data["start_time"],source_data["end_time"]])
             
@@ -346,7 +346,7 @@ def generate_import_files(source_data,v2xhub_data,dest_data,is_tcr_tcm,test_name
                 print(f'\t\tAdding row for {sdo_type_file}')
                 
                 if sdo_type_file_i == 0:
-                    if data_type == "TrafficLight":
+                    if data_type == "TrafficSignalController":
                         import_data_type = "J2735-SPAT"
                         import_adapter_ip = source_data["adapter_addresses_by_type"]["TJ2735Msg-J2735"]
                     else:
@@ -359,7 +359,7 @@ def generate_import_files(source_data,v2xhub_data,dest_data,is_tcr_tcm,test_name
             
             # if data_type in ["SPAT"]:
             #     this_importfile_name_writer.writerow(["true",sourceJ2735-Payload_data["site_name"] + " J2735 in to " + source_data["site_name"] + " SDO commit",all_data[source_data["site_name"]][data_type]["exported_tcds_file"],"tdcs",data_type,adapter_ip,source_data["start_time"],source_data["end_time"]])
-            if data_type == "TrafficLight":
+            if data_type == "TrafficSignalController":
                 import_data_file = all_data[dest_data["site_name"]][data_type]["exported_tcds_file"][1]
             else:
                 import_data_file = all_data[dest_data["site_name"]][data_type]["exported_tcds_file"][0]
@@ -370,9 +370,9 @@ def generate_import_files(source_data,v2xhub_data,dest_data,is_tcr_tcm,test_name
                 
                 this_importfile_name_writer.writerow(["true",source_data["site_name"] + " SDO to " + dest_data["site_name"] +  " SDO transmit",import_data_file,"tdcs",data_type,None,source_data["start_time"],source_data["end_time"]])
             
-            # include pcap in if we are not trafficlight (this doesnt have pcap out since it is not j2735)
+            # include pcap in if we are not TrafficSignalController (this doesnt have pcap out since it is not j2735)
             # and if we have a pcap in file listed
-            if data_type != "TrafficLight" and all_data[source_data["site_name"]][data_type]["decoded_pcap_in_file"]:
+            if data_type != "TrafficSignalController" and all_data[source_data["site_name"]][data_type]["decoded_pcap_in_file"]:
                 this_importfile_name_writer.writerow(["true",dest_data["site_name"] + " J2735 to " + dest_data["site_name"] + " J2735 pcap in",all_data[dest_data["site_name"]][data_type]["decoded_pcap_in_file"],"pcap",data_type,None,source_data["start_time"],source_data["end_time"]])
         else:
             print("Invalid vehicle configuration. Must be: live to constructive vehicle, constructive to live vehicle, or constructive to constructive vehicle")
