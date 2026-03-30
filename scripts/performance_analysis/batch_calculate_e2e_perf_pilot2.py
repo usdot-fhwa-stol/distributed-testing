@@ -3,116 +3,79 @@ import os
 import fnmatch
 import json
 import csv
-# import re
 import argparse
-# import glob
-# import matplotlib.pyplot as plt
-# import pandas as pd
-# import itertools
-# import time
-# import batch_generate_e2e_plots
-
-## TODO
-#   - make import files a json object so name doesnt matter
-#       - add types and names to data from different sources
-#   - 
-#
-#
-#
-#
-
-# PROCESS FOR USE
-#   1. Find start and end times of of event by replaying data and getting start and end time of desired event
-#   2. 
-#
-#
-#
-#
-
-
-
 
 ############################## DATA LOCATION PARAMETERS ##############################
 
-# TEST Times 
-
-# event0 take 1
-
-#   start:  2023-11-17 20:30:38
-#   end:    2023-11-17 20:31:26
-
-# even0 take 2: 
-
-#   start:  2023-11-17 20:38:36
-#   end:    2023-11-17 20:40:09
-
-# even1 take 2: 
-
-#   start:  2023-12-08 17:35:10
-#   end:    2023-12-08 17:43:05
+# old_data_types = {    MOST ARE OUT OF DATE - MAY BE USEFUL FOR PCAP
+#     "J2735-SPAT": {
+#         "pcap_file_pattern" : "J2735-Payload",
+#         "sdo_file_pattern"   : ["TJ2735Msg-J2735"]
+#     },
+#     "J2735-BSM": {
+#         "pcap_file_pattern" : "J2735-Payload",
+#         "sdo_file_pattern"   : ["TJ2735Msg-J2735"]
+#     },
+#     "J2735-MAP": {
+#         "pcap_file_pattern" : "J2735-Payload",
+#         "sdo_file_pattern"   : ["TJ2735Msg-J2735"]
+#     },
+#     "J3224": {
+#         "pcap_file_pattern" : "J3224-Payload",
+#         "sdo_file_pattern"   : ["TJ3224Msg-J3224"]
+#     },
+#     "BSM": {
+#         "pcap_file_pattern" : "BSM-SKIPME",
+#         "sdo_file_pattern"   : ["Track-BSM"]
+#     },
+#     "Mobility_Path": {
+#         "pcap_file_pattern" : "Mobility-Path",
+#         "sdo_file_pattern"   : "Mobility-Path"
+#     },
+#         "Mobility_Request": {
+#         "pcap_file_pattern" : "Mobility-Request",
+#         "sdo_file_pattern"   : "Platoon"
+#     },
+#     "Mobility_Response": {
+#         "pcap_file_pattern" : "Mobility-Response",
+#         "sdo_file_pattern"   : "Platoon"
+#     },
+#     "Mobility_Operations-INFO": {
+#         "pcap_file_pattern" : "Mobility-Operations",
+#         "sdo_file_pattern"   : "Platoon"
+#     },
+#     "Mobility_Operations-STATUS": {
+#         "pcap_file_pattern" : "Mobility-Operations",
+#         "sdo_file_pattern"   : "Platoon"
+#     },
+#     "Traffic_Control_Request": {
+#         "pcap_file_pattern" : "Traffic-Control-Request",
+#         "sdo_file_pattern"   : "TrafficControlRequest"
+#     },
+#     "Traffic_Control_Message": {
+#         "pcap_file_pattern" : "Traffic-Control-Message",
+#         "sdo_file_pattern"   : "TrafficControlMessage"
+#     },
+#     "MAP": {
+#         "pcap_file_pattern" : "MAP",
+#         "sdo_file_pattern"   : ["MAP"]
+#     },
+# }
 
 
 data_types = {
-    # "J2735-SPAT": {
-    #     "pcap_file_pattern" : "J2735-Payload",
-    #     "sdo_file_pattern"   : ["TJ2735Msg-J2735"]
+    # "LandVehicle": {
+    #     "pcap_file_pattern" : "LandVehicle-THIS-DOES-NOT-EXIST",
+    #     "sdo_file_pattern"   : ["Entities-LandVehicle"]
     # },
-    # "J2735-BSM": {
-    #     "pcap_file_pattern" : "J2735-Payload",
-    #     "sdo_file_pattern"   : ["TJ2735Msg-J2735"]
+    # "V2XMessage":{
+    #     "pcap_file_pattern" : "V2XMessage-UNKNOWN",
+    #     "sdo_file_pattern" : ["TV2XMsg-V2X"]
     # },
-    # "J2735-MAP": {
-    #     "pcap_file_pattern" : "J2735-Payload",
-    #     "sdo_file_pattern"   : ["TJ2735Msg-J2735"]
-    # },
-    # "J3224": {
-    #     "pcap_file_pattern" : "J3224-Payload",
-    #     "sdo_file_pattern"   : ["TJ3224Msg-J3224"]
-    # },
-    # "BSM": {
-    #     "pcap_file_pattern" : "BSM-SKIPME",
-    #     "sdo_file_pattern"   : ["Track-BSM"]
-    # },
-    # "Mobility_Path": {
-    #     "pcap_file_pattern" : "Mobility-Path",
-    #     "sdo_file_pattern"   : "Mobility-Path"
-    # },
-    "LandVehicle": {
-        "pcap_file_pattern" : "LandVehicle-THIS-DOES-NOT-EXIST",
-        "sdo_file_pattern"   : ["Entities-LandVehicle"]
+    "TrafficSignalController": {
+        "pcap_file_pattern" : "SPAT",
+        "sdo_file_pattern"   : ["Entities-TrafficSignalController"]
     },
-    # "Mobility_Request": {
-    #     "pcap_file_pattern" : "Mobility-Request",
-    #     "sdo_file_pattern"   : "Platoon"
-    # },
-    # "Mobility_Response": {
-    #     "pcap_file_pattern" : "Mobility-Response",
-    #     "sdo_file_pattern"   : "Platoon"
-    # },
-    # "Mobility_Operations-INFO": {
-    #     "pcap_file_pattern" : "Mobility-Operations",
-    #     "sdo_file_pattern"   : "Platoon"
-    # },
-    # "Mobility_Operations-STATUS": {
-    #     "pcap_file_pattern" : "Mobility-Operations",
-    #     "sdo_file_pattern"   : "Platoon"
-    # },
-    # "Traffic_Control_Request": {
-    #     "pcap_file_pattern" : "Traffic-Control-Request",
-    #     "sdo_file_pattern"   : "TrafficControlRequest"
-    # },
-    # "Traffic_Control_Message": {
-    #     "pcap_file_pattern" : "Traffic-Control-Message",
-    #     "sdo_file_pattern"   : "TrafficControlMessage"
-    # },
-    # "MAP": {
-    #     "pcap_file_pattern" : "MAP",
-    #     "sdo_file_pattern"   : ["MAP"]
-    # },
-    # "TrafficSignalController": {
-    #     "pcap_file_pattern" : "SPAT",
-    #     "sdo_file_pattern"   : ["TJ2735Msg-J2735","Entities-TrafficSignalController"]
-    # },
 }
 
 ################################################## FUNCTIONS ##################################################
@@ -346,23 +309,24 @@ def generate_import_files(source_data,v2xhub_data,dest_data,is_tcr_tcm,test_name
                 print(f'\t\tAdding row for {sdo_type_file}')
                 
                 if sdo_type_file_i == 0:
-                    if data_type == "TrafficSignalController":
-                        import_data_type = "J2735-SPAT"
-                        import_adapter_ip = source_data["adapter_addresses_by_type"]["TJ2735Msg-J2735"]
-                    else:
-                        import_data_type = data_type
-                        import_adapter_ip = adapter_ip
-                    
+                    # if data_type == "TrafficSignalController":
+                    #     import_data_type = "J2735-SPAT"
+                    #     import_adapter_ip = source_data["adapter_addresses_by_type"]["TJ2735Msg-J2735"]
+                    # else:
+
+                    import_data_type = data_type
+                    import_adapter_ip = adapter_ip           
+
                     this_importfile_name_writer.writerow(["true",source_data["site_name"] + " J2735 in to " + source_data["site_name"] + " SDO commit",sdo_type_file,"tdcs",import_data_type,import_adapter_ip,source_data["start_time"],source_data["end_time"]])
                 else:
                     this_importfile_name_writer.writerow(["true",source_data["site_name"] + " to " + source_data["site_name"] + " SDO convert",sdo_type_file,"tdcs",data_type,adapter_ip,source_data["start_time"],source_data["end_time"]])
             
             # if data_type in ["SPAT"]:
             #     this_importfile_name_writer.writerow(["true",sourceJ2735-Payload_data["site_name"] + " J2735 in to " + source_data["site_name"] + " SDO commit",all_data[source_data["site_name"]][data_type]["exported_tcds_file"],"tdcs",data_type,adapter_ip,source_data["start_time"],source_data["end_time"]])
-            if data_type == "TrafficSignalController":
-                import_data_file = all_data[dest_data["site_name"]][data_type]["exported_tcds_file"][1]
-            else:
-                import_data_file = all_data[dest_data["site_name"]][data_type]["exported_tcds_file"][0]
+            # if data_type == "TrafficSignalController":
+            #     import_data_file = all_data[dest_data["site_name"]][data_type]["exported_tcds_file"][1]
+            # else:
+            import_data_file = all_data[dest_data["site_name"]][data_type]["exported_tcds_file"][0]
 
             if not import_data_file:
                 print(f'\t\tImport data file is empty, skipping SDO transmit')
@@ -435,7 +399,6 @@ else:
 with open(metadata_file_path, 'r') as metadata_file:
     # Reading from json file
     site_list = json.load(metadata_file)
-
 
 
 if not args.plot_only:
@@ -534,14 +497,6 @@ if not args.plot_only:
                         print(f'\nAnalysis encountered an error, exiting...')
                         sys.exit()
 
-
-# for datatype in data_types:
-#     datatype_to_plot = datatype
-    
-#     if "J2735-" in datatype:
-#         datatype_to_plot = datatype.replace("J2735-","")
-
-#     batch_generate_e2e_plots.plot_performance_data("results", datatype_to_plot)
 
 
 

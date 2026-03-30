@@ -1651,7 +1651,7 @@ def select_message_type_user_input():
 # specifies the number of match_keys defined in the params for each data source
 num_match_keys = 5
 
-J2735_message_types = ["J2735","J3224","J2735-BSM","J2735-SPAT","J2735-MAP","LandVehicle","MAP","TrafficLight","BSM","Mobility_Request","Mobility_Response","Mobility_Path","Mobility_Operations-STATUS","Mobility_Operations-INFO","Traffic_Control_Request","Traffic_Control_Message"]
+J2735_message_types = ["J2735","J3224","J2735-BSM","J2735-SPAT","J2735-MAP","LandVehicle","MAP","TrafficLight","BSM","Mobility_Request","Mobility_Response","Mobility_Path","Mobility_Operations-STATUS","Mobility_Operations-INFO","Traffic_Control_Request","Traffic_Control_Message", "V2XMessage", "TrafficSignalController"]
 
 J2735_message_type_ids = {
     "BSM"   : "0014",
@@ -1660,7 +1660,7 @@ J2735_message_type_ids = {
 }
 
 # list of J2735 messages that become TENA Messages (as opposed to SDOs)
-J2735_message_types_as_tena_message = ["Traffic_Control_Request","Traffic_Control_Message", "J2735","J3224"]
+J2735_message_types_as_tena_message = ["Traffic_Control_Request","Traffic_Control_Message", "J2735","J3224","V2XMessage"]
 
 desired_intersection_name = ""
 desired_signal_id = "1628"
@@ -1840,7 +1840,7 @@ source_vehicle_metadata = metadata_site_list[source_vehicle_metadata_index]
 # desired_bsm_id = source_vehicle_metadata["bsm_id"]
 desired_bsm_id = ""
 # desired_tena_identifier = source_vehicle_metadata["tena_host_id"]
-desired_tena_identifier = ""
+desired_tena_identifier = source_vehicle_metadata["site_name"]
 # desired_host_static_id = source_vehicle_metadata["host_static_id"]
 desired_host_static_id = ""
 # desired_traffic_control_ip_address = source_vehicle_metadata["traffic_control_ip_address"]
@@ -2336,6 +2336,34 @@ data_params = {
                 }
             ]
         },
+        "V2XMessage" : {
+            "skip_if_neqs" : [
+                {
+                    "key" : "Metadata,Endpoint",
+                    "value" : source_ip_address,
+                }
+            ],
+            "skip_if_eqs" : [
+                
+            ],
+            "match_keys" : [
+                {
+                    "key" : "Metadata,MessageCount",
+                },
+                {
+                    "key" : "senderIdentifier,String",
+                },
+                {
+                    "key" : "uuid,String"
+                },
+                {
+                    "key"       : None,
+                },
+                {
+                    "key"       : None,
+                },
+            ]
+        },
         "LandVehicle" : {
             "skip_if_neqs"      : [
                 {
@@ -2374,6 +2402,41 @@ data_params = {
                 },
                 {
                     "key"       : "Metadata,StateVersion",
+                },
+                {
+                    "key"       : None,
+                },
+                {
+                    "key"       : None,
+                },
+                {
+                    "key"       : None,
+                },
+            ]
+        },
+        "TrafficSignalController" : {
+            "skip_if_neqs" : [
+                {
+                    "key" : "const^Metadata,SDOid.hostIPaddress",
+                    "value": source_ip_address,
+                }
+            ],
+            "skip_if_eqs" : [
+                {
+                    "key"   : "Metadata,Enum,Middleware::EventType",
+                    "value" : "Discovery",
+                },
+                {
+                    "key"   : "Metadata,Enum,Middleware::EventType",
+                    "value" : "Destruction",
+                },
+            ],
+            "match_keys" : [
+                {
+                    "key" : "Metadata,StateVersion",
+                },
+                {
+                    "key" : "const^identifier,String",
                 },
                 {
                     "key"       : None,

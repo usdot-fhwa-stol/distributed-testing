@@ -466,7 +466,7 @@ def generate_all_dest_all_runs_hist_plot(plots_dir,data_type,run_data_frames,plo
                         ha='center',  # Horizontal alignment
                         va='bottom',   # Vertical alignment
                         rotation=90,    # Rotate the label 90 degrees
-                        fontsize=patch.get_width()*4,
+                        fontsize=max(8, min(20, 200/ len(bins))),
                     )
                     
                     # greyscale_value = 1/len(list_of_all_dest_names_labels)*(i % len(list_of_all_dest_names_labels))
@@ -678,7 +678,9 @@ def generate_all_dest_all_runs_hist_plot(plots_dir,data_type,run_data_frames,plo
 def main():
     # plot_performance_data("results","P2E2-RFR2-", "J2735-BSM",True)
     # plot_performance_data("results/P2E2-RFR2-DOWNLOAD","P2E2-RFR2-", "BSM",True)
-    plot_performance_data("results","Energy-", "LandVehicle",True)
+    # plot_performance_data("results","Energy130-","LandVehicle",True)
+    # plot_performance_data("results","Energy130-","V2XMessage",True)
+    plot_performance_data("results", "Energy130-","TrafficSignalController",True)
     # plot_performance_data("results", "SPAT")
     # plot_performance_data("results","P2E0-","Vehicle")
     # plot_performance_data("results","P2E0-","J2735-BSM")
