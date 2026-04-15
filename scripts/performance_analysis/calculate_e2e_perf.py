@@ -1375,7 +1375,7 @@ def plot_latency(file_path, results_base_dir):
 
 
     plt.title('Latency of each Segment')
-    plt.xlabel('Index')
+    plt.xlabel('Time (UTC)')
     # Ensure end_of_shortest_data is within the range of available timestamps
     if end_of_shortest_data is not None:
         max_timestamp = timestamps.max()
@@ -1388,7 +1388,7 @@ def plot_latency(file_path, results_base_dir):
             # If end_of_shortest_data is out of bounds, set the limit to the maximum timestamp
             plt.gca().set_xlim(right=max_timestamp)
     plt.ylabel('Latency (ms)')
-    plt.gca().set_ylim(bottom=0)
+    plt.axhline(0, color='black', linestyle='--', linewidth=3)
     plt.legend()
     plt.grid(True)
     combined_plot_path = os.path.join(results_base_dir, f'{base_name}_combined_plot.png')
@@ -1411,7 +1411,7 @@ def plot_latency(file_path, results_base_dir):
     
     plt.ylabel("Latency (ms)")
     plt.gca().set_ylim(bottom=0)
-    plt.xlabel('Index')
+    plt.xlabel('Time (UTC)')
 
     if end_of_shortest_data != None:
         plt.gca().set_xlim(right=end_of_shortest_data)
@@ -1420,10 +1420,10 @@ def plot_latency(file_path, results_base_dir):
     for col_name in incremental_col_to_plot:
         cleaned_col_names.append(clean_column_name(col_name))
 
-    plt.legend(cleaned_col_names)
+    plt.legend(cleaned_col_names, loc="upper center")
+    plt.tight_layout()
     plt.title("Latency in Segments")
-    
-    bar_plot_path = f'{file_path}_stacked_bar_chart.png'
+    bar_plot_path = os.path.join(results_base_dir, f'{base_name}_stacked_bar_chart.png')
     plt.savefig(bar_plot_path)
     plt.close()
 
@@ -1466,11 +1466,11 @@ def plot_latency(file_path, results_base_dir):
     first_occurrence = consecutive.idxmax() if consecutive.any() else None
 
     plt.title('End to End Latency')
-    plt.xlabel('Index')
+    plt.xlabel('Time (UTC)')
     if first_occurrence != None:
         plt.gca().set_xlim(right=first_occurrence)
     plt.ylabel('Latency (ms)')
-    plt.gca().set_ylim(bottom=0)
+    plt.axhline(0, color='black', linestyle='--', linewidth=3)
     plt.legend()
     plt.grid(True)
     last_total_plot_path = os.path.join(results_base_dir, f'{base_name}_last_total_latency_plot.png')
@@ -1481,8 +1481,10 @@ def plot_latency(file_path, results_base_dir):
     # Plot total histograms
     ################# 
     last_total_latency_data.hist(bins=50, figsize=(20, 8))
-    plt.title('End to End Latency Histogram')
-    hist_plot_path = f'{file_path}_histograms.png'
+    plt.title('Latency Distribution')
+    plt.xlabel('Latency (ms)')
+    plt.ylabel('Frequency')
+    hist_plot_path = os.path.join(results_base_dir, f'{base_name}_histograms.png')
     plt.savefig(hist_plot_path)
     plt.close()
 

@@ -5,7 +5,23 @@ import json
 import csv
 import argparse
 
+############################## USAGE AND NOTES ##############################
+# Run this script from within the dt-user container using
+##      python3 batch_calculate_e2e_perf_pilot2.py -m <input metadata file> -n <output directory for results and import files>
+## | ex. output directory: <EventName>-<Run#>-<DataType>
+
+# In theory, this script should be able to do multiple data_types at once but that has not been tested - be cautious
+
+# Additionally, this script will automatically call 'calculate_e2e_perf.py' to run the performance from -> to each site.
+# The command being executed to do this is in the terminal output. For debug help, copy this command, add "-l DEBUG" and run
+# more verbose output will be saved in ..../performance_analysis/performance_analysis.log
+
+
 ############################## DATA LOCATION PARAMETERS ##############################
+##
+## Data types stores the file pattern that should be looked for when searching through a site's logs for analysis
+## i.e. for TENA SDO LandVehicle land vehicle data the script will search in ~/distributed-testing/logs/<event>/<run #>/<site>/exported_tdcs/
+## for any file that contains "Entities-LandVehicle"
 
 # old_data_types = {    MOST ARE OUT OF DATE - MAY BE USEFUL FOR PCAP
 #     "J2735-SPAT": {
@@ -62,24 +78,26 @@ import argparse
 #     },
 # }
 
-
+# Current used DataTypes (at least through TENA/DT) are LandVehicle, V2XMessage (captures all J2735), and TrafficSignalController
+# This dictionary should be updated as more OMs and data types are introduced to future DT's
 data_types = {
-    # "LandVehicle": {
-    #     "pcap_file_pattern" : "LandVehicle-THIS-DOES-NOT-EXIST",
-    #     "sdo_file_pattern"   : ["Entities-LandVehicle"]
-    # },
+    "LandVehicle": {
+        "pcap_file_pattern" : "LandVehicle-THIS-DOES-NOT-EXIST",
+        "sdo_file_pattern"   : ["Entities-LandVehicle"]
+    },
     # "V2XMessage":{
     #     "pcap_file_pattern" : "V2XMessage-UNKNOWN",
     #     "sdo_file_pattern" : ["TV2XMsg-V2X"]
     # },
-    "TrafficSignalController": {
-        "pcap_file_pattern" : "SPAT",
-        "sdo_file_pattern"   : ["Entities-TrafficSignalController"]
-    },
+    # "TrafficSignalController": {
+    #     "pcap_file_pattern" : "SPAT",
+    #     "sdo_file_pattern"   : ["Entities-TrafficSignalController"]
+    # },
 }
 
 ################################################## FUNCTIONS ##################################################
-    
+
+# Takes in a pattern and file path - returns files in the path directory that contain the pattern - allows you to select which if there are multiple    
 def find_file_at_path(pattern, path):
     result = []
     for root, dirs, files in os.walk(path):
@@ -100,15 +118,15 @@ def find_file_at_path(pattern, path):
             print("\t[" + str(filename_i) + "] " +  filename)
         file_index_selection = input("--> ")
         return result[int(file_index_selection)]
-            
-    return result
 
+# Iterates through a dictionary for the first instance where the value at a specified key matches the input - returns the index of the matching entry
 def get_obj_by_key_value(obj_array,key,value):
     for index, element in enumerate(obj_array):
         if element[key] == value:
             return index
 
-def find_data_files(exported_tcds_dir,decoded_pcap_in_dir,decoded_pcap_out_dir):
+# Searches the input directories (TDCS, PCAP in, PCAP out) from a site's log directory for a file that matches the identifier specified in the data_types object defined at the top of this file - Determines whether PCAP, or TDCS data exists for that site for each specified data_type and saves the path to those locations if it does exist
+def find_data_files(exported_tdcs_dir,decoded_pcap_in_dir,decoded_pcap_out_dir):
 
     data_file_locations = {}
     for data_type in data_types:
@@ -135,23 +153,24 @@ def find_data_files(exported_tcds_dir,decoded_pcap_in_dir,decoded_pcap_out_dir):
             data_file_locations[data_type]["decoded_pcap_in_file"] = None
         print("\n  No pcap in dir specified") 
         
-    if exported_tcds_dir:
+    if exported_tdcs_dir:
         print("\n  Locating exported tdcs files: ")
         for data_type in data_types:
-            data_file_locations[data_type]["exported_tcds_file"] = []
+            data_file_locations[data_type]["exported_tdcs_file"] = []
 
             for sdo_type_pattern in data_types[data_type]["sdo_file_pattern"]:
                 print(sdo_type_pattern)
-                found_file = find_file_at_path("*" + sdo_type_pattern + "*", exported_tcds_dir)
-                data_file_locations[data_type]["exported_tcds_file"].append(found_file)
-                print("\t" + data_type + ": " + str(data_file_locations[data_type]["exported_tcds_file"]))
+                found_file = find_file_at_path("*" + sdo_type_pattern + "*", exported_tdcs_dir)
+                data_file_locations[data_type]["exported_tdcs_file"].append(found_file)
+                print("\t" + data_type + ": " + str(data_file_locations[data_type]["exported_tdcs_file"]))
     else:
         for data_type in data_types:
-            data_file_locations[data_type]["exported_tcds_file"] = None
+            data_file_locations[data_type]["exported_tdcs_file"] = None
         print("\n  No exported tdcs dir specified")
     
     return data_file_locations
-        
+
+# Import files define between 2 specific sites: location of data files, purpose of data files, type of data (pcap/tdcs), message type (landvehicle, v2x), as well as the start/end times of interest - They're used by the calculate e2e performance script for calculating the latency between those sites - There are different import files for Site A -> Site B and for Site B -> Site A
 def generate_import_files(source_data,v2xhub_data,dest_data,is_tcr_tcm,test_name):
     
     try:
@@ -201,10 +220,10 @@ def generate_import_files(source_data,v2xhub_data,dest_data,is_tcr_tcm,test_name
             else:
                 this_importfile_name_writer.writerow(["load_data","dataset_name","dataset_file_location","dataset_type","message_type"])
                 this_importfile_name_writer.writerow(["true",source_data["site_name"] + " J2735 TCR platform out pcap",all_data[source_data["site_name"]]["Traffic_Control_Request"]["decoded_pcap_out_file"],"pcap","Traffic_Control_Request"])
-                this_importfile_name_writer.writerow(["true",source_data["site_name"] + " J2735 TCR out to " + source_data["site_name"] + " TCR SDO commit",all_data[source_data["site_name"]]["Traffic_Control_Request"]["exported_tcds_file"],"tdcs","Traffic_Control_Request"])
-                this_importfile_name_writer.writerow(["true",source_data["site_name"] + " to " + v2xhub_data["site_name"] + " TCR SDO transmit",all_data[v2xhub_data["site_name"]]["Traffic_Control_Request"]["exported_tcds_file"],"tdcs","Traffic_Control_Request"])
-                this_importfile_name_writer.writerow(["true",v2xhub_data["site_name"] + " TCR SDO receipt to " + v2xhub_data["site_name"] + " TCM SDO commit",all_data[v2xhub_data["site_name"]]["Traffic_Control_Message"]["exported_tcds_file"],"tdcs","Traffic_Control_Message"])
-                this_importfile_name_writer.writerow(["true",v2xhub_data["site_name"] + " to " + source_data["site_name"] + " TCM SDO transmit",all_data[source_data["site_name"]]["Traffic_Control_Message"]["exported_tcds_file"],"tdcs","Traffic_Control_Message"])
+                this_importfile_name_writer.writerow(["true",source_data["site_name"] + " J2735 TCR out to " + source_data["site_name"] + " TCR SDO commit",all_data[source_data["site_name"]]["Traffic_Control_Request"]["exported_tdcs_file"],"tdcs","Traffic_Control_Request"])
+                this_importfile_name_writer.writerow(["true",source_data["site_name"] + " to " + v2xhub_data["site_name"] + " TCR SDO transmit",all_data[v2xhub_data["site_name"]]["Traffic_Control_Request"]["exported_tdcs_file"],"tdcs","Traffic_Control_Request"])
+                this_importfile_name_writer.writerow(["true",v2xhub_data["site_name"] + " TCR SDO receipt to " + v2xhub_data["site_name"] + " TCM SDO commit",all_data[v2xhub_data["site_name"]]["Traffic_Control_Message"]["exported_tdcs_file"],"tdcs","Traffic_Control_Message"])
+                this_importfile_name_writer.writerow(["true",v2xhub_data["site_name"] + " to " + source_data["site_name"] + " TCM SDO transmit",all_data[source_data["site_name"]]["Traffic_Control_Message"]["exported_tdcs_file"],"tdcs","Traffic_Control_Message"])
                 this_importfile_name_writer.writerow(["false",source_data["site_name"] + " J2735 TCM SDO in to " +  source_data["site_name"] + " J2735 TCM in",all_data[source_data["site_name"]]["Traffic_Control_Message"]["decoded_pcap_in_file"],"pcap","Traffic_Control_Message"])
         
         elif source_data["lvc"] == "live":
@@ -223,8 +242,8 @@ def generate_import_files(source_data,v2xhub_data,dest_data,is_tcr_tcm,test_name
             this_importfile_name_writer.writerow(["load_data","dataset_name","dataset_file_location","dataset_type","message_type"])
             this_importfile_name_writer.writerow(["true",source_data["site_name"] + " J2735 platform out pcap",all_data[source_data["site_name"]][data_type]["decoded_pcap_out_file"],"pcap",data_type])
             this_importfile_name_writer.writerow(["true",source_data["site_name"] + " to v2xhub DSRC in pcap",all_data[v2xhub_data["site_name"]][data_type]["decoded_pcap_in_file"],"pcap",data_type])
-            this_importfile_name_writer.writerow(["true",v2xhub_data["site_name"] + " J2735 in to " + v2xhub_data["site_name"] + " SDO commit",all_data[v2xhub_data["site_name"]][data_type]["exported_tcds_file"],"tdcs",data_type])
-            this_importfile_name_writer.writerow(["true",v2xhub_data["site_name"] + " SDO to " + dest_data["site_name"] +  " SDO transmit",all_data[dest_data["site_name"]][data_type]["exported_tcds_file"],"tdcs",data_type])
+            this_importfile_name_writer.writerow(["true",v2xhub_data["site_name"] + " J2735 in to " + v2xhub_data["site_name"] + " SDO commit",all_data[v2xhub_data["site_name"]][data_type]["exported_tdcs_file"],"tdcs",data_type])
+            this_importfile_name_writer.writerow(["true",v2xhub_data["site_name"] + " SDO to " + dest_data["site_name"] +  " SDO transmit",all_data[dest_data["site_name"]][data_type]["exported_tdcs_file"],"tdcs",data_type])
             this_importfile_name_writer.writerow(["true",dest_data["site_name"] + " SDO to " + dest_data["site_name"] + " J2735 in",all_data[dest_data["site_name"]][data_type]["decoded_pcap_in_file"],"pcap",data_type])
         
         elif dest_data["lvc"] == "live":
@@ -242,8 +261,8 @@ def generate_import_files(source_data,v2xhub_data,dest_data,is_tcr_tcm,test_name
             
             this_importfile_name_writer.writerow(["load_data","dataset_name","dataset_file_location","dataset_type","message_type",data_type])
             this_importfile_name_writer.writerow(["true",source_data["site_name"] + " J2735 platform out pcap",all_data[source_data["site_name"]][data_type]["decoded_pcap_out_file"],"pcap",data_type])
-            this_importfile_name_writer.writerow(["true",source_data["site_name"] + " J2735 in to " + source_data["site_name"] + " SDO commit",all_data[source_data["site_name"]][data_type]["exported_tcds_file"],"tdcs",data_type])
-            this_importfile_name_writer.writerow(["true",source_data["site_name"] + " SDO to " + v2xhub_data["site_name"] +  " SDO transmit",all_data[v2xhub_data["site_name"]][data_type]["exported_tcds_file"],"tdcs",data_type])
+            this_importfile_name_writer.writerow(["true",source_data["site_name"] + " J2735 in to " + source_data["site_name"] + " SDO commit",all_data[source_data["site_name"]][data_type]["exported_tdcs_file"],"tdcs",data_type])
+            this_importfile_name_writer.writerow(["true",source_data["site_name"] + " SDO to " + v2xhub_data["site_name"] +  " SDO transmit",all_data[v2xhub_data["site_name"]][data_type]["exported_tdcs_file"],"tdcs",data_type])
             
             if data_type == "BSM":
                 print("J2735 messages not generated from constructive vehicles, skipping v2xhub out and live in data")
@@ -266,13 +285,11 @@ def generate_import_files(source_data,v2xhub_data,dest_data,is_tcr_tcm,test_name
             if not has_req_data:
                 continue
                 
+            # create import file directory for source to dest
             try:
                 os.mkdir("generated_import_files/" + test_name + "/" +  source_data["site_name"] + "_to_" + dest_data["site_name"])
             except Exception as err:
                 pass
-                # print("Dir generated_import_file/" + source_data["site_name"] + "_to_" + dest_data["site_name"] + " already exists")
-            
-            # for adapter_ip in source_data["adapter_addresses_by_type"][sdo_file_patterns[0]]:
 
             adapter_ip = source_data["adapter_addresses_by_type"][sdo_file_patterns[0]]
 
@@ -289,9 +306,7 @@ def generate_import_files(source_data,v2xhub_data,dest_data,is_tcr_tcm,test_name
             this_importfile_name_writer.writerow(["load_data","dataset_name","dataset_file_location","dataset_type","message_type","adapter_ip","start_time","end_time"])
             
             # TODO - need a better way to organize data inputs to decide when to include pcap when a site has a data type that is in pcap and a data type that isnt
-            # this particular logic is always true for pilot 1 but will not always be 
-            
-            # print(str(all_data[source_data["site_name"]][data_type]["decoded_pcap_out_file"]) + " : " +  str(all_data[source_data["site_name"]][data_type]))
+            # The logic was originally written specifically for pilot 1 and has been modified to fit each specific test since. Need to come up with a better system
 
             # if there is a pcap out file (meaning this site generated udp messages for this) and it is one of the listed message types,
             # include a pcap out row
@@ -303,35 +318,19 @@ def generate_import_files(source_data,v2xhub_data,dest_data,is_tcr_tcm,test_name
 
                 this_importfile_name_writer.writerow(["true",source_data["site_name"] + " J2735 pcap out",all_data[source_data["site_name"]][data_type]["decoded_pcap_out_file"],"pcap",import_data_type,None,source_data["start_time"],source_data["end_time"]])
             
-            # loop through all the exported TDCS files for this data type for this site
-            for sdo_type_file_i,sdo_type_file in enumerate(all_data[source_data["site_name"]][data_type]["exported_tcds_file"]):
+            # loop through all the exported TDCS files for this data type for this site - Adds the site's own TDCS export for each applicable data type to the import file - used to ...? (my guess is identify the time taken for the site to create the SDO - DT system latency)
+            for sdo_type_file_i,sdo_type_file in enumerate(all_data[source_data["site_name"]][data_type]["exported_tdcs_file"]):
 
                 print(f'\t\tAdding row for {sdo_type_file}')
                 
-                if sdo_type_file_i == 0:
-                    # if data_type == "TrafficSignalController":
-                    #     import_data_type = "J2735-SPAT"
-                    #     import_adapter_ip = source_data["adapter_addresses_by_type"]["TJ2735Msg-J2735"]
-                    # else:
-
-                    import_data_type = data_type
-                    import_adapter_ip = adapter_ip           
-
-                    this_importfile_name_writer.writerow(["true",source_data["site_name"] + " J2735 in to " + source_data["site_name"] + " SDO commit",sdo_type_file,"tdcs",import_data_type,import_adapter_ip,source_data["start_time"],source_data["end_time"]])
-                else:
-                    this_importfile_name_writer.writerow(["true",source_data["site_name"] + " to " + source_data["site_name"] + " SDO convert",sdo_type_file,"tdcs",data_type,adapter_ip,source_data["start_time"],source_data["end_time"]])
+                this_importfile_name_writer.writerow(["true",source_data["site_name"] + " to " + source_data["site_name"] + " SDO convert",sdo_type_file,"tdcs",data_type,adapter_ip,source_data["start_time"],source_data["end_time"]])
             
-            # if data_type in ["SPAT"]:
-            #     this_importfile_name_writer.writerow(["true",sourceJ2735-Payload_data["site_name"] + " J2735 in to " + source_data["site_name"] + " SDO commit",all_data[source_data["site_name"]][data_type]["exported_tcds_file"],"tdcs",data_type,adapter_ip,source_data["start_time"],source_data["end_time"]])
-            # if data_type == "TrafficSignalController":
-            #     import_data_file = all_data[dest_data["site_name"]][data_type]["exported_tcds_file"][1]
-            # else:
-            import_data_file = all_data[dest_data["site_name"]][data_type]["exported_tcds_file"][0]
+            # Grab the TDCS export of the applicable datatype for the destination site - used to....? (my guess is identify the time taken for transfer of the SDO - network latency) 
+            import_data_file = all_data[dest_data["site_name"]][data_type]["exported_tdcs_file"][0]
 
             if not import_data_file:
                 print(f'\t\tImport data file is empty, skipping SDO transmit')
             else:
-                
                 this_importfile_name_writer.writerow(["true",source_data["site_name"] + " SDO to " + dest_data["site_name"] +  " SDO transmit",import_data_file,"tdcs",data_type,None,source_data["start_time"],source_data["end_time"]])
             
             # include pcap in if we are not TrafficSignalController (this doesnt have pcap out since it is not j2735)
@@ -344,9 +343,9 @@ def generate_import_files(source_data,v2xhub_data,dest_data,is_tcr_tcm,test_name
 
         this_importfile_name_obj.close()
         
+        # This check ensures that both the destination and the source site has data for the data type under analysis. There must be a data file for both the source and destination, otherwise the import file is deleted.
         with open(this_importfile_name + ".csv") as f:
             num_importfile_rows = sum(1 for line in f)
-        # print(f'\t\tnum_importfile_rows {num_importfile_rows}')
         if  num_importfile_rows <= 2:
             print(f'ERROR: only one data source added, skipping this analysis')
             os.remove(this_importfile_name + ".csv")
@@ -404,22 +403,18 @@ with open(metadata_file_path, 'r') as metadata_file:
 if not args.plot_only:
     print("\n########## FINDING ALL DATA FILES ##########")
 
-
+    # For each site in the input metadata file, search their "exported_tdcs", "pcap_in_dir", and "pcap_out_dir" to get the paths to all data files for the data types specified in the data_types dictionary at the top of this file
     all_data = {}
-
 
     for test_site in site_list:
         print("\nFinding data files for " + test_site["site_name"])
         all_data[test_site["site_name"]] = find_data_files(test_site["tdcs_dir"],test_site["pcap_out_dir"],test_site["pcap_in_dir"])
 
-
-
-
     print("\n########## GENERATING IMPORT FILES ##########")
 
     import_file_directory_list = []
 
-
+    # Create the import files from -> to each site for the specified data types
     for src_test_site in site_list:
         
         for dest_test_site in site_list:
@@ -446,6 +441,7 @@ if not args.plot_only:
     except:
         pass
 
+    # Create a summary file that lists latency statistics from -> to each site. Only the header is added here. File is populated in the calculate_e2e_perf.py script.
     results_summary_outfile_obj = open(results_base_dir + "/" + test_name + "_results_summary.csv",'w',newline='')
     results_summary_outfile_writer = csv.writer(results_summary_outfile_obj)
     results_summary_outfile_writer.writerow(["j2735_type","source","source_type","destination","destination_type","step_type","min","max","mean","jitter","std_dev"])
@@ -490,6 +486,7 @@ if not args.plot_only:
                     loader_file_to_run_abs = os.path.join(root, filename)
                     source_site = os.path.basename(loader_file_to_run_abs).split("_to_")[0]
 
+                    #Run analysis for site to site e2e performance
                     analysis_command =  "python3 calculate_e2e_perf.py -i " + loader_file_to_run_abs + " -t " + data_type + " -o " + filename + "_performance_results.csv -r " + test_name + plot_only_arg + " -m " + metadata_file_path + " -s " + source_site
                     print("\nExecuting analysis: " + analysis_command)
                     exit_status = os.system(analysis_command)

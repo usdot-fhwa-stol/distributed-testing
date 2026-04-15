@@ -246,31 +246,32 @@ def generate_single_run_all_dest_plot(plots_dir,data_type,run_data_frames,plot_s
     # Step 2: Generate plot for each run for each source site
     for run_number, run_data in run_data_frames.items():
         for source_site, destinations in run_data.items():
-            plt.figure(figsize=(10, 6))
+            fig, ax = plt.subplots(figsize=(10, 6))
             for destination_site, dfs in destinations.items():
                 color = plot_styles["source_destination_colors"][destination_site]
                 linestyle = plot_styles["source_destination_linestyles"][destination_site]
                 hatch = plot_styles["source_dest_hatches"][destination_site]
 
                 for _, df in dfs:
-                    plt.plot(df['Datetime'], df['Latency'], label=f'{source_site} to {destination_site}', color=color, linestyle=linestyle)
-            plt.xlabel('Datetime')
+                    ax.plot(df['Datetime'], df['Latency'], label=f'{source_site} to {destination_site}', color=color, linestyle=linestyle)
+            ax.xlabel('Datetime')
             # plt.yscale('log') # sets scale to log
             # plt.ylim(10**1, 10**4)  # Set y-axis limits for logarithmic scale
-            plt.ylabel('Latency (ms)')
+            ax.ylabel('Latency (ms)')
             # plt.title(f'Latency from {source_site} for Run {run_number}')
-            plt.legend(loc="upper right")
+            ax.legend(loc="upper left", bbox_to_anchor=(1.02, 1), borderaxespad=0, ncol=1)
+            #plt.tight_layout()
             # Save the plot as a PNG file in the plots directory
             single_run_plot_path = os.path.join(plots_dir, f'{source_site}_single_run_{run_number}_{data_type}.png')
-            plt.savefig(single_run_plot_path)
-            plt.close()
+            fig.savefig(single_run_plot_path, bbox_inches="tight")
+            plt.close(fig)
     
 def generate_single_destination_all_runs_plot(plots_dir,data_type,run_data_frames,plot_styles,all_source_sites,all_destination_sites):
     # Step 3: Generate separate plots for each destination site across all runs
     for source_site in all_source_sites:
         for destination_site in all_destination_sites:
             if source_site != destination_site:  # Skip plots where source and destination are the same
-                plt.figure(figsize=(10, 6))
+                fig, ax = plt.subplots(figsize=(10, 6))
                 # print(f'run_data_frames: {run_data_frames}')
                 
                 if len(run_data_frames) <= 1:
@@ -287,17 +288,19 @@ def generate_single_destination_all_runs_plot(plots_dir,data_type,run_data_frame
                             color = plot_styles["run_colors"][run_number]
                             linestyle = plot_styles["run_linestyles"][run_number]
 
-                            plt.plot(df['Timestamp_in_s'], df['Latency'], label=f'Run {run_num}', color=color, linestyle=linestyle)
-                plt.xlabel('Time (normalized in s)')
-                plt.ylabel('Latency (ms)')
+                            ax.plot(df['Timestamp_in_s'], df['Latency'], label=f'Run {run_num}', color=color, linestyle=linestyle)
+                
+                ax.xlabel('Time (normalized in s)')
+                ax.ylabel('Latency (ms)')
                 # plt.yscale('log') # sets scale to log
                 # plt.ylim(10**1, 10**4)  # Set y-axis limits for logarithmic scale
                 # plt.title(f'Latency from {source_site} to {destination_site} for All Runs')
-                plt.legend(loc="upper right")
+                ax.legend(loc="upper left", bbox_to_anchor=(1.02, 1), borderaxespad=0, ncol=1)
+                #plt.tight_layout()
                 # Save the plot as a PNG file in the plots directory
                 all_runs_plot_path = os.path.join(plots_dir, f'{source_site}_to_{destination_site}_all_runs_{data_type}.png')
-                plt.savefig(all_runs_plot_path)
-                plt.close()
+                fig.savefig(all_runs_plot_path, bbox_inches="tight")
+                plt.close(fig)
 
 def generate_all_dest_all_runs_hist_plot(plots_dir,data_type,run_data_frames,plot_styles,all_source_sites,all_destination_sites,max_bin_value,annotate):
     concat_plot_path = os.path.join(plots_dir,"concat_plots")
@@ -324,8 +327,7 @@ def generate_all_dest_all_runs_hist_plot(plots_dir,data_type,run_data_frames,plo
             if source_site == destination_site:  # Skip plots where source and destination are the same
                 continue
             fig, ax = plt.subplots(figsize=(16, 12))
-            plt.rcParams.update({'font.size': font_size}) 
-            plt.rc('axes', labelsize=axis_font_size, labelweight='bold')  
+             
             # print(f'run_data_frames: {run_data_frames}')
             
             # if len(run_data_frames) <= 1:
@@ -524,28 +526,26 @@ def generate_all_dest_all_runs_hist_plot(plots_dir,data_type,run_data_frames,plo
         # ax.tick_params(axis="y", length=0)  # Switch off y ticks
         ax.margins(x=0.02) # tighter x margins
 
-        plt.subplots_adjust( top=0.8, bottom=0.1)
-
-        plt.xlabel('Latency (ms)')
-        plt.ylabel('Number of Samples')
+        ax.set_xlabel('Latency (ms)', fontsize=axis_font_size, fontweight='bold')
+        ax.set_ylabel('Number of Samples', fontsize=axis_font_size, fontweight='bold')
         # plt.yscale('log') # sets scale to log
         # plt.ylim(10**1, 10**4)  # Set y-axis limits for logarithmic scale
         # plt.title(f'Latency from {source_site} to {destination_site} for All Runs')
         
         
-        plt.legend(loc="best")
+        ax.legend(loc="upper left", bbox_to_anchor=(1.02, 1), borderaxespad=0, frameon=False, ncol=1)
+        #plt.tight_layout()
         # Save the plot as a PNG file in the plots directory
         concat_plot_path_full = os.path.join(concat_plot_path, f'{source_site}_all_runs_CONCAT_{max_bin_value}_{data_type}.png')
-        plt.savefig(concat_plot_path_full)
-        plt.close()
+        fig.savefig(concat_plot_path_full, boox_inches="tight")
+        plt.close(fig)
         
         ## MAKE CUMULATIVE HISTOGRAM
         mu = 200
         sigma = 25
 
         ecdf_fig, ecdf_ax = plt.subplots(figsize=(12, 10))
-        plt.rcParams.update({'font.size': font_size}) 
-        plt.rc('axes', labelsize=axis_font_size, labelweight='bold') 
+         
 
         # add labels for descriptions
         annotation_offset_x = 0.5
@@ -667,20 +667,21 @@ def generate_all_dest_all_runs_hist_plot(plots_dir,data_type,run_data_frames,plo
             # rect.set_linewidths([2, 0, 2, 0])  # Left, bottom, right, top
             
 
-        ecdf_ax.legend(loc="lower right")
-        ecdf_ax.set_xlabel("Latency (ms)")
-        ecdf_ax.set_ylabel("Probability of Occurrence")
+        ecdf_ax.legend(loc="upper left", bbox_to_anchor=(1.02, 1), borderaxespad=0, frameon=False, ncol=1)
+        ecdf_ax.set_xlabel("Latency (ms)", fontsize=axis_font_size, fontweight='bold')
+        ecdf_ax.set_ylabel("Probability of Occurrence", fontsize=axis_font_size, fontweight='bold')
         ecdf_ax.label_outer()
         concat_cdf_plot_path_full = os.path.join(concat_plot_path, f'{source_site}_all_runs_CONCAT_{max_bin_value}_CDF_{data_type}.png')
-        plt.savefig(concat_cdf_plot_path_full)
-        plt.close()
+        #plt.tight_layout()
+        ecdf_fig.savefig(concat_cdf_plot_path_full, bbox_inches="tight")
+        plt.close(ecdf_fig)
 
 def main():
     # plot_performance_data("results","P2E2-RFR2-", "J2735-BSM",True)
     # plot_performance_data("results/P2E2-RFR2-DOWNLOAD","P2E2-RFR2-", "BSM",True)
-    # plot_performance_data("results","Energy130-","LandVehicle",True)
+    plot_performance_data("results","Energy131-","LandVehicle",True)
     # plot_performance_data("results","Energy130-","V2XMessage",True)
-    plot_performance_data("results", "Energy130-","TrafficSignalController",True)
+    # plot_performance_data("results", "Energy130-","TrafficSignalController",True)
     # plot_performance_data("results", "SPAT")
     # plot_performance_data("results","P2E0-","Vehicle")
     # plot_performance_data("results","P2E0-","J2735-BSM")
