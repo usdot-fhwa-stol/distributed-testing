@@ -1,16 +1,9 @@
-import sys
 import os
-import fnmatch
-import json
-import csv
-import re
-import argparse
 import glob
 import matplotlib.pyplot as plt
 import matplotlib.colors as mcolors
 import matplotlib.patches as patches
 import pandas as pd
-import itertools
 import time
 import numpy as np
 import math
@@ -24,10 +17,6 @@ def plot_performance_data(root_dir, folder_prefix, data_type, annotate):
     run_data_frames, all_source_sites, all_destination_sites = import_csv_results(root_dir, folder_prefix, data_type)
 
     plot_styles = generate_styles(run_data_frames)
-
-    # generate_single_run_all_dest_plot(plots_dir,data_type,run_data_frames,plot_styles)
-
-    # generate_single_destination_all_runs_plot(plots_dir,data_type,run_data_frames,plot_styles,all_source_sites,all_destination_sites)
     
     generate_all_dest_all_runs_hist_plot(plots_dir,data_type,run_data_frames,plot_styles,all_source_sites,all_destination_sites,200,annotate)
     generate_all_dest_all_runs_hist_plot(plots_dir,data_type,run_data_frames,plot_styles,all_source_sites,all_destination_sites,1000,annotate)
@@ -62,8 +51,6 @@ def import_csv_results(root_dir, folder_prefix, data_type):
             
             # Extract source and destination site names from the file name
             filename_to_split_parts = os.path.basename(csv_file).split('_to_')
-            # print(f'filename_to_split_parts: {filename_to_split_parts}')
-
             source_site = filename_to_split_parts[0]
 
             if "2024" in source_site:
@@ -80,8 +67,6 @@ def import_csv_results(root_dir, folder_prefix, data_type):
             print(f'source_site: {source_site}')
 
             filename_type_split_parts = filename_to_split_parts[1].split("_" + data_type.lower() + "_" )
-
-            # print(f'filename_type_split_parts: {filename_type_split_parts}')
 
             destination_site = filename_type_split_parts[0]
 
@@ -136,8 +121,6 @@ def import_csv_results(root_dir, folder_prefix, data_type):
             for dest_site in run_data_frames[run_number][source_site]:
                 print(f'\t\tdest_site: {dest_site}')
 
-    # print(f'all_source_sites: {all_source_sites}')
-    # print(f'all_destination_sites: {all_destination_sites}')
     if not run_data_frames:
         print("No data found for the specified source site.")
         return
@@ -145,11 +128,6 @@ def import_csv_results(root_dir, folder_prefix, data_type):
     return run_data_frames, all_source_sites, all_destination_sites
     
 def generate_styles(run_data_frames):
-    # normal colors
-    # colors_to_use = [
-    #     'tab:blue', 'tab:orange', 'tab:green', 'tab:red', 'tab:purple', 
-    #     'tab:brown', 'tab:pink', 'tab:gray', 'tab:olive', 'tab:cyan'
-    # ]
     
     # shades of a color
     color_to_use = "blue"
@@ -157,27 +135,6 @@ def generate_styles(run_data_frames):
     number_of_shades = 9
     colors_to_use = [(base_color[0], base_color[1], base_color[2], i / (number_of_shades - 1)) for i in range(number_of_shades)]
     print(f'colors_to_use: {colors_to_use}')
-
-    # greyscale
-    # colors_to_use = [
-    #     (1,1,1),
-    #     (0.8,0.8,0.8),
-    #     (0.6,0.6,0.6),
-    #     (0.4,0.4,0.4),
-    #     (0.2,0.2,0.2),
-    # ]
-
-    # all white
-    # colors_to_use = [
-    #     (1,1,1),
-    #     (1,1,1),
-    #     (1,1,1),
-    #     (1,1,1),
-    #     (1,1,1),
-    #     (1,1,1),
-    #     (1,1,1),
-    # ]
-
 
     hatch_types = ["/","+",".","O","X",'\\','-','*',"|"]
 
@@ -195,7 +152,6 @@ def generate_styles(run_data_frames):
             (0, (5, 5)),   # Dashed
             (0, (3, 1, 1, 1)), # Dash-dot
             (0, (5, 1)),   # Dash with small gaps
-            # (0, (1, 2)),   # Dotted with larger gaps
             (0, (5, 2, 1, 2)), # Long dash, short dash
             (0, (2, 1)),   # Dash with short gaps
             (0, (1, 1, 1, 1, 1, 1)) # Dense dash-dot
@@ -255,12 +211,8 @@ def generate_single_run_all_dest_plot(plots_dir,data_type,run_data_frames,plot_s
                 for _, df in dfs:
                     ax.plot(df['Datetime'], df['Latency'], label=f'{source_site} to {destination_site}', color=color, linestyle=linestyle)
             ax.xlabel('Datetime')
-            # plt.yscale('log') # sets scale to log
-            # plt.ylim(10**1, 10**4)  # Set y-axis limits for logarithmic scale
             ax.ylabel('Latency (ms)')
-            # plt.title(f'Latency from {source_site} for Run {run_number}')
             ax.legend(loc="upper left", bbox_to_anchor=(1.02, 1), borderaxespad=0, ncol=1)
-            #plt.tight_layout()
             # Save the plot as a PNG file in the plots directory
             single_run_plot_path = os.path.join(plots_dir, f'{source_site}_single_run_{run_number}_{data_type}.png')
             fig.savefig(single_run_plot_path, bbox_inches="tight")
@@ -292,11 +244,8 @@ def generate_single_destination_all_runs_plot(plots_dir,data_type,run_data_frame
                 
                 ax.xlabel('Time (normalized in s)')
                 ax.ylabel('Latency (ms)')
-                # plt.yscale('log') # sets scale to log
-                # plt.ylim(10**1, 10**4)  # Set y-axis limits for logarithmic scale
-                # plt.title(f'Latency from {source_site} to {destination_site} for All Runs')
+
                 ax.legend(loc="upper left", bbox_to_anchor=(1.02, 1), borderaxespad=0, ncol=1)
-                #plt.tight_layout()
                 # Save the plot as a PNG file in the plots directory
                 all_runs_plot_path = os.path.join(plots_dir, f'{source_site}_to_{destination_site}_all_runs_{data_type}.png')
                 fig.savefig(all_runs_plot_path, bbox_inches="tight")
@@ -321,32 +270,18 @@ def generate_all_dest_all_runs_hist_plot(plots_dir,data_type,run_data_frames,plo
         list_of_all_dest_names_labels = []
         for destination_site in all_destination_sites:
 
-            # if destination_site == "FHWA":
-            #     continue
             print(f'\t\tdestination_site: {destination_site}')
             if source_site == destination_site:  # Skip plots where source and destination are the same
                 continue
             fig, ax = plt.subplots(figsize=(16, 12))
-             
-            # print(f'run_data_frames: {run_data_frames}')
-            
-            # if len(run_data_frames) <= 1:
-            #     print(f'\t\tONLY ONE RUN, SKIPPING RUN PLOTS')
-            #     continue
             
             all_runs_concat_data = pd.Series(dtype='float64')
             for run_number in sorted(run_data_frames.keys(), key=lambda x: int(float(x[1:]))):  # Sort run numbers in ascending order
                 print(f'\t\t run_number: {run_number}')
                 run_data = run_data_frames[run_number]
 
-                # print(f'run_data: {run_data}')
-                # print(f'run_data[source_site]: {run_data[source_site]}')
                 if source_site in run_data and destination_site in run_data[source_site]:
                     
-                    
-                    # for run_num, df in run_data[source_site][destination_site]:
-                        # print(f'\t\trun_num: {run_num}')
-                        # print(f't\t\df:\n{df}')
                     if len(run_data[source_site][destination_site]) > 1:
                         print(f'Length: {len(run_data[source_site][destination_site])}')
                     run_num,df = run_data[source_site][destination_site][0]
@@ -357,7 +292,6 @@ def generate_all_dest_all_runs_hist_plot(plots_dir,data_type,run_data_frames,plo
                         print(f'\t\t   Added: {df["Latency"].size}')
                         all_runs_concat_data = pd.concat([all_runs_concat_data,df["Latency"]], ignore_index=True)
 
-                    # print(f'\t\t  Total {run_number}: {all_runs_concat_data.size}')
                 else:
                     print(f'\tNo data found for {source_site} to {destination_site} for {run_number}')
 
@@ -373,9 +307,7 @@ def generate_all_dest_all_runs_hist_plot(plots_dir,data_type,run_data_frames,plo
             list_of_all_dest.append(all_runs_concat_data_droppedna)
 
             # clip data for use in plotting (changes any value over max to the max value)
-            # print(f'max: {all_runs_concat_data.max()}')
             all_runs_concat_data_clipped = np.clip(all_runs_concat_data_droppedna,0,max_bin_value + 1)
-            # print(f'max: {all_runs_concat_data_clipped.max()}')
 
             list_of_all_dest_clipped.append(all_runs_concat_data_clipped)
         
@@ -395,18 +327,8 @@ def generate_all_dest_all_runs_hist_plot(plots_dir,data_type,run_data_frames,plo
         num_bins = 10
         bin_width = int(max_bin_value/num_bins)
 
-        # bin_width = 15
-        # num_bins = math.ceil(max_bin_value/bin_width)
-        # max_bin_value = num_bins*bin_width
-
-        # bin_width = max(20, np.round(max_x / 25 / 20) * 20) # round to multiple of 20, use max(20, ...) to avoid rounding to zero
-        # bins = np.arange(0, max_x + bin_width, bin_width)
-        
-
-        # bins = np.append(np.arange(0, max_bin_value, max_bin_value/num_bins), np.inf)
         bins = np.arange(math.floor(min_x/bin_width)*bin_width, max_bin_value + bin_width*2, bin_width)
         
-        # bins.append(np.inf)
         # add another bin of equal width as a placeholder for 0 to smallest bucket
         if bins[0] != 0:
             bins = np.append(bins[0] - bin_width,bins)
@@ -415,10 +337,6 @@ def generate_all_dest_all_runs_hist_plot(plots_dir,data_type,run_data_frames,plo
         list_of_all_dest_colors = [plot_styles["source_destination_colors"][site] for site in list_of_all_dest_names]
         list_of_all_dest_hatches = [plot_styles["source_dest_hatches"][site] for site in list_of_all_dest_names]
 
-                
-        # bins = [bin for bin in bins if bin >= min_x]
-        # if bins[0] != 0:
-        #     bins = np.append(0,bins)
 
         n, _, hist_patches = ax.hist(
             list_of_all_dest_clipped, 
@@ -431,8 +349,6 @@ def generate_all_dest_all_runs_hist_plot(plots_dir,data_type,run_data_frames,plo
             edgecolor='black',
             )
 
-        # total = len(list_of_all_dest[0])
-        # ax.set_xticks(bins)
         print(f'\tbins: {bins}')
         if max_x > max_bin_value:
             print(f'\tLargest value greater than largest bin, capping values')
@@ -470,25 +386,19 @@ def generate_all_dest_all_runs_hist_plot(plots_dir,data_type,run_data_frames,plo
                         rotation=90,    # Rotate the label 90 degrees
                         fontsize=max(8, min(20, 200/ len(bins))),
                     )
-                    
-                    # greyscale_value = 1/len(list_of_all_dest_names_labels)*(i % len(list_of_all_dest_names_labels))
-
-                    # patch.set_color((greyscale_value,greyscale_value,greyscale_value)) 
-                    # patch.set_hatch(list_of_all_dest_hatches[i % len(list_of_all_dest_names_labels)])
                 else: 
                     patch.set_height(0)
 
         # if the first bin is larger than bin width (since the multiple starting bins are empty), hatch it
         if int(bin_labels[1]) - int(bin_labels[0]) > bin_width:
-        #     print(f'\tADDING FIRST BIN HATCHING')
-        #     plt.axvspan(bins[0], bins[1], hatch='-', edgecolor='black', facecolor='none', alpha=0.3)
+
             ax_bbox = ax.get_position().get_points()
             ax_width = ax_bbox[1][0] - ax_bbox[0][0]
             ax_height = ax_bbox[1][1] - ax_bbox[0][1]
             bin_width = ax_width/len(bins)
             box_cover_y_buffer = 0.05
             box_cover_x_buffer = 0.001
-            # box = fig.add_patch(patches.Rectangle((bin_width - bin_width/8, -1*box_height/2), width=bin_width/4, height=box_height, color="grey",zorder=1000))
+
             fig.patches.extend([    
                                     plt.Rectangle(
                                         (ax_bbox[0][0] + bin_width/2 + box_cover_x_buffer/2,ax_bbox[0][1] - ax_height/40 - box_cover_y_buffer/2),
@@ -515,26 +425,19 @@ def generate_all_dest_all_runs_hist_plot(plots_dir,data_type,run_data_frames,plo
                                         figure=fig
                                     )
                                 ])
-            # ax.plot([ax_bbox[0][0], ax_bbox[0][0] + bin_width/4], [ax_bbox[0][1] + ax_height/30, ax_bbox[0][1] + ax_height/30], color='black', linewidth=2, zorder=1000, transform=fig.transFigure)
-
-            # rect.set_linewidths([2, 0, 2, 0])  # Left, bottom, right, top
             
         ax.grid(True, axis='both', ls=':', alpha=0.7)
         ax.set_axisbelow(True)
         for dir in ['left', 'right', 'top']:
             ax.spines[dir].set_visible(False)
-        # ax.tick_params(axis="y", length=0)  # Switch off y ticks
+
         ax.margins(x=0.02) # tighter x margins
 
         ax.set_xlabel('Latency (ms)', fontsize=axis_font_size, fontweight='bold')
         ax.set_ylabel('Number of Samples', fontsize=axis_font_size, fontweight='bold')
-        # plt.yscale('log') # sets scale to log
-        # plt.ylim(10**1, 10**4)  # Set y-axis limits for logarithmic scale
-        # plt.title(f'Latency from {source_site} to {destination_site} for All Runs')
         
         
         ax.legend(loc="upper left", bbox_to_anchor=(1.02, 1), borderaxespad=0, frameon=False, ncol=1)
-        #plt.tight_layout()
         # Save the plot as a PNG file in the plots directory
         concat_plot_path_full = os.path.join(concat_plot_path, f'{source_site}_all_runs_CONCAT_{max_bin_value}_{data_type}.png')
         fig.savefig(concat_plot_path_full, boox_inches="tight")
@@ -573,7 +476,6 @@ def generate_all_dest_all_runs_hist_plot(plots_dir,data_type,run_data_frames,plo
                                         histtype="step",
                                         cumulative=True, 
                                         label=f'{list_of_all_dest_names_labels[i]} Cumulative Histogram',
-                                        # color=list_of_all_dest_colors[i],
                                         color=(0,0,0),
                                         linestyle=plot_styles["source_destination_linestyles"][list_of_all_dest_names[i]],
                                     )
@@ -590,7 +492,7 @@ def generate_all_dest_all_runs_hist_plot(plots_dir,data_type,run_data_frames,plo
                         color="black",  # Text color
                     )
 
-                # cdf = np.cumsum(ecdf_n) / np.sum(ecdf_n)
+                
 
                 # Find and annotate where the CDF crosses 0.2, 0.4, 0.6, 0.8, and 1.0
                 target_values = [0.005, 0.2, 0.4, 0.5, 0.6, 0.8, 0.995]
@@ -622,20 +524,20 @@ def generate_all_dest_all_runs_hist_plot(plots_dir,data_type,run_data_frames,plo
         ecdf_ax.set_axisbelow(True)
         for dir in ['left', 'right', 'top']:
             ecdf_ax.spines[dir].set_visible(False)
-        # ax.tick_params(axis="y", length=0)  # Switch off y ticks
+        
         ecdf_ax.margins(x=0.02) # tighter x margins
 
         # if the first bin is larger than bin width (since the multiple starting bins are empty), hatch it
         if int(bin_labels[1]) - int(bin_labels[0]) > bin_width:
             print(f'\tADDING BIN GAP')
-        #     plt.axvspan(bins[0], bins[1], hatch='-', edgecolor='black', facecolor='none', alpha=0.3)
+        
             ax_bbox = ecdf_ax.get_position().get_points()
             ax_width = ax_bbox[1][0] - ax_bbox[0][0]
             ax_height = ax_bbox[1][1] - ax_bbox[0][1]
             bin_width = ax_width/len(bins)
             box_cover_y_buffer = 0.05
             box_cover_x_buffer = 0.002
-            # box = fig.add_patch(patches.Rectangle((bin_width - bin_width/8, -1*box_height/2), width=bin_width/4, height=box_height, color="grey",zorder=1000))
+            
             ecdf_fig.patches.extend([    
                                     plt.Rectangle(
                                         (ax_bbox[0][0] + bin_width + box_cover_x_buffer/2,ax_bbox[0][1] - ax_height/80 - box_cover_y_buffer/2),
@@ -661,31 +563,24 @@ def generate_all_dest_all_runs_hist_plot(plots_dir,data_type,run_data_frames,plo
                                         transform=ecdf_fig.transFigure, 
                                         figure=ecdf_fig
                                     )
-                                ])
-            # ax.plot([ax_bbox[0][0], ax_bbox[0][0] + bin_width/4], [ax_bbox[0][1] + ax_height/30, ax_bbox[0][1] + ax_height/30], color='black', linewidth=2, zorder=1000, transform=fig.transFigure)
-
-            # rect.set_linewidths([2, 0, 2, 0])  # Left, bottom, right, top
-            
+                                ])            
 
         ecdf_ax.legend(loc="upper left", bbox_to_anchor=(1.02, 1), borderaxespad=0, frameon=False, ncol=1)
         ecdf_ax.set_xlabel("Latency (ms)", fontsize=axis_font_size, fontweight='bold')
         ecdf_ax.set_ylabel("Probability of Occurrence", fontsize=axis_font_size, fontweight='bold')
         ecdf_ax.label_outer()
         concat_cdf_plot_path_full = os.path.join(concat_plot_path, f'{source_site}_all_runs_CONCAT_{max_bin_value}_CDF_{data_type}.png')
-        #plt.tight_layout()
         ecdf_fig.savefig(concat_cdf_plot_path_full, bbox_inches="tight")
         plt.close(ecdf_fig)
 
 def main():
-    # plot_performance_data("results","P2E2-RFR2-", "J2735-BSM",True)
-    # plot_performance_data("results/P2E2-RFR2-DOWNLOAD","P2E2-RFR2-", "BSM",True)
+    # Simply run plot_performance_data for each data type, script can handle multiple plot calls.
+    # The function will compile and plot the results from each run for the input data type
+    # ex. plot_performance_data("results", "<Event prefix (no run #)>", "<data type>", True)
+
     plot_performance_data("results","Energy131-","LandVehicle",True)
-    # plot_performance_data("results","Energy130-","V2XMessage",True)
-    # plot_performance_data("results", "Energy130-","TrafficSignalController",True)
-    # plot_performance_data("results", "SPAT")
-    # plot_performance_data("results","P2E0-","Vehicle")
-    # plot_performance_data("results","P2E0-","J2735-BSM")
-    # plot_performance_data("results","P2E1-","SPAT")
+    plot_performance_data("results","Energy130-","V2XMessage",True)
+    plot_performance_data("results", "Energy130-","TrafficSignalController",True)
     return
 
 if __name__ == '__main__':
