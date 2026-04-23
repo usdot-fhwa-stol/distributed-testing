@@ -11,7 +11,7 @@
 
   <vehicles>
 
-   <vehicle name="FHWA-M-1" bsmid="f03ad610" type="vehicle.ford.mustang" simulationIdentifier="CARLA-FHWA-1" material="Aluminum" lvcIndicator="Constructive" generate_bsms="true" organization="FHWA">
+   <vehicle name="DEFAULT-M-1" bsmid="f03ad610" type="vehicle.ford.mustang" simulationIdentifier="CARLA-DEFAULT-1" material="Aluminum" lvcIndicator="Constructive" generate_bsms="true" organization="DEFAULT">
         <initialTSPI>
             <GeodeticPosition latitudeInDegrees="0.001936" longitudeInDegrees="0.000771" heightAboveEllipsoidInMeters="1"> </GeodeticPosition>
             <Heading>21.85235</Heading>
@@ -22,7 +22,7 @@
 
   <simulations>
 
-    <simulation name="FHWA-1" type="CARLA">
+    <simulation name="DEFAULT-1" type="CARLA">
       <WeatherState>ClearNoon</WeatherState>
     </simulation>
 
