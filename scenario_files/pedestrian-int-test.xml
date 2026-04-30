@@ -1,0 +1,39 @@
+<?xml version="1.0.0" encoding="UTF-8"?>
+<scenario>
+  <identifier>
+    <name>DT Energy - Integration Test</name>
+  </identifier>
+  <OpenDrive>
+    <MapFileName name="Town04.xodr">
+      <MapOrigin latitudeInDegrees="0.0" longitudeInDegrees="0.0" heightAboveEllipsoidInMeters="0"> </MapOrigin>
+    </MapFileName>
+  </OpenDrive>
+
+  <vehicles>
+
+    <vehicle name="FHWA-M-1" bsmid="0a000000" type="vehicle.mustang.mustang" owner="CARLA-FHWA-4" material="Aluminum" lvcIndicator="Live" generate_bsms="false" organization="ORNL">
+        <initialTSPI>
+            <GeodeticPosition latitudeInDegrees="0.001532" longitudeInDegrees="0.001931" heightAboveEllipsoidInMeters="1"> </GeodeticPosition>
+            <Heading>38</Heading>
+        </initialTSPI>
+    </vehicle>
+  </vehicles>
+
+  <intersectionSignalControllers>
+  </intersectionSignalControllers>
+
+  <phaseSignalMappings>
+  </phaseSignalMappings>
+
+  <simulations>
+
+    <simulation name="CARLA-PALASH-1" type="CARLA">
+      <WeatherState>ClearNoon</WeatherState>
+    </simulation>
+        <simulation name="CARLA-FHWA-4" type="CARLA">
+      <WeatherState>ClearNoon</WeatherState>
+    </simulation>
+
+  </simulations>
+
+</scenario>

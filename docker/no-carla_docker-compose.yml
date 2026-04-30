@@ -17,3 +17,4 @@ services:
     volumes:
       - /tmp/.X11-unix:/tmp/.X11-unix:rw
       - ${VUG_LOCAL_DT_PATH}:/home/dt_user/distributed-testing
+      - ~/tenadev/INSTALL:/home/dt_user/VUG_Adapters
