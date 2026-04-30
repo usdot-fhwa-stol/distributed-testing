@@ -1,7 +1,7 @@
 <?xml version="1.0.0" encoding="UTF-8"?>
 <scenario>
   <identifier>
-    <name>DT Energy - Integration Test</name>
+    <name>Integration Test 3</name>
   </identifier>
   <OpenDrive>
     <MapFileName name="Town04.xodr">
@@ -10,8 +10,14 @@
   </OpenDrive>
 
   <vehicles>
+    <vehicle name="PALASH-M-1" bsmid="f03ad620" type="vehicle.audi.etron" simulationIdentifier="CARLA-PALASH-1" material="Aluminum" generate_bsms="true" lvcIndicator="Constructive" organization="PALASH">
+        <initialTSPI>
+            <GeodeticPosition latitudeInDegrees="0.002066" longitudeInDegrees="0.002291" heightAboveEllipsoidInMeters="1"> </GeodeticPosition>
+            <Heading>90</Heading>
+        </initialTSPI>
+    </vehicle>
 
-    <vehicle name="FHWA-M-1" bsmid="0a000000" type="vehicle.mustang.mustang" owner="CARLA-FHWA-4" material="Aluminum" lvcIndicator="Live" generate_bsms="false" organization="ORNL">
+    <vehicle name="FHWA-M-3" bsmid="0a000000" type="vehicle.mustang.mustang" simulationIdentifier="CARLA-FHWA-3" material="Aluminum" lvcIndicator="Live" organization="FHWA">
         <initialTSPI>
             <GeodeticPosition latitudeInDegrees="0.001532" longitudeInDegrees="0.001931" heightAboveEllipsoidInMeters="1"> </GeodeticPosition>
             <Heading>38</Heading>
@@ -19,21 +25,14 @@
     </vehicle>
   </vehicles>
 
-  <intersectionSignalControllers>
-  </intersectionSignalControllers>
-
-  <phaseSignalMappings>
-  </phaseSignalMappings>
-
   <simulations>
-
     <simulation name="CARLA-PALASH-1" type="CARLA">
       <WeatherState>ClearNoon</WeatherState>
     </simulation>
-        <simulation name="CARLA-FHWA-4" type="CARLA">
+
+    <simulation name="CARLA-FHWA-3" type="CARLA">
       <WeatherState>ClearNoon</WeatherState>
     </simulation>
-
   </simulations>
 
 </scenario>
