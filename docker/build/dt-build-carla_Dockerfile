@@ -59,7 +59,9 @@ RUN find /home/dt_user/carla -type f -exec sed -i 's|boostorg\.jfrog\.io/artifac
 #   setup.sh: https://github.com/carla-simulator/carla/blob/0.9.15.2/Util/BuildTools/Setup.sh
 # ALSO, we switch to boost 1.82. Boost 1.80 with the added packages needed to build the carla adapter won't build with gcc-11, 
 #   so we either switch this entire build to gcc-7, or boost 1.82.0. Trying boost 1.82 first
-RUN sed -i 's|^LLVM_INCLUDE=.*|LLVM_INCLUDE="/usr/include"|' /home/dt_user/carla/Util/BuildTools/Setup.sh && \
+# Also, we need to fix the broken libpng repo link
+RUN sed -i 's|LIBPNG_REPO=.*|LIBPNG_REPO=https://downloads.sourceforge.net/libpng/libpng-1.6.37.tar.xz|g' /home/dt_user/carla/Util/BuildTools/Setup.sh && \
+    sed -i 's|^LLVM_INCLUDE=.*|LLVM_INCLUDE="/usr/include"|' /home/dt_user/carla/Util/BuildTools/Setup.sh && \
     sed -i 's|^LLVM_LIBPATH=.*|LLVM_LIBPATH="/usr/lib/x86_64-linux-gnu"|' /home/dt_user/carla/Util/BuildTools/Setup.sh && \
     sed -i 's|^UNREAL_HOSTED_CFLAGS=.*|UNREAL_HOSTED_CFLAGS=""|' /home/dt_user/carla/Util/BuildTools/Setup.sh && \
     sed -i 's|^export CC=.*|export CC=/usr/bin/clang|' /home/dt_user/carla/Util/BuildTools/Setup.sh && \
@@ -68,7 +70,6 @@ RUN sed -i 's|^LLVM_INCLUDE=.*|LLVM_INCLUDE="/usr/include"|' /home/dt_user/carla
     sed -i 's|^BOOST_VERSION=.*|BOOST_VERSION=1.82.0|' /home/dt_user/carla/Util/BuildTools/Setup.sh && \
     sed -i 's|-stdlib=libc++||g' /home/dt_user/carla/Util/BuildTools/Setup.sh && \
     sed -i 's|^export PATH=.*||g' /home/dt_user/carla/Util/BuildTools/Setup.sh
-    # Also build thread, so we can use boost 1.80 to build the carla adapter
 RUN sed -i 's|^        --with-libraries=python,.*|        --with-libraries=python,filesystem,system,program_options,thread,timer,chrono,regex,log \\|' /home/dt_user/carla/Util/BuildTools/Setup.sh
 RUN sed -i 's|^export CC=.*|export CC=/usr/bin/gcc-11|' /home/dt_user/carla/Examples/CppClient/Makefile && \
     sed -i 's|^export CXX=.*|export CXX=/usr/bin/g++-11|' /home/dt_user/carla/Examples/CppClient/Makefile

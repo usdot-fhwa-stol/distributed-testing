@@ -36,7 +36,7 @@ RUN --mount=type=bind,from=assets,source=.,target=/mnt/build,readonly \
     mv ./postinst ./opt/TENA/postinst-DV
 
 # INSTALL TENA Data Collection System
-ARG TDCS_VERSION="DOT_OSTR-Combined-DataCollectionDistribution-v1.2.3"
+ARG TDCS_VERSION="VUG-Combined-DataCollectionDistribution-v1.2.3"
 WORKDIR /home/$USER/INSTALL/TDCS
 RUN --mount=type=bind,from=assets,source=.,target=/mnt/build,readonly \
     set -euo pipefail; \
@@ -47,7 +47,7 @@ RUN --mount=type=bind,from=assets,source=.,target=/mnt/build,readonly \
     mv ./postinst ./opt/TENA/postinst-TDCS
 
 # INSTALL TENA JSON Tools
-ARG JSON_VERSION="DOT_OSTR-Combined-JSONtoolsDistribution-v1.2.4"
+ARG JSON_VERSION="VUG-Combined-JSONtoolsDistribution-v1.2.3"
 WORKDIR /home/$USER/INSTALL/JSON
 RUN --mount=type=bind,from=assets,source=.,target=/mnt/build,readonly \
     export ; \    
@@ -63,9 +63,20 @@ WORKDIR /home/$USER
 USER root
 RUN rsync -a /home/$USER/INSTALL/TDCS/opt/TENA/ /home/$USER/INSTALL/DV/opt/TENA/ /home/$USER/INSTALL/JSON/opt/TENA/ /home/$USER/TENA
 
-RUN chown -R $USER:$USER /home/$USER/TENA
-USER $USER
-ENV USER="dt_user"
+RUN chown -R root:root /home/$USER/TENA
+
+RUN DSTROOT=/home/dt_user bash /home/$USER/TENA/postinst-DV || true && \
+    DSTROOT=/home/dt_user bash /home/$USER/TENA/postinst-TDCS || true && \
+    sed -i '/^chown -R root/d;/^chgrp -R root/d' /home/$USER/TENA/postinst-JSON && \
+    DSTROOT=/home/dt_user bash /home/$USER/TENA/postinst-JSON || true
+
+RUN find /home/$USER/TENA -type d -exec chmod 755 {} + && \
+    find /home/$USER/TENA -type f -exec chmod a+r {} + && \
+    find /home/$USER/TENA -type f -name "*.sh" -exec chmod a+x {} + && \
+    find /home/$USER/TENA -type f -perm /111 -exec chmod a+x {} + && \
+    chown -R dt_user:dt_user /home/$USER/TENA
+
+USER dt_user
 
 # CARLA_0.9.15 (contains just the PythonAPI folder for CARLA PythonAPI capabilities)
 RUN --mount=type=bind,from=assets,source=.,target=/mnt/build,readonly \
@@ -160,14 +171,8 @@ RUN python3 -m pip install --no-cache-dir --user --force-reinstall "numpy<=1.21.
 
 USER root
 RUN rm -rf /home/$USER/TENA
-USER $USER
 
 COPY --chown=dt_user:dt_user --from=build /home/$USER/TENA /home/$USER/TENA
-
-RUN DSTROOT=/home/dt_user ./TENA/postinst-DV
-RUN DSTROOT=/home/dt_user ./TENA/postinst-TDCS
-RUN sed -i '/^chown -R root/d;/^chgrp -R root/d' ./TENA/postinst-JSON
-RUN DSTROOT=/home/dt_user ./TENA/postinst-JSON
 
 COPY --chown=dt_user:dt_user --from=build /home/$USER/CARLA /home/$USER/CARLA
 

@@ -53,7 +53,7 @@ RUN --mount=type=bind,from=assets,source=.,target=/mnt/build,readonly \
     # move the postinst script into TENA dir to make it easier to copy and run later on final container
     mv ./postinst ./opt/TENA/postinst-MW 
 
-ARG DIST_VERSION="DOT_OSTR-Combined-Distribution-v1.2.3"
+ARG DIST_VERSION="VUG-Combined-Distribution-v1.2.3"
 # Install DT OMs
 RUN --mount=type=bind,from=assets,source=.,target=/mnt/build,readonly \
     set -euo pipefail; \
