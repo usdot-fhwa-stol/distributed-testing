@@ -27,7 +27,7 @@ services:
 
   dt-core:
     container_name: dt-core
-    image: harbor.distributedtesting.org/distributed-testing/dt-core:latest
+    image: harbor.distributedtesting.org/distributed-testing-dev/dt-core:dev-latest
     tty: true 
     depends_on:
       - dt-carla

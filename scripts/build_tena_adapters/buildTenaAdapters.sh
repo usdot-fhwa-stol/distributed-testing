@@ -177,8 +177,8 @@ fi
 
 carlaTenaAdapterGitUrl="git@github.com:usdot-fhwa-stol/vug-carla-adapter.git"
 
-buildGeneralImage="harbor.distributedtesting.org/distributed-testing/dt-build-general:latest"
-buildCarlaImage="harbor.distributedtesting.org/distributed-testing/dt-build-carla:latest"
+buildGeneralImage="harbor.distributedtesting.org/distributed-testing-dev/dt-build-general:dev-latest"
+buildCarlaImage="harbor.distributedtesting.org/distributed-testing-dev/dt-build-carla:dev-latest"
 buildV2xImage="usdotfhwaops/v2xhubamd:dt-P-1.1.0"
 
 if [[ $tenaAppIndex == 1 ]]; then
