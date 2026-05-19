@@ -1797,28 +1797,6 @@ print("Message Type: " + J2735_message_type_name + " selected")
 if J2735_message_subtype_name:
     print("Message Sub-Type: " + J2735_message_subtype_name + " selected")
 
-# we do not need to select a vehicle for spat
-# we dont need this anymore, get data from metadata
-# if False:
-# 
-# # if J2735_message_type_name != "TrafficLight" and J2735_message_type_name != "J2735":
-#     if args.source_vehicle_index == None:
-#         vehicle_info = select_vehicle_user_input()
-#     else:
-        
-#         if args.source_vehicle_index > len(dt_vehicles):
-#             print("ERROR: Source LandVehicle index out of bounds, try again")
-#             print("\nValid Vehicles:")
-#             for vehicle_i,vehicle in enumerate(dt_vehicles):
-#                 print("\n[" + str(vehicle_i + 1) + "] \tHOST ID: " + vehicle["host_static_id"] + " \n\tTENA ID: " + vehicle["tena_host_id"] + " \n\tBSM ID: " + vehicle["bsm_id"])
-
-#             sys.exit()
-        
-#         vehicle_info = dt_vehicles[args.source_vehicle_index - 1]
-# else:
-# but, we need values for the params, so we put one in as a placeholder...
-# probably can do this better
-
 
 source_vehicle_metadata_index = get_obj_by_key_value(metadata_site_list,"site_name",args.source_site)
 
