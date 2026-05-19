@@ -36,19 +36,15 @@ if [ "$CURRENT_SERVERS" = "$DESIRED_SERVERS" ]; then
     RESTART_NEEDED=false
 else
     echo "Updating chrony servers..."
-
     sed -i '/^pool /d' "$CONF_FILE"
     sed -i '/^server /d' "$CONF_FILE"
-
     echo "$DESIRED_SERVERS" >> "$CONF_FILE"
-
     RESTART_NEEDED=true
 fi
 
 if [ "$RESTART_NEEDED" = true ]; then
     echo "Restarting chronyd..."
     /etc/init.d/chrony restart >/dev/null 2>&1 || { pkill chronyd 2>/dev/null; /usr/sbin/chronyd >/dev/null 2>&1; }
-
     sleep 2
 else
     echo "No restart required."
@@ -66,11 +62,14 @@ if [ -n "$CURRENT_OFFSET" ] && [ "$LEAP_STATUS" != "Not synchronised" ] && awk -
     echo "Time is already synchronized within $VUG_TIMESYNC_THRESHOLD_MS ms (Offset: $CURRENT_OFFSET)."
 else
     echo "Forcing initial time step (makestep)..."
+
     #chronyc makestep [threshold] [limit]
     # -a (allow step at any time) - forces a step if the offset exceeds the threshold
     # threshold: 0.005 seconds (5 ms) - step if offset exceeds 5 ms
-    # limit: -1 (unlimited) - allow unlimited steps at startup
-    chronyc -a makestep 0.005 -1 >/dev/null 2>&1
+    # limit: 3 - allow up to 3 steps at startup
+    chronyc -a makestep 0.005 3 >/dev/null 2>&1
+
+    chronyc burst 4/8 >/dev/null 2>&1
 
     echo "Waiting for synchronization to settle (waitsync)..."
     # chronyc waitsync [max_tries] [max_correction] [max_skew] [interval]
@@ -81,20 +80,21 @@ else
             chronyc tracking
     else
             echo "WARNING: Failed to reliably synchronize within the strict accuracy goals."
-            
+
             OFFSET=$(chronyc tracking | grep 'System time' | awk '{print $4, $5}')
             DELAY=$(chronyc tracking | grep 'Root delay' | awk '{print $3, $4}')
             DISPERSION=$(chronyc tracking | grep 'Root dispersion' | awk '{print $3, $4}')
-            
             echo "Current System Time Offset: $OFFSET"
             echo "Current Root Delay: $DELAY"
             echo "Current Root Dispersion: $DISPERSION"
-            
+
             echo "Advice:"
             echo "- If confidence (skew) is over +/- 50 ms, it indicates that network jitter is making it difficult to accurately synchronize your clock."
             echo "  It is recommended that you find ways to stabilize your connection (e.g., use a wired ethernet connection instead of Wi-Fi)."
             echo "- If the offset is consistently high, check if outbound UDP port 123 is blocked by a firewall."
             echo "- If sync persistently fails to meet these strict requirements, please contact and discuss with the event host."
+
+            read -p "Press Enter to continue anyway, or Ctrl+C to abort and troubleshoot."
             
             exit 1
     fi
