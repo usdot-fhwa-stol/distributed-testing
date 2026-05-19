@@ -57,10 +57,11 @@ fi
 
 
 CURRENT_OFFSET=$(chronyc tracking | awk '/System time/ {print $4}')
+LEAP_STATUS=$(chronyc tracking | grep 'Leap status' | awk -F ': ' '{print $2}')
 : "${VUG_TIMESYNC_THRESHOLD_MS:=5}" 
 
 # Check if already synchronized
-if awk -v current="$CURRENT_OFFSET" -v target="$VUG_TIMESYNC_THRESHOLD_MS" \
+if [ -n "$CURRENT_OFFSET" ] && [ "$LEAP_STATUS" != "Not synchronised" ] && awk -v current="$CURRENT_OFFSET" -v target="$VUG_TIMESYNC_THRESHOLD_MS" \
    'BEGIN { abs_val = (current < 0) ? -current : current; target_sec = target / 1000; exit !(abs_val <= target_sec) }'; then
     echo "Time is already synchronized within $VUG_TIMESYNC_THRESHOLD_MS ms (Offset: $CURRENT_OFFSET)."
 else
@@ -69,23 +70,25 @@ else
     # -a (allow step at any time) - forces a step if the offset exceeds the threshold
     # threshold: 0.005 seconds (5 ms) - step if offset exceeds 5 ms
     # limit: -1 (unlimited) - allow unlimited steps at startup
-    chronyc -a makestep 0.005 -1
+    chronyc -a makestep 0.005 -1 >/dev/null 2>&1
 
     echo "Waiting for synchronization to settle (waitsync)..."
     # chronyc waitsync [max_tries] [max_correction] [max_skew] [interval]
     # max_correction: 0.002 seconds (2 ms) target for last sample
     # max_skew: 0.05 seconds (50 ms) target for confidence
-    if chronyc waitsync 30 0.002 0.05 1; then
+    if chronyc waitsync 60 0.002 50 1; then
             echo "Time successfully synchronized within the 2ms offset and 50ms confidence bounds."
             chronyc tracking
     else
             echo "WARNING: Failed to reliably synchronize within the strict accuracy goals."
             
             OFFSET=$(chronyc tracking | grep 'System time' | awk '{print $4, $5}')
-            SKEW=$(chronyc tracking | grep 'Root dispersion' | awk '{print $4, $5}')
+            DELAY=$(chronyc tracking | grep 'Root delay' | awk '{print $3, $4}')
+            DISPERSION=$(chronyc tracking | grep 'Root dispersion' | awk '{print $3, $4}')
             
             echo "Current System Time Offset: $OFFSET"
-            echo "Current Confidence/Skew: $SKEW"
+            echo "Current Root Delay: $DELAY"
+            echo "Current Root Dispersion: $DISPERSION"
             
             echo "Advice:"
             echo "- If confidence (skew) is over +/- 50 ms, it indicates that network jitter is making it difficult to accurately synchronize your clock."

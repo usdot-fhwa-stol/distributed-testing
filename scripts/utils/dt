@@ -355,8 +355,10 @@ dt__start() {
     echo "Starting DT..."
 
     if [[ "$VUG_LOCAL_START_TIMESYNC" == "true" ]]; then
+        echo ""
         echo "Performing pre-start time sync on host..."
         sudo VUG_TIMESYNC_THRESHOLD_MS="$VUG_LOCAL_TIMESYNC_THRESHOLD_MS" "$VUG_LOCAL_TIMESYNC_SCRIPT_PATH"
+        echo ""
     fi
     
     $VUG_LOCAL_DT_PATH/docker/start-docker.sh "${EXTRA_ARGS[@]}"
