@@ -17,16 +17,9 @@ CONF_FILE="/etc/chrony/chrony.conf"
 
 # Server list
 DESIRED_SERVERS="server time.cloudflare.com iburst
-server time1.google.com iburst
-server time2.google.com iburst
-server time3.google.com iburst
-server time4.google.com iburst
-server time.aws.com iburst
-server time1.facebook.com iburst
-server time2.facebook.com iburst
-server time3.facebook.com iburst
-server time4.facebook.com iburst
-server time5.facebook.com iburst"
+pool pool.ntp.org iburst
+server time.windows.com iburst
+"
 
 # Check if servers already added
 CURRENT_SERVERS=$(grep -E '^(server|pool) ' "$CONF_FILE")
@@ -54,7 +47,6 @@ fi
 
 CURRENT_OFFSET=$(chronyc tracking | awk '/System time/ {print $4}')
 LEAP_STATUS=$(chronyc tracking | grep 'Leap status' | awk -F ': ' '{print $2}')
-: "${VUG_TIMESYNC_THRESHOLD_MS:=5}" 
 
 # Check if already synchronized by comparing the absolute value of the current offset to the threshold
 if [ -n "$CURRENT_OFFSET" ] && [ "$LEAP_STATUS" != "Not synchronised" ] && awk -v current="$CURRENT_OFFSET" -v target="$VUG_TIMESYNC_THRESHOLD_MS" \
