@@ -1,5 +1,4 @@
 import os
-import csv
 import json
 import pandas as pd
 from pathlib import Path
@@ -11,12 +10,12 @@ import argparse
 
 # For Energy Cohort, ORNL was deemed to have the most stable connection and thus they are the basis for the timing offsets
 ENERGY_COHORT_OFFSETS = {
-    "ANL": -15,
-    "FHWA": -25,
+    "ANL": -10,
+    "FHWA": -20,
     "ORNL": 0,
-    "PITT": 200,
-    "SWARCO": -2450,
-    "SWRI": -3450,
+    "PITT": 180,
+    "SWARCO": -2480,
+    "SWRI": -3425,
 }
 
 
@@ -197,7 +196,7 @@ def apply_offset_to_event(event_dir: str):
 # ------------------------
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--input", required=True, help="Event directory")
+    parser.add_argument("-i", "--input", required=True, help="Event directory")
     args = parser.parse_args()
 
     apply_offset_to_event(args.input)
