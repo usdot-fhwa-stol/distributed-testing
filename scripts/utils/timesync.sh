@@ -18,8 +18,7 @@ CONF_FILE="/etc/chrony/chrony.conf"
 # Server list
 DESIRED_SERVERS="server time.cloudflare.com iburst
 pool pool.ntp.org iburst
-server time.windows.com iburst
-"
+server time.windows.com iburst"
 
 # Check if servers already added
 CURRENT_SERVERS=$(grep -E '^(server|pool) ' "$CONF_FILE")
