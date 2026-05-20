@@ -56,7 +56,7 @@ CURRENT_OFFSET=$(chronyc tracking | awk '/System time/ {print $4}')
 LEAP_STATUS=$(chronyc tracking | grep 'Leap status' | awk -F ': ' '{print $2}')
 : "${VUG_TIMESYNC_THRESHOLD_MS:=5}" 
 
-# Check if already synchronized
+# Check if already synchronized by comparing the absolute value of the current offset to the threshold
 if [ -n "$CURRENT_OFFSET" ] && [ "$LEAP_STATUS" != "Not synchronised" ] && awk -v current="$CURRENT_OFFSET" -v target="$VUG_TIMESYNC_THRESHOLD_MS" \
    'BEGIN { abs_val = (current < 0) ? -current : current; target_sec = target / 1000; exit !(abs_val <= target_sec) }'; then
     echo "Time is already synchronized within $VUG_TIMESYNC_THRESHOLD_MS ms (Offset: $CURRENT_OFFSET)."
