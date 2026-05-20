@@ -44,7 +44,6 @@ else
     /etc/init.d/chrony start >/dev/null 2>&1 || /usr/sbin/chronyd >/dev/null 2>&1
 fi
 
-
 CURRENT_OFFSET=$(chronyc tracking | awk '/System time/ {print $4}')
 LEAP_STATUS=$(chronyc tracking | grep 'Leap status' | awk -F ': ' '{print $2}')
 
@@ -56,19 +55,23 @@ else
     echo "Forcing initial time step (makestep)..."
 
     #chronyc makestep [threshold] [limit]
-    # -a (allow step at any time) - forces a step if the offset exceeds the threshold
     # threshold: 0.005 seconds (5 ms) - step if offset exceeds 5 ms
-    # limit: 3 - allow up to 3 steps at startup
-    chronyc -a makestep 0.005 3 >/dev/null 2>&1
+    # limit: 3 - allow only in the first three clock updates
+    chronyc makestep 0.005 10 >/dev/null 2>&1
 
+    #chronyc burst [good] [max]
+    # good: try to collect 4 good samples from each source
+    # max: max number of measurement attempts per source
     chronyc burst 4/8 >/dev/null 2>&1
 
     echo "Waiting for synchronization to settle (waitsync)..."
     # chronyc waitsync [max_tries] [max_correction] [max_skew] [interval]
+    # max_tries: 60 possible attempts to sync
     # max_correction: 0.002 seconds (2 ms) target for last sample
-    # max_skew: 0.05 seconds (50 ms) target for confidence
-    if chronyc waitsync 60 0.002 50 1; then
-            echo "Time successfully synchronized within the 2ms offset and 50ms confidence bounds."
+    # max_skew: 0.05 seconds (50 ms) target
+    # interval: 5 seconds between checks
+    if chronyc waitsync 45 0.002 50 3; then
+            echo "Time successfully synchronized within the 2ms offset and 50ms skew."
             chronyc tracking
     else
             echo "WARNING: Failed to reliably synchronize within the strict accuracy goals."
