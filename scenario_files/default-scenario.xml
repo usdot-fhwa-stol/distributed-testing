@@ -1,7 +1,7 @@
 <?xml version="1.0.0" encoding="UTF-8"?>
 <scenario>
   <identifier>
-    <name>RAHUL</name>
+    <name>DEFAULT</name>
   </identifier>
   <OpenDrive>
     <MapFileName name="Town04.umap">
@@ -11,10 +11,13 @@
 
   <vehicles>
 
-    <vehicle name="RAHUL-M-1" bsmid="f03ad658" type="vehicle.toyota.prius" simulationIdentifier="CARLA-RAHUL-1" material="Aluminum" lvcIndicator="Constructive" generate_bsms="true" organization="ORNL">
+    <vehicle name="DEFAULT-M-1" bsmid="f03ad618" type="vehicle.mustang.mustang" owner="CARLA-DEFAULT-1" material="Aluminum" lvcIndicator="Virtual">
+        <userData>
+            <CARLA manual="true" generate_bsms="true"></CARLA>
+        </userData>
         <initialTSPI>
-            <GeodeticPosition latitudeInDegrees="0.001800" longitudeInDegrees="0.001122" heightAboveEllipsoidInMeters="1"> </GeodeticPosition>
-            <Heading>21.85235</Heading>
+            <GeodeticPosition latitudeInDegrees="0.001535" longitudeInDegrees="0.001661" heightAboveEllipsoidInMeters="2.521041"> </GeodeticPosition>
+            <Heading>90</Heading>
         </initialTSPI>
     </vehicle>
 
@@ -22,7 +25,7 @@
 
   <simulations>
 
-    <simulation name="RAHUL-1" type="CARLA">
+    <simulation name="DEFAULT-1" type="CARLA">
       <WeatherState>ClearNoon</WeatherState>
     </simulation>
 
