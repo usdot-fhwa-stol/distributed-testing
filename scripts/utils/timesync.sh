@@ -62,9 +62,10 @@ else
     /etc/init.d/chrony start >/dev/null 2>&1 || /usr/sbin/chronyd >/dev/null 2>&1
 fi
 
-TARGET_OFFSET=$(awk -v t="${VUG_TIMESYNC_THRESHOLD_MS:-5}" 'BEGIN { print t/1000 }')
-TARGET_DISPERSION=0.050
-IDEAL_OFFSET=0.002
+TARGET_OFFSET=$(awk -v t="${VUG_MAXIMUM_OFFSET_MS:-5}" 'BEGIN { print t/1000 }')
+TARGET_DISPERSION="${VUG_MAXIMUM_DISPERSION:-0.050}"
+IDEAL_OFFSET=$(awk -v t="${VUG_IDEAL_OFFSET_MS:-2}" 'BEGIN { print t/1000 }')
+IDEAL_DISPERSION="${VUG_IDEAL_DISPERSION:-0.050}"
 
 #chronyc tracking
 # Last offset: This is the estimated local offset on the last clock update. 
@@ -80,15 +81,15 @@ IS_SYNCED=false
 if [ -n "$START_OFFSET" ] && [ -n "$START_DISPERSION" ] && [ "$START_LEAP_STATUS" != "Not synchronised" ]; then
 
     if awk -v current="$START_OFFSET" -v target="$TARGET_OFFSET" 'BEGIN { exit !(current <= target) }'; then
-        echo "Time is already synchronized within minimum ${VUG_TIMESYNC_THRESHOLD_MS:-5} ms threshold."
+        echo "Time is already synchronized within minimum ${VUG_MAXIMUM_OFFSET_MS:-5} ms threshold."
         IS_SYNCED=true
     fi
 
-    if awk -v current="$START_OFFSET" -v dispersion="$START_DISPERSION" -v ideal_o="$IDEAL_OFFSET" -v ideal_d="$TARGET_DISPERSION" \
+    if awk -v current="$START_OFFSET" -v dispersion="$START_DISPERSION" -v ideal_o="$IDEAL_OFFSET" -v ideal_d="$IDEAL_DISPERSION" \
        'BEGIN { exit !(current <= ideal_o && dispersion <= ideal_d) }'; then
-        echo "Ideal Measurements Achieved: Your system time is within 1-2 ms offset and confidence is less than +/- 50 ms."
+        echo "Ideal Measurements Achieved: Your system time is within ${VUG_IDEAL_OFFSET_MS:-2} ms offset and confidence is less than +/- $(awk -v d="${IDEAL_DISPERSION}" 'BEGIN {print d*1000}') ms."
     else
-        echo "Note: Your system time is outside the ideal measurements (Offset <= 2ms, Confidence <= 50ms). Offset: $START_OFFSET, Dispersion: $START_DISPERSION."
+        echo "Note: Your system time is outside the ideal measurements (Offset <= ${VUG_IDEAL_OFFSET_MS:-2}ms, Confidence <= $(awk -v d="${IDEAL_DISPERSION}" 'BEGIN {print d*1000}')ms). Offset: $START_OFFSET, Dispersion: $START_DISPERSION."
     fi
 fi
 
@@ -133,7 +134,7 @@ else
     done
 
     if [ "$SYNC_SUCCESS" = true ]; then
-            echo "Time successfully synchronized within the 2ms offset and 50ms dispersion."
+            echo "Time successfully synchronized within the $(awk -v d="${TARGET_OFFSET}" 'BEGIN {print d*1000}')ms offset and $(awk -v d="${TARGET_DISPERSION}" 'BEGIN {print d*1000}')ms dispersion."
             chronyc tracking
     else
             echo "WARNING: Failed to reliably synchronize within the strict accuracy goals."
