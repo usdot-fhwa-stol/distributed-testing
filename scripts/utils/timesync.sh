@@ -83,20 +83,21 @@ IS_SYNCED=false
 if [ -n "$START_OFFSET" ] && [ -n "$START_DISPERSION" ] && [ "$START_LEAP_STATUS" != "Not synchronised" ]; then
 
     if awk -v current="$START_OFFSET" -v target="$TARGET_OFFSET" 'BEGIN { exit !(current <= target) }'; then
-        echo "Time is already synchronized within minimum ${VUG_MAXIMUM_OFFSET_MS:-5} ms threshold."
+        echo "Last Sample Offset is already within minimum ${VUG_MAXIMUM_OFFSET_MS:-5} ms threshold."
         IS_SYNCED=true
     fi
 
     if awk -v current="$START_OFFSET" -v dispersion="$START_DISPERSION" -v ideal_o="$IDEAL_OFFSET" -v ideal_d="$IDEAL_DISPERSION" \
        'BEGIN { exit !(current <= ideal_o && dispersion <= ideal_d) }'; then
-        echo "Ideal Measurements Achieved: Your system time is within ${VUG_IDEAL_OFFSET_MS:-2} ms offset and confidence is less than +/- $(awk -v d="${IDEAL_DISPERSION}" 'BEGIN {print d*1000}') ms."
+        echo "Ideal Measurements Achieved: Your system time is within ${VUG_IDEAL_OFFSET_MS:-2} ms last sample offset and root dispersion is less than $(awk -v d="${IDEAL_DISPERSION}" 'BEGIN {print d*1000}') ms."
     else
-        echo "Note: Your system time is outside the ideal measurements (Offset <= ${VUG_IDEAL_OFFSET_MS:-2}ms, Confidence <= $(awk -v d="${IDEAL_DISPERSION}" 'BEGIN {print d*1000}')ms). Offset: $START_OFFSET, Dispersion: $START_DISPERSION."
+        echo "Note: Your system time is outside the ideal measurements (Last Sample Offset <= ${VUG_IDEAL_OFFSET_MS:-2} ms, Root Dispersion <= $(awk -v d="${IDEAL_DISPERSION}" 'BEGIN {print d*1000}') ms). \n 
+        Starting Offset: $START_OFFSET s, Starting Dispersion: $START_DISPERSION s."
     fi
 fi
 
 if [ "$IS_SYNCED" = true ]; then
-    echo "Skipping forced time step."
+    echo ""
 else
     echo "Forcing immediate time step (makestep 0.1 -1)..."
 
