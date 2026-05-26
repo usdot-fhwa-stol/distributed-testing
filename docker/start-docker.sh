@@ -92,8 +92,12 @@ fi
 
 # Performs time sync with chrony
 if [[ "$VUG_FORMAL_EVENT" == "true" ]]; then
-echo -e "\nPerforming pre-start time sync on host..."
-    sudo VUG_MAXIMUM_OFFSET_MS VUG_IDEAL_OFFSET_MS VUG_MAXIMUM_DISPERSION VUG_IDEAL_DISPERSION "$VUG_LOCAL_TIMESYNC_SCRIPT_PATH"
+    echo -e "\nPerforming time synchronization..."
+    sudo VUG_MAXIMUM_OFFSET_MS="$VUG_MAXIMUM_OFFSET_MS" \
+         VUG_IDEAL_OFFSET_MS="$VUG_IDEAL_OFFSET_MS" \
+         VUG_MAXIMUM_DISPERSION="$VUG_MAXIMUM_DISPERSION" \
+         VUG_IDEAL_DISPERSION="$VUG_IDEAL_DISPERSION" \
+         "$VUG_LOCAL_TIMESYNC_SCRIPT_PATH"
     echo ""
 fi
 

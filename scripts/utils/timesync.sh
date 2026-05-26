@@ -5,12 +5,11 @@ if dpkg -s chrony >/dev/null 2>&1; then
     echo "Chrony is already installed."
 else
     echo "Installing chrony..."
-    if ! (export DEBIAN_FRONTEND=noninteractive; apt-get update -qq >/dev/null 2>&1 && apt-get install -y chrony -qq >/dev/null 2>&1); then
+    if ! DEBIAN_FRONTEND=noninteractive apt-get install -y -qq chrony >/dev/null 2>&1; then
         echo "There was an error installing chrony. Please check your package manager."
         exit 1
     fi
 fi
-
 
 CONF_FILE="/etc/chrony/chrony.conf"
 [ ! -f "$CONF_FILE" ] && CONF_FILE="/etc/chrony.conf"
@@ -36,18 +35,18 @@ if [ "$CURRENT_SERVERS" = "$DESIRED_SERVERS" ]; then
 else
     echo "Updating chrony configuration..."
     # Always base our configuration on their preserved original config
-    # This keeps system-specific rules like driftfile intact
+    # Keeps references to other config relates files intact
     cp "$USER_BACKUP" "$CONF_FILE"
     sed -i '/^pool /d' "$CONF_FILE"
     sed -i '/^server /d' "$CONF_FILE"
     echo "$DESIRED_SERVERS" >> "$CONF_FILE"
 
     echo "--------------------------------------------------------"
-    echo "NOTE: Your original chrony configuration remains safe at:"
+    echo "NOTE: Your original chrony configuration is saved at:"
     echo "  $USER_BACKUP"
-    echo "To revert back to your original settings anytime, run:"
+    echo "To revert back to your original chrony configuration, run:"
     echo "  sudo cp $USER_BACKUP $CONF_FILE"
-    echo "  sudo /etc/init.d/chrony restart"
+    echo "  sudo systemctl restart chrony"
     echo "--------------------------------------------------------"
     
     RESTART_NEEDED=true
@@ -55,11 +54,14 @@ fi
 
 if [ "$RESTART_NEEDED" = true ]; then
     echo "Restarting chronyd..."
-    /etc/init.d/chrony restart >/dev/null 2>&1 || { pkill chronyd 2>/dev/null; /usr/sbin/chronyd >/dev/null 2>&1; }
-    sleep 2
+    systemctl restart chrony >/dev/null 2>&1
+    sleep 10
+elif ! pgrep -x chronyd >/dev/null 2>&1; then
+    echo "Starting chronyd..."
+    systemctl start chrony >/dev/null 2>&1
+    sleep 10
 else
-    echo "No restart required."
-    /etc/init.d/chrony start >/dev/null 2>&1 || /usr/sbin/chronyd >/dev/null 2>&1
+    echo "Chronyd is already running. No restart required."
 fi
 
 TARGET_OFFSET=$(awk -v t="${VUG_MAXIMUM_OFFSET_MS:-5}" 'BEGIN { print t/1000 }')
@@ -73,7 +75,7 @@ IDEAL_DISPERSION="${VUG_IDEAL_DISPERSION:-0.050}"
 # Leap status: Current leap second status of the source, which can be Normal, Insert second, Delete second or Not synchronised.
 START_TRACKING_OUT=$(chronyc tracking)
 START_OFFSET=$(echo "$START_TRACKING_OUT" | awk '/Last offset/ {val = $4; gsub(/[+-]/, "", val); print val }')
-START_DISPERSION=$(echo "$START_TRACKING_OUT" | awk '/Root dispersion/ {print $3}')
+START_DISPERSION=$(echo "$START_TRACKING_OUT" | awk '/Root dispersion/ {print $4}')
 START_LEAP_STATUS=$(echo "$START_TRACKING_OUT" | grep 'Leap status' | awk -F ': ' '{print $2}')
 
 # Check if already synchronized
@@ -111,17 +113,17 @@ else
     echo "Waiting for time synchronization to converge..."
     
     SYNC_SUCCESS=false
-    MAX_TRIES=45
+    MAX_TRIES=30
     INTERVAL=3
 
 
     for i in $(seq 1 $MAX_TRIES); do
         TRACKING_OUT=$(chronyc tracking)
         OFFSET=$(echo "$TRACKING_OUT" | awk '/Last offset/ {val = $4; gsub(/[+-]/, "", val); print val }')
-        DISPERSION=$(echo "$TRACKING_OUT" | awk '/Root dispersion/ {print $3}')
+        DISPERSION=$(echo "$TRACKING_OUT" | awk '/Root dispersion/ {print $4}')
         LEAP_STATUS=$(echo "$TRACKING_OUT" | awk -F ': ' '/Leap status/ {print $2}')
         
-        if [ -n "$OFFSET" ] && [ -n "$DISPERSION" ] && [ "$START_LEAP_STATUS" != "Not synchronised" ]; then
+        if [ -n "$OFFSET" ] && [ -n "$DISPERSION" ] && [ "$LEAP_STATUS" != "Not synchronised" ]; then
             if awk -v o="$OFFSET" -v d="$DISPERSION" -v to="$TARGET_OFFSET" -v td="$TARGET_DISPERSION" \
                 'BEGIN { exit !(o <= to && d <= td) }'; then
                 SYNC_SUCCESS=true
@@ -141,20 +143,17 @@ else
 
             LAST_TRACKING_OUT=$(chronyc tracking)
             LAST_OFFSET=$(echo "$LAST_TRACKING_OUT" | awk '/Last offset/ {val = $4; gsub(/[+-]/, "", val); print val }')
-            LAST_DELAY=$(echo "$LAST_TRACKING_OUT" | awk '/Root delay/ {print $3, $4}')
-            LAST_DISPERSION=$(echo "$LAST_TRACKING_OUT" | awk '/Root dispersion/ {print $3, $4}')
+            LAST_DISPERSION=$(echo "$LAST_TRACKING_OUT" | awk '/Root dispersion/ {print $4}')
             echo "FINAL System Time Offset: $LAST_OFFSET"
-            echo "FINAL Root Delay: $LAST_DELAY"
             echo "FINAL Root Dispersion: $LAST_DISPERSION"
 
             echo "Advice:"
-            echo "- If confidence (dispersion) is over +/- 50 ms, it indicates that network jitter is making it difficult to accurately synchronize your clock."
-            echo "  It is recommended that you find ways to stabilize your connection (e.g., use a wired ethernet connection instead of Wi-Fi)."
+            echo "- If root dispersion is over 50 ms, it indicates high uncertainty in your clock accuracy."
+            echo "- This can be caused by network jitter, unstable time sources, or high latency."
+            echo "- It is recommended that you find ways to stabilize your connection (e.g., use a wired ethernet connection instead of Wi-Fi)."
             echo "- If the offset is consistently high, check if outbound UDP port 123 is blocked by a firewall."
             echo "- If sync persistently fails to meet these strict requirements, please contact and discuss with the event host."
 
             read -p "Press Enter to continue anyway, or Ctrl+C to abort and troubleshoot." _
-            
-            exit 1
     fi
-fi
+fi 
