@@ -100,15 +100,15 @@ if [ "$IS_SYNCED" = true ]; then
 else
     echo "Forcing immediate time step (makestep 0.1 -1)..."
 
-    #chronyc makestep 0.1 -1
-    # threshold: 0.1 seconds (100 ms) 
-    # limit: -1 (all updates allowed
+    #chronyc makestep [threshold] [limit]
+    # threshold: if offset is more than threshold, jump
+    # limit: number of jumps allowed, (if -1 then unlimited)
     chronyc makestep 0.1 -1 >/dev/null 2>&1
 
     #chronyc burst [good] [max]
     # good: try to collect 4 good samples from each source
     # max: max number of measurement attempts per source
-    chronyc burst 4/8 >/dev/null 2>&1
+    chronyc burst 10/20 >/dev/null 2>&1
 
     echo "Waiting for time synchronization to converge..."
     
