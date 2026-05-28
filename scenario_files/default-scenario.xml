@@ -4,28 +4,69 @@
     <name>DEFAULT</name>
   </identifier>
   <OpenDrive>
-    <MapFileName name="Town04.umap">
+    <MapFileName name="Town04.xodr">
       <MapOrigin latitudeInDegrees="0" longitudeInDegrees="0" heightAboveEllipsoidInMeters="0"> </MapOrigin>
     </MapFileName>
   </OpenDrive>
 
   <vehicles>
-
     <vehicle name="DEFAULT-M-1" bsmid="f03ad658" type="vehicle.toyota.prius" simulationIdentifier="CARLA-DEFAULT-1" material="Aluminum" lvcIndicator="Constructive" generate_bsms="true" organization="DEFAULT">
-        <initialTSPI>
-            <GeodeticPosition latitudeInDegrees="0.001800" longitudeInDegrees="0.001122" heightAboveEllipsoidInMeters="1"> </GeodeticPosition>
-            <Heading>21.85235</Heading>
-        </initialTSPI>
+      <initialTSPI>
+        <GeodeticPosition latitudeInDegrees="0.001800" longitudeInDegrees="0.001122" heightAboveEllipsoidInMeters="1"> </GeodeticPosition>
+        <Heading>21.85235</Heading>
+      </initialTSPI>
     </vehicle>
-
   </vehicles>
 
-  <simulations>
+  <pedestrians>
+    <pedestrian name="DEFAULT-P-1" type="walker.pedestrian.0001" organization="DEFAULT" lvcIndicator="Live">
+      <initialTSPI>
+        <GeodeticPosition latitudeInDegrees="0.001532" longitudeInDegrees="0.001931" heightAboveEllipsoidInMeters="1"> </GeodeticPosition>
+        <Heading>38</Heading>
+      </initialTSPI>
+    </pedestrian>
+  </pedestrians>
 
+  <radios>
+    <radio name="DEFAULT-R-1" lvcIndicator="Live" organization="DEFAULT" scmsEnrolled="true">
+      <initialTSPI>
+        <GeodeticPosition latitudeInDegrees="0.002066" longitudeInDegrees="0.002291" heightAboveEllipsoidInMeters="1"> </GeodeticPosition>
+        <Heading>90</Heading>
+      </initialTSPI>
+    </radio>
+  </radios>
+
+  <intersectionSignalControllers>
+    <intersectionSignalController name="Town04_Main" adapterName="V2XEG-1" lvcIndicator="Live">
+      <controller name="" id="0"/>
+    </intersectionSignalController>
+  </intersectionSignalControllers>
+
+  <phaseSignalMappings>
+    <configuration name="Town04_Main Configuration" controllerName="Town04_Main">
+      <GeodeticPosition latitudeInDegrees="39.682130" longitudeInDegrees="-75.747327" heightAboveEllipsoidInMeters="0"/>
+      <mapping signalId="1629" phase="4"/> <!-- SB, Actor 135 -->
+      <mapping signalId="1628" phase="2"/> <!-- EB, Actor 118 -->
+      <mapping signalId="1627" phase="6"/> <!-- NB, Actor 122 -->
+      <mapping signalId="1626" phase="8"/> <!-- WB, Actor 124 -->
+    </configuration>
+  </phaseSignalMappings>
+
+  <simulations>
     <simulation name="DEFAULT-1" type="CARLA">
       <WeatherState>ClearNoon</WeatherState>
     </simulation>
-
   </simulations>
 
+  <routes>
+    <route name="DEFAULT-Route-1" entityIdentifier="DEFAULT-R-1" csvRoute="route_files/test_route.csv"/>
+    <route name="DEFAULT-Route-2" entityIdentifier="DEFAULT-P-1">
+      <waypoint latitudeInDegrees="0.000000000" longitudeInDegrees="0.000000000" heightAboveEllipsoidInMeters="1" heading="90.0" time="0"/>
+      <waypoint latitudeInDegrees="0.000000000" longitudeInDegrees="0.000080317" heightAboveEllipsoidInMeters="1" heading="90.0" time="1"/>
+      <waypoint latitudeInDegrees="0.000000000" longitudeInDegrees="0.000160633" heightAboveEllipsoidInMeters="1" heading="90.0" time="2"/>
+      <waypoint latitudeInDegrees="0.000000000" longitudeInDegrees="0.000240950" heightAboveEllipsoidInMeters="1" heading="90.0" time="3"/>
+      <waypoint latitudeInDegrees="0.000000000" longitudeInDegrees="0.000321266" heightAboveEllipsoidInMeters="1" heading="90.0" time="4"/>
+      <waypoint latitudeInDegrees="0.000000000" longitudeInDegrees="0.000401583" heightAboveEllipsoidInMeters="1" heading="90.0" time="5"/>
+    </route>
+  </routes>
 </scenario>
