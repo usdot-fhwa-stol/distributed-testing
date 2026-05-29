@@ -14,8 +14,8 @@ ENERGY_COHORT_OFFSETS = {
     "FHWA": -20,
     "ORNL": 0,
     "PITT": 180,
-    "SWARCO": -2480,
-    "SWRI": -3425,
+    "SWARCO": -2450,
+    "SWRI": -3475,
 }
 
 
