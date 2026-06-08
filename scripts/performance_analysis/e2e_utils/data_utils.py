@@ -1,7 +1,8 @@
 from pathlib import Path
 import time
-import pandas as pd
 import re
+
+import pandas as pd
 
 _YEAR_PATTERN = re.compile(r"2\d{3}")
 

@@ -4,7 +4,6 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
-import hashlib
 
 from .data_utils import RunDataFrames
 
@@ -12,79 +11,6 @@ sns.set_theme(style="whitegrid")
 
 _AXIS_FONT_SIZE = 16
 _NUM_BINS = 10
-
-
-def get_deterministic_color(target_name: str, palette_name: str = "tab20") -> tuple:
-    """
-    Deterministically assigns a safe RGB color based on a string hash using Seaborn.
-    """
-    # 1. Load the qualitative palette from Seaborn
-    # This returns a list of RGB tuples
-    palette = sns.color_palette(palette_name)
-
-    # 2. Hash the target string
-    hash_int = int(hashlib.md5(target_name.encode("utf-8")).hexdigest(), 16)
-
-    # 3. Modulo the hash integer by the total number of colors in the palette
-    # len(palette) dynamically checks how many colors are available
-    return palette[hash_int % len(palette)]
-
-
-def assign_plot_styles(run_data_frames: dict) -> dict[str, dict]:
-
-    source_destination_colors: dict[str, tuple] = {}
-    source_destination_alphas: dict[str, dict[str, float]] = {}
-
-    hatch_types = ["/", "+", ".", "O", "X", "\\", "-", "*", "|"]
-    source_dest_hatch_cycle = iter(hatch_types)
-    source_dest_hatches: dict[str, str] = {}
-
-    # Assign color and opacity to each destination
-    for run_number, run_data in run_data_frames.items():
-        for source_site, destinations in run_data.items():
-            for destination_site, dfs in destinations.items():
-
-                # 1. Assign consistent color via deterministic hash
-                if destination_site not in source_destination_colors:
-                    source_destination_colors[destination_site] = (
-                        get_deterministic_color(destination_site)
-                    )
-
-                # 2. Replace linestyle with opacity mapping
-                if destination_site not in source_destination_alphas:
-                    source_destination_alphas[destination_site] = {
-                        "cdf": 1.0,  # Solid line
-                        "chist": 0.4,  # Less solid/transparent line
-                    }
-
-                # 3. Maintain hatches if utilized elsewhere
-                if destination_site not in source_dest_hatches:
-                    try:
-                        source_dest_hatches[destination_site] = next(
-                            source_dest_hatch_cycle
-                        )
-                    except StopIteration:
-                        source_dest_hatches[destination_site] = ""  # Fallback
-
-    # Assign consistent color for each run
-    run_colors: dict[str, tuple] = {}
-
-    # Sort run numbers in ascending order
-    for run_number in sorted(
-        run_data_frames.keys(), key=lambda x: int(x) if x.isdigit() else 0
-    ):
-        if run_number not in run_colors:
-            # Utilize a distinct colormap for runs to prevent overlap with destinations
-            run_colors[run_number] = get_deterministic_color(
-                run_number, palette_name="tab20"
-            )
-
-    return {
-        "source_destination_colors": source_destination_colors,
-        "source_destination_alphas": source_destination_alphas,
-        "source_dest_hatches": source_dest_hatches,
-        "run_colors": run_colors,
-    }
 
 
 def _gather_latency_data(
@@ -130,10 +56,8 @@ def plot_grouped_histogram(
     all_source_sites: set[str],
     all_destination_sites: set[str],
     max_bin_value: int,
-    plot_styles: dict,  # <-- added
+    plot_styles: dict,
 ) -> None:
-    concat_plot_path = plots_dir / "concat_plots"
-    concat_plot_path.mkdir(parents=True, exist_ok=True)
 
     for source_site in all_source_sites:
         print(f"source_site: {source_site}")
@@ -141,7 +65,6 @@ def plot_grouped_histogram(
         dest_dfs: list[pd.DataFrame] = []
         has_overflow = False
 
-        # Build palette mapping route label -> assigned color
         palette: dict[str, tuple] = {}
 
         for destination_site in all_destination_sites:
@@ -180,7 +103,8 @@ def plot_grouped_histogram(
             data=plot_df,
             x="Latency",
             hue="Route",
-            palette=palette,  # <-- use assigned colors
+            palette=palette,
+            alpha=0.9,
             bins=_NUM_BINS,
             binrange=(0, max_bin_value),
             multiple="dodge",
@@ -200,15 +124,20 @@ def plot_grouped_histogram(
 
         if has_overflow:
             ticks = ax.get_xticks()
+            ax.set_xticks(ticks)
             ax.set_xticklabels(
                 [f"{int(t)}" for t in ticks[:-1]] + [f">{max_bin_value}"]
             )
 
         ax.set_axisbelow(True)
         ax.margins(x=0.02)
-        for spine in ["left", "right", "top"]:
-            ax.spines[spine].set_visible(False)
+        sns.despine(ax=ax, left=True, right=True, bottom=True)
 
+        ax.set_title(
+            f"Grouped Histogram of Latency from {source_site} (max {max_bin_value} ms, {data_type})",
+            fontsize=_AXIS_FONT_SIZE,
+            fontweight="bold",
+        )
         ax.set_xlabel("Latency (ms)", fontsize=_AXIS_FONT_SIZE, fontweight="bold")
         ax.set_ylabel("Number of Samples", fontsize=_AXIS_FONT_SIZE, fontweight="bold")
         sns.move_legend(
@@ -220,8 +149,8 @@ def plot_grouped_histogram(
         )
 
         plot_path = (
-            concat_plot_path
-            / f"{source_site}_all_runs_CONCAT_{max_bin_value}_{data_type}.png"
+            plots_dir / f"{source_site}_all_runs_{max_bin_value}"
+            f"_GHIST_{data_type}.png"
         )
         fig.savefig(str(plot_path), bbox_inches="tight")
         plt.close(fig)
@@ -236,8 +165,6 @@ def plot_cumulative_histogram(
     max_bin_value: int,
     plot_styles: dict,
 ) -> None:
-    concat_plot_path = plots_dir / "concat_plots"
-    concat_plot_path.mkdir(parents=True, exist_ok=True)
 
     for source_site in all_source_sites:
         print(f"source_site: {source_site}")
@@ -245,7 +172,6 @@ def plot_cumulative_histogram(
         dest_data: list[np.ndarray] = []
         dest_labels: list[str] = []
         dest_colors: list[tuple] = []
-        dest_alphas: list[float] = []
 
         for destination_site in all_destination_sites:
             if source_site == destination_site:
@@ -264,11 +190,6 @@ def plot_cumulative_histogram(
             dest_colors.append(
                 plot_styles["source_destination_colors"][destination_site]
             )
-            dest_alphas.append(
-                plot_styles["source_destination_alphas"][destination_site][
-                    "chist"
-                ]
-            )
 
         if not dest_data:
             print(f"\tNo data to plot for {source_site}, skipping.")
@@ -276,9 +197,7 @@ def plot_cumulative_histogram(
 
         fig, ax = plt.subplots(figsize=(16, 12))
 
-        for data, label, color, alpha in zip(
-            dest_data, dest_labels, dest_colors, dest_alphas
-        ):
+        for data, label, color in zip(dest_data, dest_labels, dest_colors):
             sns.histplot(
                 data=data,
                 bins=_NUM_BINS,
@@ -288,7 +207,7 @@ def plot_cumulative_histogram(
                 element="step",
                 fill=False,
                 color=color,
-                alpha=alpha,
+                alpha=0.9,
                 ax=ax,
                 label=label,
             )
@@ -299,9 +218,7 @@ def plot_cumulative_histogram(
             fontsize=_AXIS_FONT_SIZE,
             fontweight="bold",
         )
-        ax.set_xlabel(
-            "Latency (ms)", fontsize=_AXIS_FONT_SIZE, fontweight="bold"
-        )
+        ax.set_xlabel("Latency (ms)", fontsize=_AXIS_FONT_SIZE, fontweight="bold")
         ax.set_ylabel(
             "Cumulative Proportion",
             fontsize=_AXIS_FONT_SIZE,
@@ -316,16 +233,15 @@ def plot_cumulative_histogram(
         )
 
         plot_path = (
-            concat_plot_path
-            / f"{source_site}_all_runs_CONCAT_{max_bin_value}"
-            f"_CumulativeHistogram_{data_type}.png"
+            plots_dir / f"{source_site}_all_runs_{max_bin_value}"
+            f"_CHIST_{data_type}.png"
         )
         fig.savefig(str(plot_path), bbox_inches="tight")
         plt.close(fig)
 
 
 def plot_timeseries_by_destination(
-    plots_dir, data_type, run_data_frames, plot_styles
+    plots_dir: Path, data_type: str, run_data_frames: dict, plot_styles: dict
 ):
     for run_number, run_data in run_data_frames.items():
         for source_site, destinations in run_data.items():
@@ -333,12 +249,10 @@ def plot_timeseries_by_destination(
             plotted_destinations = set()
 
             for destination_site, dfs in destinations.items():
-                color = plot_styles["source_destination_colors"][
-                    destination_site
+                color = plot_styles["source_destination_colors"][destination_site]
+                alpha = plot_styles["source_destination_alphas"][destination_site][
+                    "cdf"
                 ]
-                alpha = plot_styles["source_destination_alphas"][
-                    destination_site
-                ]["cdf"]
 
                 for _, df in dfs:
                     df = df.copy()
@@ -361,9 +275,7 @@ def plot_timeseries_by_destination(
                         ax=ax,
                     )
 
-            ax.set_title(
-                f"Latency from {source_site} — Run {run_number} ({data_type})"
-            )
+            ax.set_title(f"Latency from {source_site} — Run {run_number} ({data_type})")
             ax.set_xlabel("Datetime")
             ax.set_ylabel("Latency (ms)")
             ax.legend(
@@ -376,8 +288,7 @@ def plot_timeseries_by_destination(
             fig.autofmt_xdate()
 
             single_run_plot_path = (
-                plots_dir
-                / f"{source_site}_single_run_{run_number}_{data_type}.png"
+                plots_dir / f"{source_site}_single_run_{run_number}_{data_type}.png"
             )
             fig.savefig(single_run_plot_path, bbox_inches="tight")
             plt.close(fig)
@@ -439,9 +350,7 @@ def plot_timeseries_by_run(
                         ax=ax,
                     )
 
-            ax.set_title(
-                f"Latency: {source_site} → {destination_site} ({data_type})"
-            )
+            ax.set_title(f"Latency: {source_site} → {destination_site} ({data_type})")
             ax.set_xlabel("Time (s)")
             ax.set_ylabel("Latency (ms)")
             ax.legend(

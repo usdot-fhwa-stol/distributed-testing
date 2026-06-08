@@ -2,8 +2,9 @@ from collections.abc import Sequence
 import argparse
 from pathlib import Path
 
-from e2e_utils.data_utils import load_and_parse_csv_data
-from e2e_utils.plot_utils import plot_cumulative_histogram, plot_grouped_histogram, assign_plot_styles
+from e2e_utils.data_utils import load_and_parse_csv_data, _DATA_TYPE_FOLDER_ABBREV
+from e2e_utils.plot_utils import plot_cumulative_histogram, plot_grouped_histogram
+from e2e_utils.style_utils import assign_plot_styles
 
 _RESULTS_DIR = Path(__file__).parent / "results"
 
@@ -30,7 +31,15 @@ def process_and_plot_results(
     if max_bins is None:
         max_bins = []
 
-    plots_dir = root_dir / "plots" / folder_prefix.rstrip("-")
+    data_abrv = ""
+    if data_type.lower() in _DATA_TYPE_FOLDER_ABBREV:
+        data_abrv = _DATA_TYPE_FOLDER_ABBREV[data_type.lower()]
+    else:
+        data_abrv = [char for char in data_type if char.isupper()]
+
+    plots_dir = root_dir / (folder_prefix.rstrip("-") + "-RALL" + "-" + data_abrv + "_results")
+    print(plots_dir)
+
     plots_dir.mkdir(parents=True, exist_ok=True)
 
     result = load_and_parse_csv_data(root_dir, folder_prefix, data_type)
