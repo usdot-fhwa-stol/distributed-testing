@@ -116,7 +116,7 @@
     </vehicles>
 
     <intersectionSignalControllers>
-        <intersectionSignalController name="DelAve_01" adapterType="spat-adapter"
+        <intersectionSignalController name="Town04_01" adapterType="spat-adapter"
             adapterName="SPAT-1" lvcIndicator="Live">
             <userData>
                 <CARLA>
@@ -127,7 +127,7 @@
             </userData>
         </intersectionSignalController>
 
-        <intersectionSignalController name="DelAve_02" adapterType="spat-adapter"
+        <intersectionSignalController name="Town04_02" adapterType="spat-adapter"
             adapterName="SPAT-1" lvcIndicator="Live">
             <userData>
                 <CARLA>
@@ -138,7 +138,7 @@
             </userData>
         </intersectionSignalController>
 
-        <intersectionSignalController name="DelAve_03" adapterType="spat-adapter"
+        <intersectionSignalController name="Town04_03" adapterType="spat-adapter"
             adapterName="SPAT-1" lvcIndicator="Live">
             <userData>
                 <CARLA>
@@ -149,7 +149,7 @@
             </userData>
         </intersectionSignalController>
 
-        <intersectionSignalController name="DelAve_04" adapterType="spat-adapter"
+        <intersectionSignalController name="Town04_04" adapterType="spat-adapter"
             adapterName="SPAT-1" lvcIndicator="Live">
             <userData>
                 <CARLA>
@@ -160,7 +160,7 @@
             </userData>
         </intersectionSignalController>
 
-        <intersectionSignalController name="DelAve_05" adapterType="spat-adapter"
+        <intersectionSignalController name="Town04_05" adapterType="spat-adapter"
             adapterName="SPAT-1" lvcIndicator="Live">
             <userData>
                 <CARLA>
@@ -171,7 +171,7 @@
             </userData>
         </intersectionSignalController>
 
-        <intersectionSignalController name="DelAve_06" adapterType="spat-adapter"
+        <intersectionSignalController name="Town04_06" adapterType="spat-adapter"
             adapterName="SPAT-1" lvcIndicator="Live">
             <userData>
                 <CARLA>
@@ -182,7 +182,7 @@
             </userData>
         </intersectionSignalController>
 
-        <intersectionSignalController name="DelAve_07" adapterType="spat-adapter"
+        <intersectionSignalController name="Town04_07" adapterType="spat-adapter"
             adapterName="SPAT-1" lvcIndicator="Live">
             <userData>
                 <CARLA>
@@ -194,7 +194,7 @@
         </intersectionSignalController>
 
 
-        <intersectionSignalController name="DelAve_08" adapterType="spat-adapter"
+        <intersectionSignalController name="Town04_08" adapterType="spat-adapter"
             adapterName="SPAT-1" lvcIndicator="Live">
             <userData>
                 <CARLA>
@@ -205,7 +205,7 @@
             </userData>
         </intersectionSignalController>
 
-        <intersectionSignalController name="DelAve_09" adapterType="spat-adapter"
+        <intersectionSignalController name="Town04_09" adapterType="spat-adapter"
             adapterName="SPAT-1" lvcIndicator="Live">
             <userData>
                 <CARLA>
@@ -220,7 +220,7 @@
     <phaseSignalMappings>
         <!-- name of config doesnt matter, match controllerName with intersectionSignalController
         name  -->
-        <configuration name="DelAve_01 Configuration" controllerName="DelAve_01">
+        <configuration name="Town04_01 Configuration" controllerName="Town04_01">
             <GeodeticPosition latitudeInDegrees="39.681590" longitudeInDegrees="-75.755311"
                 heightAboveEllipsoidInMeters="0">
             </GeodeticPosition>
@@ -247,7 +247,7 @@
             </controller>
         </configuration>
 
-        <configuration name="DelAve_02 Configuration" controllerName="DelAve_02">
+        <configuration name="Town04_02 Configuration" controllerName="Town04_02">
             <GeodeticPosition latitudeInDegrees="39.681635" longitudeInDegrees="-75.753626"
                 heightAboveEllipsoidInMeters="0">
             </GeodeticPosition>
@@ -274,7 +274,7 @@
             </controller>
         </configuration>
 
-        <configuration name="DelAve_03 Configuration" controllerName="DelAve_03">
+        <configuration name="Town04_03 Configuration" controllerName="Town04_03">
             <GeodeticPosition latitudeInDegrees="39.681743" longitudeInDegrees="-75.752443"
                 heightAboveEllipsoidInMeters="0">
             </GeodeticPosition>
@@ -287,7 +287,7 @@
             </controller>
         </configuration>
 
-        <configuration name="DelAve_04 Configuration" controllerName="DelAve_04">
+        <configuration name="Town04_04 Configuration" controllerName="Town04_04">
             <GeodeticPosition latitudeInDegrees="39.681961" longitudeInDegrees="-75.749513"
                 heightAboveEllipsoidInMeters="0">
             </GeodeticPosition>
@@ -314,7 +314,7 @@
             </controller>
         </configuration>
 
-        <configuration name="DelAve_05 Configuration" controllerName="DelAve_05">
+        <configuration name="Town04_05 Configuration" controllerName="Town04_05">
             <GeodeticPosition latitudeInDegrees="39.682130" longitudeInDegrees="-75.747327"
                 heightAboveEllipsoidInMeters="0">
             </GeodeticPosition>
@@ -341,7 +341,7 @@
             </controller>
         </configuration>
 
-        <configuration name="DelAve_06 Configuration" controllerName="DelAve_06">
+        <configuration name="Town04_06 Configuration" controllerName="Town04_06">
             <GeodeticPosition latitudeInDegrees="39.682209" longitudeInDegrees="-75.745210"
                 heightAboveEllipsoidInMeters="0">
             </GeodeticPosition>
@@ -368,7 +368,7 @@
             </controller>
         </configuration>
 
-        <configuration name="DelAve_07 Configuration" controllerName="DelAve_07">
+        <configuration name="Town04_07 Configuration" controllerName="Town04_07">
             <GeodeticPosition latitudeInDegrees="39.682073" longitudeInDegrees="-75.743805"
                 heightAboveEllipsoidInMeters="0">
             </GeodeticPosition>
@@ -381,7 +381,7 @@
             </controller>
         </configuration>
 
-        <configuration name="DelAve_08 Configuration" controllerName="DelAve_08">
+        <configuration name="Town04_08 Configuration" controllerName="Town04_08">
             <!-- "intersection" 8 is an visual warning ahead of intersection 9 -->
             <!-- we are assuming that this signal head matches the behavior of intersection 9, phase
             2 -->
@@ -418,8 +418,8 @@
             </controller>
         </configuration>
 
-        <!-- this intersection is off of DelAve and will not be used, adding just for completenesss -->
-        <configuration name="DelAve_09 Configuration" controllerName="DelAve_09">
+        <!-- this intersection is off of Town04 and will not be used, adding just for completenesss -->
+        <configuration name="Town04_09 Configuration" controllerName="Town04_09">
             <GeodeticPosition latitudeInDegrees="39.683623" longitudeInDegrees="-75.745524"
                 heightAboveEllipsoidInMeters="0">
             </GeodeticPosition>
