@@ -103,7 +103,7 @@ def plot_grouped_histogram(
                 pd.DataFrame(
                     {
                         "Latency": np.clip(latency.to_numpy(), 0, max_bin_value),
-                        "Route": label,
+                        "Pair": label,
                     }
                 )
             )
@@ -118,7 +118,7 @@ def plot_grouped_histogram(
         sns.histplot(
             data=plot_df,
             x="Latency",
-            hue="Route",
+            hue="Pair",
             palette=palette,
             alpha=0.85,
             bins=_NUM_BINS,
@@ -171,7 +171,7 @@ def plot_grouped_histogram(
             frameon=True,
             framealpha=0.9,
             edgecolor="lightgray",
-            title="Route",
+            title="Pair",
             title_fontsize=_AXIS_FONT_SIZE - 1,
         )
 
@@ -281,7 +281,7 @@ def plot_cumulative_histogram(
             frameon=True,
             framealpha=0.9,
             edgecolor="lightgray",
-            title="Route",
+            title="Pair",
             title_fontsize=_AXIS_FONT_SIZE - 1,
         )
 

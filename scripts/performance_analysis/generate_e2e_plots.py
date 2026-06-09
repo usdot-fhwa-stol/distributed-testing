@@ -2,14 +2,6 @@ from collections.abc import Sequence
 import argparse
 from pathlib import Path
 
-import sys
-import os
-
-# Get the directory of the current script and add it to sys.path
-script_dir = os.path.dirname(os.path.abspath(__file__))
-if script_dir not in sys.path:
-    sys.path.insert(0, script_dir)
-
 from e2e_utils.data_utils import load_and_parse_csv_data, _DATA_TYPE_FOLDER_ABBREV
 from e2e_utils.plot_utils import plot_cumulative_histogram, plot_grouped_histogram
 from e2e_utils.style_utils import assign_destination_colors
@@ -80,7 +72,7 @@ def main() -> None:
         ),
         epilog=(
             "Examples:\n"
-            "  python3 generate_e2e_plots.py EnergyOffset-131 LandVehicle\n"
+            "  python3 generate_e2e_plots.py EnergyOffset-130 LandVehicle\n"
             "  python3 generate_e2e_plots.py EnergyOffset-130 V2XMessage\n"
             "  python3 generate_e2e_plots.py EnergyOffset-130 TrafficSignalController\n"
             "  python3 generate_e2e_plots.py EnergyOffset-131 LandVehicle --grouped\n"
@@ -95,7 +87,7 @@ def main() -> None:
     parser.add_argument(
         "run_prefix",
         nargs="?",
-        default="Energy131-",
+        default="EnergyOffset-130",
         help="Prefix used to match run folders inside results_dir.",
     )
     parser.add_argument(
