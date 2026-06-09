@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<scenario>
+
+    <identifier>
+        <name>Cohort 2 - Connectivity Test</name>
+    </identifier>
+
+    <OpenDrive>
+        <MapFileName name="Town04.umap">
+            <MapOrigin latitudeInDegrees="0" longitudeInDegrees="0" heightAboveEllipsoidInMeters="0"> </MapOrigin>
+        </MapFileName>
+    </OpenDrive>
+
+    <vehicles>
+    </vehicles>
+
+    <simulations>
+
+        <simulation name="CARLA-FHWA-3" type="CARLA">
+            <WeatherState>ClearNoon</WeatherState>
+        </simulation>
+
+        <simulation name="CARLA-ORNL-1" type="CARLA">
+            <WeatherState>ClearNoon</WeatherState>
+        </simulation>
+
+        <simulation name="CARLA-PITT-1" type="CARLA">
+            <WeatherState>ClearNoon</WeatherState>
+        </simulation>
+
+        <simulation name="CARLA-SWRI-1" type="CARLA">
+            <WeatherState>ClearNoon</WeatherState>
+        </simulation>
+
+        <simulation name="CARLA-ALA-1" type="CARLA">
+            <WeatherState>ClearNoon</WeatherState>
+        </simulation>
+
+    </simulations>
+
+</scenario>

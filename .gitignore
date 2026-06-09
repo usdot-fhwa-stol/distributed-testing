@@ -8,6 +8,9 @@ logs/
 #ignore all pycache
 **/__pycache__/
 
+#ignore venv
+venv/
+
 #ignore all pcap and sqlite data files
 **.pcap
 **.sqlite
