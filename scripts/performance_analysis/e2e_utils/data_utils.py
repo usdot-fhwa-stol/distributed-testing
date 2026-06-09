@@ -48,7 +48,7 @@ def _load_run_dataframe(csv_file: Path) -> pd.DataFrame:
     performance_metric_col = df.filter(like="_total_latency").columns[-1]
     df = df[[date_col, performance_metric_col]]
 
-    if df[date_col].iloc[10] > int(time.time()):
+    if df[date_col].iloc[0] > int(time.time()):
         df["Timestamp_in_s"] = df[date_col] / 10**9
         df[date_col] = pd.to_datetime(df[date_col], unit="ns", errors="coerce")
     else:
@@ -128,13 +128,11 @@ def load_and_parse_csv_data(
         for csv_file in run_dir.glob("*.csv"):
             print(f"csv_file: {csv_file}")
 
-            if csv_file.name.endswith("results_summary.csv"):
-                print("\tSkipping results summary")
+            if "summary" in csv_file.name:
                 continue
 
             filename_parts = csv_file.name.split("_to_")
             if len(filename_parts) < 2:
-                print(f"\tSkipping unrecognised filename format")
                 continue
 
             source_site = _extract_site_name(filename_parts[0])

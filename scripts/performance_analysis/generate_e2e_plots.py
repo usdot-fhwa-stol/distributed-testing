@@ -2,9 +2,17 @@ from collections.abc import Sequence
 import argparse
 from pathlib import Path
 
+import sys
+import os
+
+# Get the directory of the current script and add it to sys.path
+script_dir = os.path.dirname(os.path.abspath(__file__))
+if script_dir not in sys.path:
+    sys.path.insert(0, script_dir)
+
 from e2e_utils.data_utils import load_and_parse_csv_data, _DATA_TYPE_FOLDER_ABBREV
 from e2e_utils.plot_utils import plot_cumulative_histogram, plot_grouped_histogram
-from e2e_utils.style_utils import assign_plot_styles
+from e2e_utils.style_utils import assign_destination_colors
 
 _RESULTS_DIR = Path(__file__).parent / "results"
 
@@ -23,53 +31,44 @@ def process_and_plot_results(
         root_dir: Root directory containing run result folders.
         folder_prefix: Prefix used to identify matching run folders.
         data_type: Message type used to filter CSV files.
-        generate_histogram: Whether to generate grouped bar histogram plots.
+        generate_grouped: Whether to generate grouped bar histogram plots.
         generate_cumulative: Whether to generate cumulative histogram plots.
         max_bins: Upper bin limits defining zoomed plot levels. Defaults to
             an empty list if not provided, resulting in no plots.
     """
-    if max_bins is None:
-        max_bins = []
+    if not max_bins or not (generate_grouped or generate_cumulative):
+        return
 
-    data_abrv = ""
-    if data_type.lower() in _DATA_TYPE_FOLDER_ABBREV:
-        data_abrv = _DATA_TYPE_FOLDER_ABBREV[data_type.lower()]
-    else:
-        data_abrv = [char for char in data_type if char.isupper()]
-
-    plots_dir = root_dir / (folder_prefix.rstrip("-") + "-RALL" + "-" + data_abrv + "_results")
+    data_abrv = _DATA_TYPE_FOLDER_ABBREV.get(
+        data_type.lower(),
+        "".join(c for c in data_type if c.isupper()),
+    )
+    plots_dir = root_dir / f"{folder_prefix.rstrip('-')}-RALL-{data_abrv}_results"
     print(plots_dir)
-
-    plots_dir.mkdir(parents=True, exist_ok=True)
 
     result = load_and_parse_csv_data(root_dir, folder_prefix, data_type)
     if result is None:
         return
 
     run_data_frames, all_source_sites, all_destination_sites = result
-    plot_styles = assign_plot_styles(run_data_frames)
+
+    plots_dir.mkdir(parents=True, exist_ok=True)
+
+    destination_colors = assign_destination_colors(run_data_frames)
+
+    common_args = (
+        plots_dir,
+        data_type,
+        run_data_frames,
+        all_source_sites,
+        all_destination_sites,
+    )
 
     for max_bin in max_bins:
         if generate_grouped:
-            plot_grouped_histogram(
-                plots_dir,
-                data_type,
-                run_data_frames,
-                all_source_sites,
-                all_destination_sites,
-                max_bin,
-                plot_styles
-            )
+            plot_grouped_histogram(*common_args, max_bin, destination_colors)
         if generate_cumulative:
-            plot_cumulative_histogram(
-                plots_dir,
-                data_type,
-                run_data_frames,
-                all_source_sites,
-                all_destination_sites,
-                max_bin,
-                plot_styles
-            )
+            plot_cumulative_histogram(*common_args, max_bin, destination_colors)
 
 
 def main() -> None:

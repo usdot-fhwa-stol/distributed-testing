@@ -3,6 +3,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
+import matplotlib.ticker
 import seaborn as sns
 
 from .data_utils import RunDataFrames
@@ -56,18 +57,30 @@ def plot_grouped_histogram(
     all_source_sites: set[str],
     all_destination_sites: set[str],
     max_bin_value: int,
-    plot_styles: dict,
+    destination_colors: dict[str, tuple],
 ) -> None:
+
+    """Generates and saves a grouped bar histogram of latency for a source site.
+
+    Args:
+        plots_dir: Directory where plot images will be saved.
+        data_type: Message type label used in the plot title and filename.
+        run_data_frames: Nested mapping of run number to site pair DataFrames.
+        all_source_sites: Set of all source site names to iterate over.
+        all_destination_sites: Set of all destination site names to plot against.
+        max_bin_value: Upper bin limit in milliseconds.
+        destination_colors: Mapping of destination site name to its assigned color.
+    """
 
     for source_site in all_source_sites:
         print(f"source_site: {source_site}")
 
         dest_dfs: list[pd.DataFrame] = []
         has_overflow = False
-
         palette: dict[str, tuple] = {}
+        total_samples = 0
 
-        for destination_site in all_destination_sites:
+        for destination_site in sorted(all_destination_sites):
             if source_site == destination_site:
                 continue
 
@@ -80,9 +93,12 @@ def plot_grouped_histogram(
             if float(latency.max()) > max_bin_value:
                 has_overflow = True
 
-            label = f"{source_site} to {destination_site}"
-            palette[label] = plot_styles["source_destination_colors"][destination_site]
-            print(f"\t{label}: {latency.size} samples")
+            label = f"{source_site} → {destination_site}"
+            palette[label] = destination_colors[destination_site]
+            n_samples = latency.size
+            total_samples += n_samples
+            print(f"\t{label}: {n_samples} samples")
+
             dest_dfs.append(
                 pd.DataFrame(
                     {
@@ -97,30 +113,32 @@ def plot_grouped_histogram(
             continue
 
         plot_df = pd.concat(dest_dfs, ignore_index=True)
-        fig, ax = plt.subplots(figsize=(16, 12))
+        fig, ax = plt.subplots(figsize=(16, 9))
 
         sns.histplot(
             data=plot_df,
             x="Latency",
             hue="Route",
             palette=palette,
-            alpha=0.9,
+            alpha=0.85,
             bins=_NUM_BINS,
             binrange=(0, max_bin_value),
             multiple="dodge",
             stat="count",
-            shrink=0.9,
+            shrink=0.85,
             ax=ax,
         )
 
         y_max = ax.get_ylim()[-1]
-        threshold = y_max / 1500
+        ax.set_ylim(top=y_max * 1.18)
+        threshold = y_max * 0.008
+
         for container in getattr(ax, "containers", []):
             labels = [
                 f"{int(bar.get_height())}" if bar.get_height() > threshold else ""
                 for bar in container
             ]
-            ax.bar_label(container, labels=labels, rotation=90, padding=4, fontsize=8)
+            ax.bar_label(container, labels=labels, rotation=90, padding=4, fontsize=7)
 
         if has_overflow:
             ticks = ax.get_xticks()
@@ -129,30 +147,38 @@ def plot_grouped_histogram(
                 [f"{int(t)}" for t in ticks[:-1]] + [f">{max_bin_value}"]
             )
 
+        ax.yaxis.grid(True, linestyle="--", linewidth=0.6, alpha=0.6, color="gray")
         ax.set_axisbelow(True)
         ax.margins(x=0.02)
-        sns.despine(ax=ax, left=True, right=True, bottom=True)
+        ax.tick_params(axis="both", labelsize=_AXIS_FONT_SIZE - 2)
+        sns.despine(ax=ax, left=False, right=True, top=True, bottom=False)
 
         ax.set_title(
-            f"Grouped Histogram of Latency from {source_site} (max {max_bin_value} ms, {data_type})",
+            f"Grouped Latency Histogram — {source_site} to All Destinations\n"
+            f"Max {max_bin_value} ms  |  {data_type}  |  {total_samples:,} total samples",
             fontsize=_AXIS_FONT_SIZE,
             fontweight="bold",
+            pad=12,
         )
         ax.set_xlabel("Latency (ms)", fontsize=_AXIS_FONT_SIZE, fontweight="bold")
         ax.set_ylabel("Number of Samples", fontsize=_AXIS_FONT_SIZE, fontweight="bold")
+
         sns.move_legend(
             ax,
             loc="upper left",
             bbox_to_anchor=(1.02, 1),
             borderaxespad=0,
-            frameon=False,
+            frameon=True,
+            framealpha=0.9,
+            edgecolor="lightgray",
+            title="Route",
+            title_fontsize=_AXIS_FONT_SIZE - 1,
         )
 
         plot_path = (
-            plots_dir / f"{source_site}_all_runs_{max_bin_value}"
-            f"_GHIST_{data_type}.png"
+            plots_dir / f"{source_site}_all_runs_{max_bin_value}_GHIST_{data_type}.png"
         )
-        fig.savefig(str(plot_path), bbox_inches="tight")
+        fig.savefig(str(plot_path), dpi=150, bbox_inches="tight")
         plt.close(fig)
 
 
@@ -163,17 +189,30 @@ def plot_cumulative_histogram(
     all_source_sites: set[str],
     all_destination_sites: set[str],
     max_bin_value: int,
-    plot_styles: dict,
+    destination_colors: dict[str, tuple],
 ) -> None:
 
+    """Generates and saves a cumulative proportion histogram of latency for a source site.
+
+    Args:
+        plots_dir: Directory where plot images will be saved.
+        data_type: Message type label used in the plot title and filename.
+        run_data_frames: Nested mapping of run number to site pair DataFrames.
+        all_source_sites: Set of all source site names to iterate over.
+        all_destination_sites: Set of all destination site names to plot against.
+        max_bin_value: Upper bin limit in milliseconds.
+        destination_colors: Mapping of destination site name to its assigned color.
+    """
+    
     for source_site in all_source_sites:
         print(f"source_site: {source_site}")
 
         dest_data: list[np.ndarray] = []
         dest_labels: list[str] = []
         dest_colors: list[tuple] = []
+        total_samples = 0
 
-        for destination_site in all_destination_sites:
+        for destination_site in sorted(all_destination_sites):
             if source_site == destination_site:
                 continue
 
@@ -183,19 +222,20 @@ def plot_cumulative_histogram(
             if latency.empty:
                 continue
 
-            label = f"{source_site} to {destination_site}"
-            print(f"\t{label}: {latency.size} samples")
+            label = f"{source_site} → {destination_site}"
+            n_samples = latency.size
+            total_samples += n_samples
+            print(f"\t{label}: {n_samples} samples")
+
             dest_labels.append(label)
             dest_data.append(np.clip(latency.to_numpy(), 0, max_bin_value))
-            dest_colors.append(
-                plot_styles["source_destination_colors"][destination_site]
-            )
+            dest_colors.append(destination_colors[destination_site])
 
         if not dest_data:
             print(f"\tNo data to plot for {source_site}, skipping.")
             continue
 
-        fig, ax = plt.subplots(figsize=(16, 12))
+        fig, ax = plt.subplots(figsize=(16, 9))
 
         for data, label, color in zip(dest_data, dest_labels, dest_colors):
             sns.histplot(
@@ -212,31 +252,43 @@ def plot_cumulative_histogram(
                 label=label,
             )
 
+        ax.yaxis.grid(True, linestyle="--", linewidth=0.6, alpha=0.6, color="gray")
+        ax.axhline(y=0.5, linestyle=":", linewidth=0.8, color="gray", alpha=0.7)
+        ax.axhline(y=0.95, linestyle=":", linewidth=0.8, color="gray", alpha=0.7)
+        ax.set_axisbelow(True)
+        ax.set_ylim(0, 1.05)
+        ax.yaxis.set_major_formatter(
+            matplotlib.ticker.PercentFormatter(xmax=1, decimals=0)
+        )
+        ax.tick_params(axis="both", labelsize=_AXIS_FONT_SIZE - 2)
+        sns.despine(ax=ax, left=False, right=True, top=True, bottom=False)
+
         ax.set_title(
-            f"Cumulative Latency from {source_site}"
-            f" (max {max_bin_value} ms, {data_type})",
+            f"Cumulative Latency Histogram — {source_site} to All Destinations\n"
+            f"Max {max_bin_value} ms  |  {data_type}  |  {total_samples:,} total samples",
             fontsize=_AXIS_FONT_SIZE,
             fontweight="bold",
+            pad=12,
         )
         ax.set_xlabel("Latency (ms)", fontsize=_AXIS_FONT_SIZE, fontweight="bold")
         ax.set_ylabel(
-            "Cumulative Proportion",
-            fontsize=_AXIS_FONT_SIZE,
-            fontweight="bold",
+            "Cumulative Proportion", fontsize=_AXIS_FONT_SIZE, fontweight="bold"
         )
         ax.legend(
             loc="upper left",
             bbox_to_anchor=(1.02, 1),
             borderaxespad=0,
-            frameon=False,
+            frameon=True,
+            framealpha=0.9,
+            edgecolor="lightgray",
             title="Route",
+            title_fontsize=_AXIS_FONT_SIZE - 1,
         )
 
         plot_path = (
-            plots_dir / f"{source_site}_all_runs_{max_bin_value}"
-            f"_CHIST_{data_type}.png"
+            plots_dir / f"{source_site}_all_runs_{max_bin_value}_CHIST_{data_type}.png"
         )
-        fig.savefig(str(plot_path), bbox_inches="tight")
+        fig.savefig(str(plot_path), dpi=150, bbox_inches="tight")
         plt.close(fig)
 
 
@@ -290,7 +342,7 @@ def plot_timeseries_by_destination(
             single_run_plot_path = (
                 plots_dir / f"{source_site}_single_run_{run_number}_{data_type}.png"
             )
-            fig.savefig(single_run_plot_path, bbox_inches="tight")
+            fig.savefig(str(single_run_plot_path), bbox_inches="tight")
             plt.close(fig)
 
 
