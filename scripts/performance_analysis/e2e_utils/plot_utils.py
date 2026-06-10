@@ -3,7 +3,6 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
-import matplotlib.ticker
 import seaborn as sns
 
 from .data_utils import RunDataFrames
@@ -14,7 +13,7 @@ _AXIS_FONT_SIZE = 16
 _NUM_BINS = 10
 
 
-def _gather_latency_data(
+def gather_latency_data(
     source_site: str,
     destination_site: str,
     run_data_frames: RunDataFrames,
@@ -76,7 +75,6 @@ def plot_grouped_histogram(
         print(f"source_site: {source_site}")
 
         dest_dfs: list[pd.DataFrame] = []
-        has_overflow = False
         palette: dict[str, tuple] = {}
         total_samples = 0
 
@@ -84,14 +82,11 @@ def plot_grouped_histogram(
             if source_site == destination_site:
                 continue
 
-            latency = _gather_latency_data(
+            latency = gather_latency_data(
                 source_site, destination_site, run_data_frames
             )
             if latency.empty:
                 continue
-
-            if float(latency.max()) > max_bin_value:
-                has_overflow = True
 
             label = f"{source_site} → {destination_site}"
             palette[label] = destination_colors[destination_site]
@@ -115,14 +110,18 @@ def plot_grouped_histogram(
         plot_df = pd.concat(dest_dfs, ignore_index=True)
         fig, ax = plt.subplots(figsize=(16, 9))
 
+        bin_width = max_bin_value / _NUM_BINS
+        bins = _NUM_BINS + 1
+        binrange = (-bin_width, max_bin_value)
+        
         sns.histplot(
             data=plot_df,
             x="Latency",
             hue="Pair",
             palette=palette,
             alpha=0.85,
-            bins=_NUM_BINS,
-            binrange=(0, max_bin_value),
+            bins=bins,
+            binrange=binrange,
             multiple="dodge",
             stat="count",
             shrink=0.85,
@@ -131,21 +130,16 @@ def plot_grouped_histogram(
 
         y_max = ax.get_ylim()[-1]
         ax.set_ylim(top=y_max * 1.18)
-        threshold = y_max * 0.008
+
+        ax.set_xlim(-bin_width/2, max_bin_value)
+        ax.set_xticks(np.arange(0, max_bin_value + 1, max_bin_value / 10))
 
         for container in getattr(ax, "containers", []):
             labels = [
-                f"{int(bar.get_height())}" if bar.get_height() > threshold else ""
+                f"{int(bar.get_height())}" if bar.get_height() > 0 else ""
                 for bar in container
             ]
             ax.bar_label(container, labels=labels, rotation=90, padding=4, fontsize=7)
-
-        if has_overflow:
-            ticks = ax.get_xticks()
-            ax.set_xticks(ticks)
-            ax.set_xticklabels(
-                [f"{int(t)}" for t in ticks[:-1]] + [f">{max_bin_value}"]
-            )
 
         ax.yaxis.grid(True, linestyle="--", linewidth=0.6, alpha=0.6, color="gray")
         ax.set_axisbelow(True)
@@ -216,19 +210,26 @@ def plot_cumulative_histogram(
             if source_site == destination_site:
                 continue
 
-            latency = _gather_latency_data(
+            latency = gather_latency_data(
                 source_site, destination_site, run_data_frames
             )
             if latency.empty:
                 continue
 
+            latency_np = latency.to_numpy()
+            
+            filtered_latency = latency_np[latency_np >= 0]
+            
+            if filtered_latency.size == 0:
+                continue
+
             label = f"{source_site} → {destination_site}"
-            n_samples = latency.size
+            n_samples = filtered_latency.size
             total_samples += n_samples
             print(f"\t{label}: {n_samples} samples")
 
             dest_labels.append(label)
-            dest_data.append(np.clip(latency.to_numpy(), 0, max_bin_value))
+            dest_data.append(np.clip(filtered_latency, 0, max_bin_value))
             dest_colors.append(destination_colors[destination_site])
 
         if not dest_data:
@@ -237,29 +238,32 @@ def plot_cumulative_histogram(
 
         fig, ax = plt.subplots(figsize=(16, 9))
 
+        bin_width = max_bin_value / _NUM_BINS
+        bins = _NUM_BINS + 1
+        binrange = (-bin_width, max_bin_value)
+
         for data, label, color in zip(dest_data, dest_labels, dest_colors):
             sns.histplot(
                 data=data,
-                bins=_NUM_BINS,
-                binrange=(0, max_bin_value),
+                bins=bins,
+                binrange=binrange,
                 cumulative=True,
                 stat="proportion",
                 element="step",
                 fill=False,
                 color=color,
-                alpha=0.9,
+                alpha=0.75,
                 ax=ax,
                 label=label,
             )
 
         ax.yaxis.grid(True, linestyle="--", linewidth=0.6, alpha=0.6, color="gray")
-        ax.axhline(y=0.5, linestyle=":", linewidth=0.8, color="gray", alpha=0.7)
-        ax.axhline(y=0.95, linestyle=":", linewidth=0.8, color="gray", alpha=0.7)
         ax.set_axisbelow(True)
         ax.set_ylim(0, 1.05)
-        ax.yaxis.set_major_formatter(
-            matplotlib.ticker.PercentFormatter(xmax=1, decimals=0)
-        )
+
+        ax.set_xlim(-bin_width/2, max_bin_value)
+        ax.set_xticks(np.arange(0, max_bin_value + 1, max_bin_value / 10))
+
         ax.tick_params(axis="both", labelsize=_AXIS_FONT_SIZE - 2)
         sns.despine(ax=ax, left=False, right=True, top=True, bottom=False)
 
@@ -293,18 +297,19 @@ def plot_cumulative_histogram(
 
 
 def plot_timeseries_by_destination(
-    plots_dir: Path, data_type: str, run_data_frames: dict, plot_styles: dict
-):
+    plots_dir: Path,
+    data_type: str,
+    run_data_frames: RunDataFrames,
+    destination_colors: dict[str, tuple],
+) -> None:
     for run_number, run_data in run_data_frames.items():
         for source_site, destinations in run_data.items():
             fig, ax = plt.subplots(figsize=(10, 6))
             plotted_destinations = set()
 
             for destination_site, dfs in destinations.items():
-                color = plot_styles["source_destination_colors"][destination_site]
-                alpha = plot_styles["source_destination_alphas"][destination_site][
-                    "cdf"
-                ]
+                color = destination_colors[destination_site]
+                alpha = 1.0
 
                 for _, df in dfs:
                     df = df.copy()
@@ -347,13 +352,14 @@ def plot_timeseries_by_destination(
 
 
 def plot_timeseries_by_run(
-    plots_dir,
-    data_type,
-    run_data_frames,
-    plot_styles,
-    all_source_sites,
-    all_destination_sites,
-):
+    plots_dir: Path,
+    data_type: str,
+    run_data_frames: RunDataFrames,
+    all_source_sites: set[str],
+    all_destination_sites: set[str],
+    run_colors: dict[str, tuple],
+) -> None:
+    
     for source_site in all_source_sites:
         for destination_site in all_destination_sites:
             if source_site == destination_site:
@@ -362,7 +368,6 @@ def plot_timeseries_by_run(
             fig, ax = plt.subplots(figsize=(10, 6))
 
             if len(run_data_frames) <= 1:
-                print("\nONLY ONE RUN, SKIPPING RUN PLOTS")
                 plt.close(fig)
                 continue
 
@@ -378,7 +383,7 @@ def plot_timeseries_by_run(
                 ):
                     continue
 
-                color = plot_styles["run_colors"][run_number]
+                color = run_colors[run_number]
 
                 for run_num, df in run_data[source_site][destination_site]:
                     df = df.copy()

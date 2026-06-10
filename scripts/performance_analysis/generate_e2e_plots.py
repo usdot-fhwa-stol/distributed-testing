@@ -3,7 +3,12 @@ import argparse
 from pathlib import Path
 
 from e2e_utils.data_utils import load_and_parse_csv_data, _DATA_TYPE_FOLDER_ABBREV
-from e2e_utils.plot_utils import plot_cumulative_histogram, plot_grouped_histogram
+from e2e_utils.plot_utils import (
+    plot_cumulative_histogram,
+    plot_grouped_histogram,
+    plot_timeseries_by_destination,
+    plot_timeseries_by_run,
+)
 from e2e_utils.style_utils import assign_destination_colors
 
 _RESULTS_DIR = Path(__file__).parent / "results"
@@ -15,9 +20,10 @@ def process_and_plot_results(
     data_type: str,
     generate_grouped: bool = True,
     generate_cumulative: bool = True,
+    generate_timeseries: bool = True,
     max_bins: Sequence[int] | None = None,
 ) -> None:
-    """Loads run data and generates grouped and/or cumulative histogram plots.
+    """Loads run data and generates grouped and/or cumulative histogram plots as well as timeseries plots.
 
     Args:
         root_dir: Root directory containing run result folders.
@@ -25,10 +31,11 @@ def process_and_plot_results(
         data_type: Message type used to filter CSV files.
         generate_grouped: Whether to generate grouped bar histogram plots.
         generate_cumulative: Whether to generate cumulative histogram plots.
+        generate_timeseries: Whether to generate timeseries latency plots.
         max_bins: Upper bin limits defining zoomed plot levels. Defaults to
-            an empty list if not provided, resulting in no plots.
+            an empty list if not provided, resulting in no plots for histograms.
     """
-    if not max_bins or not (generate_grouped or generate_cumulative):
+    if not (generate_grouped or generate_cumulative or generate_timeseries):
         return
 
     data_abrv = _DATA_TYPE_FOLDER_ABBREV.get(
@@ -56,11 +63,17 @@ def process_and_plot_results(
         all_destination_sites,
     )
 
-    for max_bin in max_bins:
+    for max_bin in (max_bins or []):
         if generate_grouped:
             plot_grouped_histogram(*common_args, max_bin, destination_colors)
         if generate_cumulative:
             plot_cumulative_histogram(*common_args, max_bin, destination_colors)
+
+    run_colors = assign_destination_colors(run_data_frames)
+
+    if generate_timeseries:
+        plot_timeseries_by_run(*common_args, run_colors)
+        plot_timeseries_by_destination(plots_dir, data_type, run_data_frames, destination_colors)
 
 
 def main() -> None:
@@ -77,10 +90,11 @@ def main() -> None:
             "  python3 generate_e2e_plots.py EnergyOffset-130 TrafficSignalController\n"
             "  python3 generate_e2e_plots.py EnergyOffset-131 LandVehicle --grouped\n"
             "  python3 generate_e2e_plots.py EnergyOffset-131 LandVehicle --cumulative\n"
+            "  python3 generate_e2e_plots.py EnergyOffset-131 LandVehicle --timeseries\n"
             "  python3 generate_e2e_plots.py EnergyOffset-131 LandVehicle --max-bins 200 1000\n"
             "\n"
-            "Note: if neither --grouped nor --cumulative is specified,\n"
-            "      both plot types are generated."
+            "Note: if none of --grouped, --cumulative are specified,\n"
+            "      all plot types are generated."
         ),
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
@@ -107,6 +121,11 @@ def main() -> None:
         help="Generate cumulative histogram plots of message latency.",
     )
     parser.add_argument(
+        "--timeseries",
+        action="store_true",
+        help="Generate timeseries plots of message latency.",
+    )
+    parser.add_argument(
         "--max-bins",
         nargs="+",
         type=int,
@@ -116,10 +135,12 @@ def main() -> None:
             " levels of plots (default: 200 1000)."
         ),
     )
+
     args = parser.parse_args()
 
     generate_grouped = args.grouped or not args.cumulative
     generate_cumulative = args.cumulative or not args.grouped
+    generate_timeseries = args.timeseries
 
     process_and_plot_results(
         _RESULTS_DIR,
@@ -127,6 +148,7 @@ def main() -> None:
         args.message_type,
         generate_grouped=generate_grouped,
         generate_cumulative=generate_cumulative,
+        generate_timeseries=generate_timeseries,
         max_bins=args.max_bins,
     )
 
