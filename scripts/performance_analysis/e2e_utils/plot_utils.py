@@ -64,7 +64,6 @@ def plot_grouped_histogram(
     max_bin_value: int,
     destination_colors: dict[str, tuple],
 ) -> None:
-
     """Generates and saves a grouped bar histogram of latency for a source site.
 
     Args:
@@ -83,6 +82,10 @@ def plot_grouped_histogram(
         dest_dfs: list[pd.DataFrame] = []
         palette: dict[str, tuple] = {}
         total_samples = 0
+        has_overflow = False
+
+        bin_width = max_bin_value / _NUM_BINS
+        overflow_center = max_bin_value + bin_width / 2
 
         for destination_site in sorted(all_destination_sites):
             if source_site == destination_site:
@@ -94,6 +97,10 @@ def plot_grouped_histogram(
             if latency.empty:
                 continue
 
+            latency_np = latency.to_numpy()
+            if latency_np.max() > max_bin_value:
+                has_overflow = True
+
             label = f"{source_site} → {destination_site}"
             palette[label] = destination_colors[destination_site]
             n_samples = latency.size
@@ -103,7 +110,7 @@ def plot_grouped_histogram(
             dest_dfs.append(
                 pd.DataFrame(
                     {
-                        "Latency": np.clip(latency.to_numpy(), 0, max_bin_value),
+                        "Latency": np.clip(latency_np, 0, overflow_center),
                         "Pair": label,
                     }
                 )
@@ -116,17 +123,16 @@ def plot_grouped_histogram(
         plot_df = pd.concat(dest_dfs, ignore_index=True)
         fig, ax = plt.subplots(figsize=(16, 9))
 
-        bin_width = max_bin_value / _NUM_BINS
-        bins = _NUM_BINS + 1
-        binrange = (-bin_width, max_bin_value)
-        
+        n_bins = _NUM_BINS + 2
+        binrange = (-bin_width, max_bin_value + bin_width)
+
         sns.histplot(
             data=plot_df,
             x="Latency",
             hue="Pair",
             palette=palette,
             alpha=0.85,
-            bins=bins,
+            bins=n_bins,
             binrange=binrange,
             multiple="dodge",
             stat="count",
@@ -137,8 +143,14 @@ def plot_grouped_histogram(
         y_max = ax.get_ylim()[-1]
         ax.set_ylim(top=y_max * 1.18)
 
-        ax.set_xlim(-bin_width/2, max_bin_value)
-        ax.set_xticks(np.arange(0, max_bin_value + 1, max_bin_value / 10))
+        tick_positions = np.arange(0, max_bin_value + bin_width, bin_width)
+        tick_labels = [f"{int(t)}" for t in tick_positions[:-1]] + (
+            [f">{max_bin_value}"] if has_overflow else [f"{int(max_bin_value)}"]
+        )
+        ax.set_xticks(tick_positions)
+        ax.set_xticklabels(tick_labels, rotation=45, ha="right",
+                           fontsize=_AXIS_FONT_SIZE - 2)
+        ax.set_xlim(-bin_width / 2, max_bin_value + bin_width * 1.5)
 
         for container in getattr(ax, "containers", []):
             labels = [
@@ -191,7 +203,6 @@ def plot_cumulative_histogram(
     max_bin_value: int,
     destination_colors: dict[str, tuple],
 ) -> None:
-
     """Generates and saves a cumulative proportion histogram of latency for a source site.
 
     Args:
@@ -203,7 +214,7 @@ def plot_cumulative_histogram(
         max_bin_value: Upper bin limit in milliseconds.
         destination_colors: Mapping of destination site name to its assigned color.
     """
-    
+
     for source_site in all_source_sites:
         print(f"source_site: {source_site}")
 
@@ -211,6 +222,10 @@ def plot_cumulative_histogram(
         dest_labels: list[str] = []
         dest_colors: list[tuple] = []
         total_samples = 0
+        has_overflow = False
+
+        bin_width = max_bin_value / _NUM_BINS
+        overflow_center = max_bin_value + bin_width / 2
 
         for destination_site in sorted(all_destination_sites):
             if source_site == destination_site:
@@ -228,6 +243,9 @@ def plot_cumulative_histogram(
             if latency_np.size == 0:
                 continue
 
+            if latency_np.max() > max_bin_value:
+                has_overflow = True
+
             label = f"{source_site} → {destination_site}"
             n_samples = latency_np.size
             total_samples += n_samples
@@ -243,14 +261,13 @@ def plot_cumulative_histogram(
 
         fig, ax = plt.subplots(figsize=(16, 9))
 
-        bin_width = max_bin_value / _NUM_BINS
-        bins = _NUM_BINS + 1
-        binrange = (-bin_width, max_bin_value)
+        n_bins = _NUM_BINS + 2
+        binrange = (-bin_width, max_bin_value + bin_width)
 
         for data, label, color in zip(dest_data, dest_labels, dest_colors):
             sns.histplot(
                 data=data,
-                bins=bins,
+                bins=n_bins,
                 binrange=binrange,
                 cumulative=True,
                 stat="proportion",
@@ -262,13 +279,18 @@ def plot_cumulative_histogram(
                 label=label,
             )
 
+        tick_positions = np.arange(0, max_bin_value + bin_width, bin_width)
+        tick_labels = [f"{int(t)}" for t in tick_positions[:-1]] + (
+            [f">{max_bin_value}"] if has_overflow else [f"{int(max_bin_value)}"]
+        )
+        ax.set_xticks(tick_positions)
+        ax.set_xticklabels(tick_labels, rotation=45, ha="right",
+                           fontsize=_AXIS_FONT_SIZE - 2)
+        ax.set_xlim(-bin_width / 2, max_bin_value + bin_width * 1.5)
+
         ax.yaxis.grid(True, linestyle="--", linewidth=0.6, alpha=0.6, color="gray")
         ax.set_axisbelow(True)
         ax.set_ylim(0, 1.05)
-
-        ax.set_xlim(-bin_width/2, max_bin_value)
-        ax.set_xticks(np.arange(0, max_bin_value + 1, max_bin_value / 10))
-
         ax.tick_params(axis="both", labelsize=_AXIS_FONT_SIZE - 2)
         sns.despine(ax=ax, left=False, right=True, top=True, bottom=False)
 
@@ -427,5 +449,5 @@ def plot_timeseries_by_run(
                 plots_dir
                 / f"{source_site}_to_{destination_site}_all_runs_{data_type}.png"
             )
-            fig.savefig(all_runs_plot_path, bbox_inches="tight")
+            fig.savefig(str(all_runs_plot_path), bbox_inches="tight")
             plt.close(fig)

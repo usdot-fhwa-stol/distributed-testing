@@ -22,9 +22,6 @@ def _extract_site_name(raw: str) -> str:
 
     Args:
         raw: Raw site name string parsed from a filename segment.
-
-    Returns:
-        Uppercase normalized site name with date and suffix tokens removed.
     """
     if _YEAR_PATTERN.search(raw) or "_" in raw:
         return raw.split("_")[0].upper()
@@ -38,9 +35,6 @@ def _load_run_dataframe(csv_file: Path) -> pd.DataFrame:
 
     Args:
         csv_file: Path to the CSV file to load.
-
-    Returns:
-        DataFrame with columns [Datetime, Latency, Timestamp_in_s].
     """
     df = pd.read_csv(csv_file)
 
@@ -90,10 +84,6 @@ def load_and_parse_csv_data(
             (e.g. 'EnergyOffset-130').
         data_type: Message type used to filter folders and CSV files
             (e.g. 'LandVehicle', 'V2XMessage', 'TrafficSignalController').
-
-    Returns:
-        A tuple of (run_data_frames, all_source_sites, all_destination_sites),
-        or None if no matching data was found.
     """
     folder_abbrev = _DATA_TYPE_FOLDER_ABBREV.get(data_type.lower())
     if folder_abbrev is None:
