@@ -12,8 +12,14 @@ sns.set_theme(style="whitegrid")
 _AXIS_FONT_SIZE = 16
 _NUM_BINS = 10
 
+def _run_sort_key(run_number: str) -> int:
+    s = run_number.lstrip("RrVv")
+    try:
+        return int(float(s))
+    except ValueError:
+        return 0
 
-def gather_latency_data(
+def _gather_latency_data(
     source_site: str,
     destination_site: str,
     run_data_frames: RunDataFrames,
@@ -33,7 +39,7 @@ def gather_latency_data(
     all_runs_data = pd.Series(dtype="float64")
 
     for run_number in sorted(
-        run_data_frames.keys(), key=lambda x: int(x) if x.isdigit() else 0
+        run_data_frames.keys(), key=_run_sort_key
     ):
         run_data = run_data_frames[run_number]
         if source_site not in run_data or destination_site not in run_data[source_site]:
@@ -82,7 +88,7 @@ def plot_grouped_histogram(
             if source_site == destination_site:
                 continue
 
-            latency = gather_latency_data(
+            latency = _gather_latency_data(
                 source_site, destination_site, run_data_frames
             )
             if latency.empty:
@@ -210,7 +216,7 @@ def plot_cumulative_histogram(
             if source_site == destination_site:
                 continue
 
-            latency = gather_latency_data(
+            latency = _gather_latency_data(
                 source_site, destination_site, run_data_frames
             )
             if latency.empty:
@@ -218,18 +224,17 @@ def plot_cumulative_histogram(
 
             latency_np = latency.to_numpy()
             
-            filtered_latency = latency_np[latency_np >= 0]
             
-            if filtered_latency.size == 0:
+            if latency_np.size == 0:
                 continue
 
             label = f"{source_site} → {destination_site}"
-            n_samples = filtered_latency.size
+            n_samples = latency_np.size
             total_samples += n_samples
             print(f"\t{label}: {n_samples} samples")
 
             dest_labels.append(label)
-            dest_data.append(np.clip(filtered_latency, 0, max_bin_value))
+            dest_data.append(np.clip(latency_np, 0, max_bin_value))
             dest_colors.append(destination_colors[destination_site])
 
         if not dest_data:

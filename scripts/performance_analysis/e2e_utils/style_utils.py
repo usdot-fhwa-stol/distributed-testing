@@ -13,7 +13,7 @@ def _assign_unique_colors(targets: list[str]) -> dict[str, tuple]:
 
 
 def assign_destination_colors(run_data_frames: dict) -> dict[str, tuple]:
-    """Assigns a deterministic unique color to each unique destination site without repeating."""
+    """Assigns a unique color to each unique destination site without repeating."""
     unique_destinations: set[str] = {
         destination_site
         for run_data in run_data_frames.values()
@@ -22,11 +22,4 @@ def assign_destination_colors(run_data_frames: dict) -> dict[str, tuple]:
     }
     return _assign_unique_colors(sorted(list(unique_destinations)))
 
-
-def assign_run_colors(run_data_frames: dict) -> dict[str, tuple]:
-    """Assigns a deterministic unique color to each run in ascending order without repeating."""
-    sorted_runs = sorted(
-        run_data_frames.keys(), key=lambda x: int(x) if x.isdigit() else 0
-    )
-    return _assign_unique_colors(sorted_runs)
 
