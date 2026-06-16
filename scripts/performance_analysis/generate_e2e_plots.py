@@ -63,7 +63,7 @@ def process_and_plot_results(
         all_destination_sites,
     )
 
-    for max_bin in (max_bins or []):
+    for max_bin in max_bins or []:
         if generate_grouped:
             plot_grouped_histogram(*common_args, max_bin, destination_colors)
         if generate_cumulative:
@@ -73,15 +73,18 @@ def process_and_plot_results(
 
     if generate_timeseries:
         plot_timeseries_by_run(*common_args, run_colors)
-        plot_timeseries_by_destination(plots_dir, data_type, run_data_frames, destination_colors)
+        plot_timeseries_by_destination(
+            plots_dir, data_type, run_data_frames, destination_colors
+        )
 
 
 def main() -> None:
-    """Parses command-line arguments and invokes the result processing pipeline."""
+    """Plots the end to end (E2E) latency results in histograms and timeseries plots for distributed testing for connected autonomous vehicles.
+    Allows users to specify test event, message type, and plot types, and ranges to generate.
+    """
     parser = argparse.ArgumentParser(
         description=(
-            "Generate latency plots for distributed connected autonomous"
-            " vehicle test runs."
+            "Generate latency plots for distributed testing for connected autonomous vehicles"
         ),
         epilog=(
             "Examples:\n"
