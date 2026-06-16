@@ -1,4 +1,7 @@
+## Utility functions for styling the plots in plot_utils.py.
+
 import seaborn as sns
+
 
 def _assign_unique_colors(targets: list[str]) -> dict[str, tuple]:
     """
