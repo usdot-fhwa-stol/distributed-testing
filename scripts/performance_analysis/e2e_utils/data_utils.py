@@ -1,3 +1,6 @@
+## Utility functions for loading and parsing CSV data from run directories, data then used by plots_utils.py for graphing. 
+## Includes functions to extract site names from filenames, load individual CSVs into DataFrames, and summarize imported data.
+
 from pathlib import Path
 import time
 import re

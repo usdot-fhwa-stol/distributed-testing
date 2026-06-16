@@ -1,4 +1,5 @@
 ## Utility functions for generating and saving plots from run data gathered with data_utils.
+## Includes functions to generate grouped bar histograms, cumulative probability histograms, and time series plots of latency data.
 
 from pathlib import Path
 

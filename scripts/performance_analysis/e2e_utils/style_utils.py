@@ -1,4 +1,5 @@
 ## Utility functions for styling the plots in plot_utils.py.
+## Includes functions to assign unique colors to runs and destination sites.
 
 import seaborn as sns
 
