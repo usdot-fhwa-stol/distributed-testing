@@ -198,6 +198,7 @@ def plot_cumulative_histogram(
     c_data_label: bool,
     max_bin_value: int,
     destination_colors: dict[str, tuple],
+    destination_linestyles: dict[str, any],
 ) -> None:
     """Generate and save a cumulative probability histogram of latency per source site.
 
@@ -229,6 +230,7 @@ def plot_cumulative_histogram(
         dest_data: list[np.ndarray] = []
         dest_labels: list[str] = []
         dest_colors: list[tuple] = []
+        dest_linestyles: list[str] = []
         total_samples = 0
         has_overflow = False
 
@@ -255,6 +257,7 @@ def plot_cumulative_histogram(
             dest_labels.append(label)
             dest_data.append(np.clip(latency_np, 0, max_bin_value + bin_width))
             dest_colors.append(destination_colors[destination_site])
+            dest_linestyles.append(destination_linestyles[destination_site])
 
         if not dest_data:
             print(f"\tNo data to plot for {source_site}, skipping.")
@@ -262,7 +265,7 @@ def plot_cumulative_histogram(
 
         fig, ax = plt.subplots(figsize=(16, 9))
 
-        for data, label, color in zip(dest_data, dest_labels, dest_colors):
+        for data, label, color, linestyle in zip(dest_data, dest_labels, dest_colors, dest_linestyles):
             sns.histplot(
                 data=data,
                 bins=n_bins,
@@ -275,6 +278,7 @@ def plot_cumulative_histogram(
                 alpha=0.75,
                 ax=ax,
                 label=label,
+                linestyle=linestyle
             )
 
             counts, _ = np.histogram(data, bins=bin_edges)
@@ -409,7 +413,7 @@ def plot_timeseries_by_run(
     Steps:
         1. Skip the plot entirely when fewer than two runs are present.
         2. For each source/destination pair, plot one line per run with
-           time zero-aligned to each run's first timestamp.
+           them all aligned to zero.
         3. Suppress duplicate legend entries for runs spanning multiple
            DataFrames.
         4. Apply axis labels and legend.

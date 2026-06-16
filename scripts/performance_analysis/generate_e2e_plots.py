@@ -9,7 +9,7 @@ from e2e_utils.plot_utils import (
     plot_timeseries_by_destination,
     plot_timeseries_by_run,
 )
-from e2e_utils.style_utils import assign_destination_colors
+from e2e_utils.style_utils import assign_destination_colors, assign_destination_linestyles
 
 _RESULTS_DIR = Path(__file__).parent / "results"
 
@@ -67,11 +67,13 @@ def process_and_plot_results(
         all_destination_sites,
     )
 
+    destination_linestyles = assign_destination_linestyles(run_data_frames)
+
     for max_bin in max_bins or []:
         if generate_grouped:
             plot_grouped_histogram(*common_args, g_data_label, max_bin, destination_colors)
         if generate_cumulative:
-            plot_cumulative_histogram(*common_args, c_data_label, max_bin, destination_colors)
+            plot_cumulative_histogram(*common_args, c_data_label, max_bin, destination_colors, destination_linestyles)
 
     run_colors = assign_destination_colors(run_data_frames)
 
@@ -123,8 +125,8 @@ def main() -> None:
         help="Generate grouped bar histogram plots of message latency.",
     )
     parser.add_argument(
-        "--g_data_label",
-        action="store_true",
+        "--no_g_data_label",
+        action="store_false",
         help="Include sample count for each bar in grouped histogram plot.",
     )
     parser.add_argument(
@@ -133,8 +135,8 @@ def main() -> None:
         help="Generate cumulative histogram plots of message latency.",
     )
     parser.add_argument(
-        "--c_data_label",
-        action="store_true",
+        "--no_c_data_label",
+        action="store_false",
         help="Include probability value for each bin in cumulative histogram plot.",
     )
     parser.add_argument(
@@ -165,9 +167,9 @@ def main() -> None:
         args.run_prefix,
         args.message_type,
         generate_grouped=generate_grouped,
-        g_data_label=args.g_data_label,
+        g_data_label=args.no_g_data_label,
         generate_cumulative=generate_cumulative,
-        c_data_label=args.c_data_label,
+        c_data_label=args.no_c_data_label,
         max_bins=args.max_bins,
         generate_timeseries=generate_timeseries,
     )
