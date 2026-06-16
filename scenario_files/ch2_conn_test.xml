@@ -20,21 +20,26 @@
             <WeatherState>ClearNoon</WeatherState>
         </simulation>
 
-        <simulation name="CARLA-ORNL-1" type="CARLA">
+        <simulation name="CARLA-VW-1" type="CARLA">
             <WeatherState>ClearNoon</WeatherState>
         </simulation>
 
-        <simulation name="CARLA-PITT-1" type="CARLA">
+        <simulation name="CARLA-AMG-1" type="CARLA">
             <WeatherState>ClearNoon</WeatherState>
         </simulation>
 
-        <simulation name="CARLA-SWRI-1" type="CARLA">
+        <simulation name="CARLA-UTC-1" type="CARLA">
             <WeatherState>ClearNoon</WeatherState>
         </simulation>
 
-        <simulation name="CARLA-ALA-1" type="CARLA">
+        <simulation name="CARLA-PATH-1" type="CARLA">
             <WeatherState>ClearNoon</WeatherState>
         </simulation>
+
+        <simulation name="CARLA-PATH-2" type="CARLA">
+            <WeatherState>ClearNoon</WeatherState>
+        </simulation>
+
 
     </simulations>
 
