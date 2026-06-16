@@ -61,6 +61,7 @@ def plot_grouped_histogram(
     run_data_frames: RunDataFrames,
     all_source_sites: set[str],
     all_destination_sites: set[str],
+    g_data_label: bool,
     max_bin_value: int,
     destination_colors: dict[str, tuple],
 ) -> None:
@@ -142,7 +143,8 @@ def plot_grouped_histogram(
 
         for container in getattr(ax, "containers", []):
             labels = [f"{int(bar.get_height())}" if bar.get_height() > 0 else "" for bar in container]
-            ax.bar_label(container, labels=labels, rotation=90, padding=4, fontsize=7)
+            if g_data_label:
+                ax.bar_label(container, labels=labels, rotation=90, padding=4, fontsize=7)
 
         ax.set_ylim(top=ax.get_ylim()[-1] * 1.18)
 
@@ -193,6 +195,7 @@ def plot_cumulative_histogram(
     run_data_frames: RunDataFrames,
     all_source_sites: set[str],
     all_destination_sites: set[str],
+    c_data_label: bool,
     max_bin_value: int,
     destination_colors: dict[str, tuple],
 ) -> None:
@@ -281,17 +284,18 @@ def plot_cumulative_histogram(
             for x, prob in zip(bin_centers, cumulative_probs):
                 if prob == 0:
                     continue
-                ax.annotate(
-                    f"{prob:.2f}",
-                    xy=(x, prob),
-                    xytext=(0, 4),
-                    textcoords="offset points",
-                    ha="center",
-                    va="bottom",
-                    fontsize=7,
-                    color=color,
-                    alpha=0.85,
-                )
+                if c_data_label:
+                    ax.annotate(
+                        f"{prob:.2f}",
+                        xy=(x, prob),
+                        xytext=(0, 4),
+                        textcoords="offset points",
+                        ha="center",
+                        va="bottom",
+                        fontsize=7,
+                        color=color,
+                        alpha=0.85,
+                    )
 
         tick_positions = np.arange(0, max_bin_value + bin_width, bin_width)
         tick_labels = [f"{int(t)}" for t in tick_positions[:-1]] + (

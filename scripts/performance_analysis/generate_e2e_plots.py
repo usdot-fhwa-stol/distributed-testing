@@ -19,9 +19,11 @@ def process_and_plot_results(
     folder_prefix: str,
     data_type: str,
     generate_grouped: bool = True,
+    g_data_label: bool = True,
     generate_cumulative: bool = True,
-    generate_timeseries: bool = True,
+    c_data_label: bool = True,
     max_bins: Sequence[int] | None = None,
+    generate_timeseries: bool = True,
 ) -> None:
     """Loads run data and generates grouped and/or cumulative histogram plots as well as timeseries plots.
 
@@ -30,10 +32,12 @@ def process_and_plot_results(
         folder_prefix: Prefix used to identify matching run folders.
         data_type: Message type used to filter CSV files.
         generate_grouped: Whether to generate grouped bar histogram plots.
+        g_data_label: Whether to include sample count for each bar in grouped histogram plot.
         generate_cumulative: Whether to generate cumulative histogram plots.
-        generate_timeseries: Whether to generate timeseries latency plots.
+        c_data_label: Whether to include probability value for each bin in cumulative histogram plot.
         max_bins: Upper bin limits defining zoomed plot levels. Defaults to
             an empty list if not provided, resulting in no plots for histograms.
+        generate_timeseries: Whether to generate timeseries latency plots.
     """
     if not (generate_grouped or generate_cumulative or generate_timeseries):
         return
@@ -65,9 +69,9 @@ def process_and_plot_results(
 
     for max_bin in max_bins or []:
         if generate_grouped:
-            plot_grouped_histogram(*common_args, max_bin, destination_colors)
+            plot_grouped_histogram(*common_args, g_data_label, max_bin, destination_colors)
         if generate_cumulative:
-            plot_cumulative_histogram(*common_args, max_bin, destination_colors)
+            plot_cumulative_histogram(*common_args, c_data_label, max_bin, destination_colors)
 
     run_colors = assign_destination_colors(run_data_frames)
 
@@ -80,7 +84,7 @@ def process_and_plot_results(
 
 def main() -> None:
     """Plots the end to end (E2E) latency results in histograms and timeseries plots for distributed testing for connected autonomous vehicles.
-    Allows users to specify test event, message type, and plot types, and ranges to generate.
+    Allows users to specify test event, message type, and plot types, and plot details to generate.
     """
     parser = argparse.ArgumentParser(
         description=(
@@ -92,7 +96,7 @@ def main() -> None:
             "  python3 generate_e2e_plots.py EnergyOffset-130 V2XMessage\n"
             "  python3 generate_e2e_plots.py EnergyOffset-130 TrafficSignalController\n"
             "  python3 generate_e2e_plots.py EnergyOffset-131 LandVehicle --grouped\n"
-            "  python3 generate_e2e_plots.py EnergyOffset-131 LandVehicle --cumulative\n"
+            "  python3 generate_e2e_plots.py EnergyOffset-131 LandVehicle --cumulative --c_data_label false\n"
             "  python3 generate_e2e_plots.py EnergyOffset-131 LandVehicle --timeseries\n"
             "  python3 generate_e2e_plots.py EnergyOffset-131 LandVehicle --max-bins 200 1000\n"
             "\n"
@@ -119,14 +123,19 @@ def main() -> None:
         help="Generate grouped bar histogram plots of message latency.",
     )
     parser.add_argument(
+        "--g_data_label",
+        action="store_true",
+        help="Include sample count for each bar in grouped histogram plot.",
+    )
+    parser.add_argument(
         "--cumulative",
         action="store_true",
         help="Generate cumulative histogram plots of message latency.",
     )
     parser.add_argument(
-        "--timeseries",
+        "--c_data_label",
         action="store_true",
-        help="Generate timeseries plots of message latency.",
+        help="Include probability value for each bin in cumulative histogram plot.",
     )
     parser.add_argument(
         "--max-bins",
@@ -138,6 +147,12 @@ def main() -> None:
             " levels of plots (default: 200 1000)."
         ),
     )
+    parser.add_argument(
+        "--timeseries",
+        action="store_true",
+        help="Generate timeseries plots of message latency.",
+    )
+
 
     args = parser.parse_args()
 
@@ -150,9 +165,11 @@ def main() -> None:
         args.run_prefix,
         args.message_type,
         generate_grouped=generate_grouped,
+        g_data_label=args.g_data_label,
         generate_cumulative=generate_cumulative,
-        generate_timeseries=generate_timeseries,
+        c_data_label=args.c_data_label,
         max_bins=args.max_bins,
+        generate_timeseries=generate_timeseries,
     )
 
 
