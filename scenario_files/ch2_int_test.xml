@@ -63,16 +63,6 @@
             </initialTSPI>
         </vehicle>
 
-        <vehicle name="AMG-M-2" bsmid="f03ad612" type="vehicle.toyota.prius"
-            simulationIdentifier="JSON-PITT-1" material="Aluminum" lvcIndicator="Constructive"
-            generate_bsms="true" organization="PITT">
-            <initialTSPI>
-                <GeodeticPosition latitudeInDegrees="0.001878" longitudeInDegrees="0.001013"
-                    heightAboveEllipsoidInMeters="1"> </GeodeticPosition>
-                <Heading>21.85235</Heading>
-            </initialTSPI>
-        </vehicle>
-
         <vehicle name="UTC-M-1" bsmid="f03ad613" type="vehicle.toyota.prius"
             simulationIdentifier="JSON-PITT-1" material="Aluminum" lvcIndicator="Constructive"
             generate_bsms="true" organization="PITT">
@@ -87,27 +77,27 @@
 
     <simulations>
 
-        <simulation name="CARLA-FHWA-3" type="CARLA">
+        <simulation name="FHWA-M-3" type="CARLA">
             <WeatherState>ClearNoon</WeatherState>
         </simulation>
 
-        <simulation name="CARLA-VW-1" type="CARLA">
+        <simulation name="VW-M-1" type="CARLA">
             <WeatherState>ClearNoon</WeatherState>
         </simulation>
 
-        <simulation name="CARLA-AMG-1" type="CARLA">
+        <simulation name="AMG-M-1" type="CARLA">
             <WeatherState>ClearNoon</WeatherState>
         </simulation>
 
-        <simulation name="CARLA-UTC-1" type="CARLA">
+        <simulation name="UTC-M-1" type="CARLA">
             <WeatherState>ClearNoon</WeatherState>
         </simulation>
 
-        <simulation name="CARLA-PATH-1" type="CARLA">
+        <simulation name="PATH-M-1" type="CARLA">
             <WeatherState>ClearNoon</WeatherState>
         </simulation>
 
-        <simulation name="CARLA-PATH-2" type="CARLA">
+        <simulation name="PATH-M-2" type="CARLA">
             <WeatherState>ClearNoon</WeatherState>
         </simulation>
 
