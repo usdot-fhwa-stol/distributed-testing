@@ -11,13 +11,10 @@
 
   <vehicles>
 
-    <vehicle name="DEFAULT-M-1" bsmid="f03ad618" type="vehicle.mustang.mustang" owner="CARLA-DEFAULT-1" material="Aluminum" lvcIndicator="Virtual">
-        <userData>
-            <CARLA manual="true" generate_bsms="true"></CARLA>
-        </userData>
+   <vehicle name="DEFAULT-M-1" bsmid="f03ad610" type="vehicle.ford.mustang" simulationIdentifier="CARLA-DEFAULT-1" material="Aluminum" lvcIndicator="Constructive" generate_bsms="true" organization="DEFAULT">
         <initialTSPI>
-            <GeodeticPosition latitudeInDegrees="0.001535" longitudeInDegrees="0.001661" heightAboveEllipsoidInMeters="2.521041"> </GeodeticPosition>
-            <Heading>90</Heading>
+            <GeodeticPosition latitudeInDegrees="0.001936" longitudeInDegrees="0.000771" heightAboveEllipsoidInMeters="1"> </GeodeticPosition>
+            <Heading>21.85235</Heading>
         </initialTSPI>
     </vehicle>
 

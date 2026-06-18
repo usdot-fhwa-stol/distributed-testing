@@ -181,7 +181,7 @@ def get_adapter_addresses_by_type(exported_tcs_path,ip_address):
         print(f"\tChecking {file}")
         file_path = os.path.join(exported_tcs_path,file)
 
-        pattern = re.compile(r'VUG-(.*?)-202')
+        pattern = re.compile(r'DOT_OSTR-(.*?)-202')
         match = pattern.search(file)
         
         if match:
@@ -303,7 +303,8 @@ def export_pcap_data(site_dir_abs,this_site_metadata):
     return this_site_metadata
 
 def export_tdcs_data(site_dir_abs,this_site_metadata):
-    dataview_dir = "/opt/TENA/DataView-v1.5.4/start.sh"
+    VUG_LOCAL_TENA_PATH = os.environ["VUG_LOCAL_TENA_PATH"]
+    dataview_dir = VUG_LOCAL_TENA_PATH + "/DataView-v1.5.4/start.sh"
 
     skip_export = create_folder(site_dir_abs,["exported_tdcs"])
 

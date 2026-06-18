@@ -237,8 +237,8 @@ def split_tdcs(database_file,ip_address,force_split):
 
     if skip_export == True:
         return
-
-    entity_types = ["Class,VUG::Entities::Vehicle","Class,VUG::Entities::Signals::TrafficLight","Msg,VUG::TJ2735Msg::J2735","Msg,VUG::TJ3224Msg::J3224","Class,VUG::Track::BSM"]
+    #entity_types = ["Class,VUG::Entities::Vehicle","Class,VUG::Entities::Signals::TrafficLight","Msg,VUG::TJ2735Msg::J2735","Msg,VUG::TJ3224Msg::J3224","Class,VUG::Track::BSM"]
+    entity_types = ["Class,DOT_OSTR::Entities::LandVehicle","Class,DOT_OSTR::Entities::TrafficSignalController","Msg,DOT_OSTR::TV2XMsg::V2X"]
     matching_rows_by_type = {}
 
     for entity_type in entity_types:
