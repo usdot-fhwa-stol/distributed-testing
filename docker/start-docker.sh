@@ -90,6 +90,12 @@ else
     echo "ERROR: Error occurred while validating configuration. See $CONFIG_VALIDATION_LOG for more details"
 fi
 
+# Performs time sync with chrony
+if [[ "$VUG_FORMAL_EVENT" == "true" ]]; then
+    echo -e "\nPerforming time synchronization..."
+    sudo "$VUG_LOCAL_TIMESYNC_SCRIPT_PATH"
+    echo ""
+fi
 
 # Check if openvpn3 is installed
 if ! command -v openvpn3 &> /dev/null

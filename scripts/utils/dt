@@ -353,8 +353,8 @@ dt__start() {
     EXTRA_ARGS=("$@")
 
     echo "Starting DT..."
-    $VUG_LOCAL_DT_PATH/docker/start-docker.sh "${EXTRA_ARGS[@]}"
 
+    $VUG_LOCAL_DT_PATH/docker/start-docker.sh "${EXTRA_ARGS[@]}"
 }
 
 dt__stop() {
