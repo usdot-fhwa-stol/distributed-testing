@@ -3,7 +3,7 @@
 # VERSION=0.0.2 && docker tag harbor.distributedtesting.org/distributed-testing/dt-build-carla:$VERSION harbor.distributedtesting.org/distributed-testing/dt-build-carla:latest
 #
 
-FROM harbor.distributedtesting.org/distributed-testing-dev/dt-build-general:dev-latest
+FROM harbor.distributedtesting.org/distributed-testing-dev/dt-build-general:0.3.0
 
 ARG DEBIAN_FRONTEND="noninteractive" 
 ARG TZ="America/New_York"
@@ -15,10 +15,10 @@ USER root
 #   different gcc version then set 11 as the default in /usr/bin/gcc, but it appears that is not necessary for now
 RUN apt-get clean && \
     apt-get update && \
-    apt install -y software-properties-common wget && \
+    apt-get install -y software-properties-common wget && \
     wget -O - https://apt.llvm.org/llvm-snapshot.gpg.key|apt-key add && \
     add-apt-repository ppa:ubuntu-toolchain-r/test && \
-    apt-add-repository "deb http://apt.llvm.org/focal/ llvm-toolchain-focal main" && \
+    apt-add-repository "deb http://apt.llvm.org/jammy/ llvm-toolchain-jammy main" && \
     apt-add-repository "deb http://archive.ubuntu.com/ubuntu jammy main universe" && \
     apt-get update && \
     apt-get install -y python3-dev python3-pip curl openssl python3-distutils \
@@ -45,7 +45,7 @@ WORKDIR /home/dt_user/carla/Examples/CppClient
 RUN git checkout tags/0.9.15.2 -b voices
 
 # # Added to resolve xerces 3.2.3 no longer being available online
-# RUN find /home/dt_user/carla -type f -exec sed -i 's/XERCESC_VERSION=3.2.3/XERCESC_VERSION=3.3.0/g' {} \;
+RUN find /home/dt_user/carla -type f -exec sed -i 's/XERCESC_VERSION=3.2.3/XERCESC_VERSION=3.3.0/g' {} \;
 
 # Point CARLA/Boost to clang-14 instead of clang-10
 RUN echo "using clang : 22.0 : /usr/bin/clang++ ;" > /home/dt_user/user-config.jam
@@ -69,9 +69,10 @@ RUN sed -i 's|LIBPNG_REPO=.*|LIBPNG_REPO=https://downloads.sourceforge.net/libpn
     sed -i 's|^    BOOST_TOOLSET=.*|    BOOST_TOOLSET="clang"|' /home/dt_user/carla/Util/BuildTools/Setup.sh && \
     sed -i 's|^BOOST_VERSION=.*|BOOST_VERSION=1.82.0|' /home/dt_user/carla/Util/BuildTools/Setup.sh && \
     sed -i 's|-stdlib=libc++||g' /home/dt_user/carla/Util/BuildTools/Setup.sh && \
-    sed -i 's|^export PATH=.*||g' /home/dt_user/carla/Util/BuildTools/Setup.sh
-RUN sed -i 's|^        --with-libraries=python,.*|        --with-libraries=python,filesystem,system,program_options,thread,timer,chrono,regex,log \\|' /home/dt_user/carla/Util/BuildTools/Setup.sh
-RUN sed -i 's|^export CC=.*|export CC=/usr/bin/gcc-11|' /home/dt_user/carla/Examples/CppClient/Makefile && \
+    sed -i 's|^export PATH=.*||g' /home/dt_user/carla/Util/BuildTools/Setup.sh && \
+    sed -i 's|^        --with-libraries=python,.*|        --with-libraries=python,filesystem,system,program_options,thread,timer,chrono,regex,log \\|' /home/dt_user/carla/Util/BuildTools/Setup.sh && \
+    sed -i 's|https://archive.apache.org/dist/xerces/c/3/sources/xerces-c-.*|https://archive.apache.org/dist/xerces/c/3/sources/xerces-c-3.3.0.tar.gz|g' /home/dt_user/carla/Util/BuildTools/Setup.sh && \
+    sed -i 's|^export CC=.*|export CC=/usr/bin/gcc-11|' /home/dt_user/carla/Examples/CppClient/Makefile && \
     sed -i 's|^export CXX=.*|export CXX=/usr/bin/g++-11|' /home/dt_user/carla/Examples/CppClient/Makefile
 
 RUN cat /home/dt_user/carla/Util/BuildTools/Setup.sh | grep "BOOST_VERSION="
@@ -86,4 +87,4 @@ RUN chown -R dt_user:dt_user /home/dt_user/carla
 
 USER dt_user
 
-RUN echo 'source /home/dt_user/TENA/6.0.9/scripts/tenaenv-u2204-gcc11-64-v6.0.9.sh' >> /home/dt_user/.bashrc
+RUN echo 'source /home/dt_user/TENA/6.0.11/scripts/tenaenv-u2204-gcc11-64-v6.0.11.sh' >> /home/dt_user/.bashrc

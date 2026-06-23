@@ -1,4 +1,4 @@
-FROM harbor.distributedtesting.org/distributed-testing-dev/dt-base:dev-latest
+FROM harbor.distributedtesting.org/distributed-testing-dev/dt-base:0.3.0
 
 # Make sure that the docker container gets enough memory or the compiler will crash building the CppClient
 # On macos I increased the memory available from 2.0GB to 6.0GB.  I didn't try lower than this yet.

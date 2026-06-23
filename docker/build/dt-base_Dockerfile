@@ -43,7 +43,7 @@ RUN tar -C /opt -czf /tmp/boost-runtime.tgz "$(basename ${BOOST_PREFIX})"
 USER dt_user
 WORKDIR /home/dt_user
 
-ARG TENA_VERSION="TENA-MiddlewareSDK-v6.0.9.A"
+ARG TENA_VERSION="TENA-MiddlewareSDK-v6.0.11"
 # INSTALL TENA deb
 RUN --mount=type=bind,from=assets,source=.,target=/mnt/build,readonly \
     set -euo pipefail; \
@@ -53,7 +53,7 @@ RUN --mount=type=bind,from=assets,source=.,target=/mnt/build,readonly \
     # move the postinst script into TENA dir to make it easier to copy and run later on final container
     mv ./postinst ./opt/TENA/postinst-MW 
 
-ARG DIST_VERSION="VUG-Combined-Distribution-v1.3.2"
+ARG DIST_VERSION="VUG-Combined-Distribution-v1.3.3"
 # Install DT OMs
 RUN --mount=type=bind,from=assets,source=.,target=/mnt/build,readonly \
     set -euo pipefail; \
@@ -87,9 +87,17 @@ USER dt_user
 
 WORKDIR /home/dt_user
 
-COPY --from=build --chown=dt_user:dt_user /home/dt_user/opt/TENA /home/dt_user/TENA
-RUN DSTROOT=/home/dt_user ./TENA/postinst-MW
-RUN DSTROOT=/home/dt_user ./TENA/postinst-DIST
+USER root
+
+# All done as one RUN command to save space in the final container
+# Mounts files in a temporary space with rw perms, copies them to container, runs postinst scripts, changes ownership
+RUN --mount=from=build,source=/home/dt_user/opt/TENA,target=/mnt/TENA,rw \
+    cp -a /mnt/TENA /home/dt_user/TENA && \
+    DSTROOT=/home/dt_user ./TENA/postinst-MW && \
+    DSTROOT=/home/dt_user ./TENA/postinst-DIST && \
+    chown -R dt_user:dt_user /home/dt_user/TENA
+
+USER dt_user
 
 ARG VERSION=dev
 LABEL version=${VERSION}
@@ -100,5 +108,5 @@ SHELL ["/bin/bash", "-ec"]
 ARG DEBIAN_FRONTEND="noninteractive"
 ARG TZ="America/New_York"
 
-RUN echo 'source /home/dt_user/TENA/6.0.9/scripts/tenaenv-u2204-gcc11-64-v6.0.9.sh' >> /home/dt_user/.bashrc
+RUN echo 'source /home/dt_user/TENA/6.0.11/scripts/tenaenv-u2204-gcc11-64-v6.0.11.sh' >> /home/dt_user/.bashrc
 
