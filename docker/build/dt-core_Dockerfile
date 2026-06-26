@@ -3,7 +3,7 @@
 #
 
 # ----------------------- BUILD STAGE ----------------------- #
-FROM harbor.distributedtesting.org/distributed-testing-dev/dt-base:dev-latest AS build
+FROM harbor.distributedtesting.org/distributed-testing-dev/dt-base:0.3.0 AS build
 
 SHELL ["/bin/bash", "-ec"]
 
@@ -36,7 +36,7 @@ RUN --mount=type=bind,from=assets,source=.,target=/mnt/build,readonly \
     mv ./postinst ./opt/TENA/postinst-DV
 
 # INSTALL TENA Data Collection System
-ARG TDCS_VERSION="VUG-Combined-DataCollectionDistribution-v1.3.2"
+ARG TDCS_VERSION="VUG-Combined-DataCollectionDistribution-v1.3.3"
 WORKDIR /home/$USER/INSTALL/TDCS
 RUN --mount=type=bind,from=assets,source=.,target=/mnt/build,readonly \
     set -euo pipefail; \
@@ -47,7 +47,7 @@ RUN --mount=type=bind,from=assets,source=.,target=/mnt/build,readonly \
     mv ./postinst ./opt/TENA/postinst-TDCS
 
 # INSTALL TENA JSON Tools
-ARG JSON_VERSION="VUG-Combined-JSONtoolsDistribution-v1.3.2"
+ARG JSON_VERSION="VUG-Combined-JSONtoolsDistribution-v1.3.3"
 WORKDIR /home/$USER/INSTALL/JSON
 RUN --mount=type=bind,from=assets,source=.,target=/mnt/build,readonly \
     export ; \    
