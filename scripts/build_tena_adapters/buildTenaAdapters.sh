@@ -249,7 +249,7 @@ elif [[ $tenaAppIndex == 6 ]]; then
 
 elif [[ $tenaAppIndex == 7 ]]; then
 	tenaApp=vug-v2xhub-v2x-plugin
-	gitCloneUrl="git@github.com:usdot-fhwa-stol/vug-v2xhub-bsm-plugin.git"
+	gitCloneUrl="git@github.com:usdot-fhwa-stol/vug-v2xhub-v2x-plugin.git"
 	dockerContainer=$buildV2xImage
 	remoteAppDir=/home/V2X-Hub/src/$tenaApp	#DO NOT CHANGE: internal docker directory mapped to localAppDir
 	isV2xhubPlugin=true
