@@ -1,0 +1,30 @@
+FROM carlasim/carla:0.10.0
+
+ARG VERSION
+ARG DEBIAN_FRONTEND="noninteractive"
+
+LABEL version=${VERSION} \
+      description="Distributed Testing Docker image for CARLA including event maps"
+
+SHELL ["/bin/bash", "-ec"]
+
+USER root
+RUN rm /etc/apt/sources.list.d/cuda.list \
+       /etc/apt/sources.list.d/nvidia-ml.list && \
+    apt-get update && \
+    apt-get install -y --no-install-recommends \
+        vulkan-tools \
+        iproute2 && \
+    rm -rf /var/lib/apt/lists/*
+
+COPY --chown=carla:carla ./lib/COPY/start_scripts          /home/carla/start_scripts
+COPY --chown=carla:carla ./lib/COPY/.dt_site_config_docker     /home/carla/.dt_site_config_docker
+COPY --chown=carla:carla ./lib/COPY/.dt_scenario_config_docker /home/carla/.dt_scenario_config_docker
+
+RUN chmod +x /home/carla/start_scripts/*
+
+USER carla
+
+RUN echo 'source /home/carla/start_scripts/setup-carla-docker.sh' >> /home/carla/.bashrc
+
+CMD ["/bin/bash", "-l", "-c", "/home/carla/start_scripts/startup-carla.sh"]
