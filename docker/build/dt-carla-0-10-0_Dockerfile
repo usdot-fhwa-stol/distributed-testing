@@ -17,7 +17,7 @@ RUN rm /etc/apt/sources.list.d/cuda.list \
         iproute2 && \
     rm -rf /var/lib/apt/lists/*
 
-COPY --chown=carla:carla ./lib/COPY/start_scripts          /home/carla/start_scripts
+COPY --chown=carla:carla ./lib/COPY/start_scripts              /home/carla/start_scripts
 COPY --chown=carla:carla ./lib/COPY/.dt_site_config_docker     /home/carla/.dt_site_config_docker
 COPY --chown=carla:carla ./lib/COPY/.dt_scenario_config_docker /home/carla/.dt_scenario_config_docker
 
