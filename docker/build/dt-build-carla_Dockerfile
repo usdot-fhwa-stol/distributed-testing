@@ -1,88 +1,50 @@
-#
-# BUILD COMMAND: VERSION=0.0.2 && sudo DOCKER_BUILDKIT=1 docker build --build-arg version=$VERSION -t harbor.distributedtesting.org/distributed-testing/dt-build-carla:$VERSION . --progress=plain -f dt-build-carla_Dockerfile
-# VERSION=0.0.2 && docker tag harbor.distributedtesting.org/distributed-testing/dt-build-carla:$VERSION harbor.distributedtesting.org/distributed-testing/dt-build-carla:latest
-#
-
 FROM harbor.distributedtesting.org/distributed-testing/dt-build-general:latest
 
-ARG DEBIAN_FRONTEND="noninteractive" 
-ARG TZ="America/New_York"
+SHELL ["/bin/bash", "-ec"]
+
+ARG VERSION
+ARG DEBIAN_FRONTEND="noninteractive"
+
+LABEL version=${VERSION} \
+      description="CARLA 0.10.0 C++ adapter build environment"
 
 USER root
 
-# The carla docs for 9.15 use 20.04 and gcc-7. The newest carla docs use 22.04 and gcc-12. 
-#   For TENA, we need 22.04 and gcc-11 so that's what we use. In theory, you could use a 
-#   different gcc version then set 11 as the default in /usr/bin/gcc, but it appears that is not necessary for now
-RUN apt-get clean && \
-    apt-get update && \
-    apt install -y software-properties-common wget && \
-    wget -O - https://apt.llvm.org/llvm-snapshot.gpg.key|apt-key add && \
-    add-apt-repository ppa:ubuntu-toolchain-r/test && \
-    apt-add-repository "deb http://apt.llvm.org/focal/ llvm-toolchain-focal main" && \
-    apt-add-repository "deb http://archive.ubuntu.com/ubuntu jammy main universe" && \
-    apt-get update && \
-    apt-get install -y python3-dev python3-pip curl openssl python3-distutils \
-        clang libc++-dev libc++abi-dev gcc-11 g++-11 cmake ninja-build libvulkan1 libpng-dev libtiff5-dev libjpeg-dev tzdata sed curl unzip autoconf libtool rsync libxml2-dev git git-lfs && \
-    update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-11 180 && \
-    update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-11 180 && \
-    python3 -m pip install --upgrade pip
 
-# Install Python packages as dt_user
-USER dt_user
-RUN python3 -m pip install --no-cache-dir --user setuptools==47.3.1 distro wheel auditwheel
-USER root
-RUN rm -rf /home/dt_user/.cache
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+        gcc-11 g++-11 \
+        cmake \
+        ninja-build \
+        python3-dev python3-pip \
+        libvulkan1 \
+        libpng-dev libtiff5-dev libjpeg-dev \
+        libxml2-dev \
+        git git-lfs \
+        rsync \
+        unzip \
+        curl && \
+    update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-11 110 && \
+    update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-11 110 && \
+    rm -rf /var/lib/apt/lists/*
 
-# install gcc-7 (required for patchelf build, not sure how to re-specify it)
-RUN echo "deb [arch=amd64] http://archive.ubuntu.com/ubuntu focal main universe" | tee /etc/apt/sources.list.d/focal.list && \
-    apt-get update && \
-    apt-get install -y gcc-7 g++-7 && \
-    rm /etc/apt/sources.list.d/focal.list
-    
-WORKDIR /home/dt_user
-RUN git clone https://github.com/carla-simulator/carla.git
-WORKDIR /home/dt_user/carla/Examples/CppClient
-RUN git checkout tags/0.9.15.2 -b voices
 
-# # Added to resolve xerces 3.2.3 no longer being available online
-# RUN find /home/dt_user/carla -type f -exec sed -i 's/XERCESC_VERSION=3.2.3/XERCESC_VERSION=3.3.0/g' {} \;
+COPY ./lib/COPY/CARLA_0.10.0.zip /tmp/CARLA_0.10.0.zip
+RUN unzip -q /tmp/CARLA_0.10.0.zip \
+        'CARLA_0.10.0/PythonAPI/carla/dependencies/*' \
+        -d /tmp/carla_extract && \
+    mkdir -p /home/dt_user/carla-deps && \
+    rsync -a /tmp/carla_extract/CARLA_0.10.0/PythonAPI/carla/dependencies/ \
+             /home/dt_user/carla-deps/ && \
+    chown -R dt_user:dt_user /home/dt_user/carla-deps && \
+    rm -rf /tmp/CARLA_0.10.0.zip /tmp/carla_extract
 
-# Point CARLA/Boost to clang-14 instead of clang-10
-RUN echo "using clang : 22.0 : /usr/bin/clang++ ;" > /home/dt_user/user-config.jam
-ENV BOOST_BUILD_USER_CONFIG=/home/dt_user/user-config.jam
 
-# replaced jfrog repo with official boost archives
-RUN find /home/dt_user/carla -type f -exec sed -i 's|boostorg\.jfrog\.io/artifactory/main|archives.boost.io|g' {} \;
-
-# Carla 0.9.15 is set up to build using gcc-7 and clang-10 with files from the UnrealEngine build. We set the defaults to 
-#   gcc-11 and clang-22 because that's what we have easiest access to
-#   setup.sh: https://github.com/carla-simulator/carla/blob/0.9.15.2/Util/BuildTools/Setup.sh
-# ALSO, we switch to boost 1.82. Boost 1.80 with the added packages needed to build the carla adapter won't build with gcc-11, 
-#   so we either switch this entire build to gcc-7, or boost 1.82.0. Trying boost 1.82 first
-RUN sed -i 's|^LLVM_INCLUDE=.*|LLVM_INCLUDE="/usr/include"|' /home/dt_user/carla/Util/BuildTools/Setup.sh && \
-    sed -i 's|^LLVM_LIBPATH=.*|LLVM_LIBPATH="/usr/lib/x86_64-linux-gnu"|' /home/dt_user/carla/Util/BuildTools/Setup.sh && \
-    sed -i 's|^UNREAL_HOSTED_CFLAGS=.*|UNREAL_HOSTED_CFLAGS=""|' /home/dt_user/carla/Util/BuildTools/Setup.sh && \
-    sed -i 's|^export CC=.*|export CC=/usr/bin/clang|' /home/dt_user/carla/Util/BuildTools/Setup.sh && \
-    sed -i 's|^export CXX=.*|export CXX=/usr/bin/clang++|' /home/dt_user/carla/Util/BuildTools/Setup.sh && \
-    sed -i 's|^    BOOST_TOOLSET=.*|    BOOST_TOOLSET="clang"|' /home/dt_user/carla/Util/BuildTools/Setup.sh && \
-    sed -i 's|^BOOST_VERSION=.*|BOOST_VERSION=1.82.0|' /home/dt_user/carla/Util/BuildTools/Setup.sh && \
-    sed -i 's|-stdlib=libc++||g' /home/dt_user/carla/Util/BuildTools/Setup.sh && \
-    sed -i 's|^export PATH=.*||g' /home/dt_user/carla/Util/BuildTools/Setup.sh
-    # Also build thread, so we can use boost 1.80 to build the carla adapter
-RUN sed -i 's|^        --with-libraries=python,.*|        --with-libraries=python,filesystem,system,program_options,thread,timer,chrono,regex,log \\|' /home/dt_user/carla/Util/BuildTools/Setup.sh
-RUN sed -i 's|^export CC=.*|export CC=/usr/bin/gcc-11|' /home/dt_user/carla/Examples/CppClient/Makefile && \
-    sed -i 's|^export CXX=.*|export CXX=/usr/bin/g++-11|' /home/dt_user/carla/Examples/CppClient/Makefile
-
-RUN cat /home/dt_user/carla/Util/BuildTools/Setup.sh | grep "BOOST_VERSION="
-RUN cat /home/dt_user/carla/Util/BuildTools/Setup.sh | grep "with-libraries=python"
-# 'make' builds libcarla, but we need to add the local install folder to PATH
-RUN make
-ENV PATH="/home/dt_user/carla/Examples/CppClient/libcarla-install:$PATH"
-ENV PATH="/home/dt_user/carla/Build/boost-1.82.0-c10-install:$PATH"
-
-# I tried building as dt_user, but something or another was failing so I'm doing this instead
-RUN chown -R dt_user:dt_user /home/dt_user/carla
+ENV CARLA_DEPS_ROOT="/home/dt_user/carla-deps" \
+    CARLA_INCLUDE_DIR="/home/dt_user/carla-deps/include" \
+    CARLA_LIB_DIR="/home/dt_user/carla-deps/lib"
 
 USER dt_user
 
-RUN echo 'source /home/dt_user/TENA/6.0.9/scripts/tenaenv-u2204-gcc11-64-v6.0.9.sh' >> /home/dt_user/.bashrc
+RUN echo 'source /home/dt_user/TENA/6.0.9/scripts/tenaenv-u2204-gcc11-64-v6.0.9.sh' \
+        >> /home/dt_user/.bashrc

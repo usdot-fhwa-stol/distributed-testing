@@ -1,187 +1,136 @@
-#
-# BUILD COMMAND: VERSION=0.0.1 && source build-assets.env && DOCKER_BUILDKIT=1 docker build --build-arg version=$VERSION --build-context assets="$BUILD_DIR" -t harbor.distributedtesting.org/distributed-testing/dt-core:$VERSION . --progress=plain -f dt-core_Dockerfile
-#
-
-# ----------------------- BUILD STAGE ----------------------- #
+# ===================== BUILD STAGE ===================== #
 FROM harbor.distributedtesting.org/distributed-testing/dt-base:latest AS build
 
 SHELL ["/bin/bash", "-ec"]
-
 ARG DEBIAN_FRONTEND="noninteractive"
-ARG TZ="America/New_York"
-
-USER dt_user
-ENV USER="dt_user"
-
-WORKDIR /home/$USER
 
 USER root
-
-RUN apt update && \
-    apt install -y python3-pip rsync zstd unzip
-
-USER dt_user
-
-RUN mkdir /home/$USER/INSTALL && mkdir /home/$USER/INSTALL/TDCS && mkdir /home/$USER/INSTALL/DV && mkdir /home/$USER/INSTALL/JSON
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+        apt-utils \
+        python3-pip \
+        rsync \
+        zstd \
+        unzip && \
+    rm -rf /var/lib/apt/lists/*
 
 ARG DV_VERSION="v1.5.4"
-# INSTALL TENA DataView
-WORKDIR /home/$USER/INSTALL/DV
+ARG TDCS_VERSION="DOT_OSTR-Combined-DataCollectionDistribution-v1.2.3"
+ARG JSON_VERSION="DOT_OSTR-Combined-JSONtoolsDistribution-v1.2.4"
+
+WORKDIR /home/dt_user/INSTALL/DV
 RUN --mount=type=bind,from=assets,source=.,target=/mnt/build,readonly \
-    set -euo pipefail; \
+    set -euo pipefail && \
     dpkg -x --force-overwrite /mnt/build/TDCS-DataView-${DV_VERSION}@Product@u2204-gcc11-64*.deb . && \
     ar -x /mnt/build/TDCS-DataView-${DV_VERSION}@Product@u2204-gcc11-64*.deb && \
     tar xf control.tar.* && \
-    # move the postinst script into TENA dir to make it easier to copy and run later on final container
     mv ./postinst ./opt/TENA/postinst-DV
 
-# INSTALL TENA Data Collection System
-ARG TDCS_VERSION="DOT_OSTR-Combined-DataCollectionDistribution-v1.2.3"
-WORKDIR /home/$USER/INSTALL/TDCS
+WORKDIR /home/dt_user/INSTALL/TDCS
 RUN --mount=type=bind,from=assets,source=.,target=/mnt/build,readonly \
-    set -euo pipefail; \
+    set -euo pipefail && \
     dpkg -x --force-overwrite /mnt/build/${TDCS_VERSION}@Product@u2204-gcc11-64*.deb . && \
     ar -x /mnt/build/${TDCS_VERSION}@Product@u2204-gcc11-64*.deb && \
     tar xf control.tar.* && \
-    # move the postinst script into TENA dir to make it easier to copy and run later on final container
     mv ./postinst ./opt/TENA/postinst-TDCS
 
-# INSTALL TENA JSON Tools
-ARG JSON_VERSION="DOT_OSTR-Combined-JSONtoolsDistribution-v1.2.4"
-WORKDIR /home/$USER/INSTALL/JSON
+WORKDIR /home/dt_user/INSTALL/JSON
 RUN --mount=type=bind,from=assets,source=.,target=/mnt/build,readonly \
-    export ; \    
-    set -euo pipefail; \
+    set -euo pipefail && \
     dpkg -x --force-overwrite /mnt/build/${JSON_VERSION}@Product@u2204-gcc11-64*.deb . && \
     ar -x /mnt/build/${JSON_VERSION}@Product@u2204-gcc11-64*.deb && \
     tar xf control.tar.* && \
-    # move the postinst script into TENA dir to make it easier to copy and run later on final container
     mv ./postinst ./opt/TENA/postinst-JSON
 
-WORKDIR /home/$USER
+WORKDIR /home/dt_user
+RUN rsync -a \
+        INSTALL/DV/opt/TENA/ \
+        INSTALL/TDCS/opt/TENA/ \
+        INSTALL/JSON/opt/TENA/ \
+        TENA/ && \
+    chown -R dt_user:dt_user TENA
 
-USER root
-RUN rsync -a /home/$USER/INSTALL/TDCS/opt/TENA/ /home/$USER/INSTALL/DV/opt/TENA/ /home/$USER/INSTALL/JSON/opt/TENA/ /home/$USER/TENA
-
-RUN chown -R $USER:$USER /home/$USER/TENA
-USER $USER
-ENV USER="dt_user"
-
-# CARLA_0.9.15 (contains just the PythonAPI folder for CARLA PythonAPI capabilities)
 RUN --mount=type=bind,from=assets,source=.,target=/mnt/build,readonly \
-    unzip /mnt/build/CARLA_0.9.15.zip && \
-    mv CARLA_0.9.15 $HOME/CARLA
+    set -euo pipefail && \
+    unzip -j /mnt/build/CARLA_0.10.0.zip \
+        'CARLA_0.10.0/PythonAPI/carla/dist/carla-0.10.0-cp310-cp310-linux_x86_64.whl' \
+        -d /home/dt_user/carla_wheels && \
+    chown -R dt_user:dt_user /home/dt_user/carla_wheels
 
-# ----------------------- RUNTIME STAGE ----------------------- #
+
+# ===================== RUNTIME STAGE ===================== #
 FROM harbor.distributedtesting.org/distributed-testing/dt-base:latest
 
+SHELL ["/bin/bash", "-ec"]
+
 ARG VERSION=dev
-LABEL version=${VERSION}
-LABEL description="Docker image for interoperability test"
+ARG DEBIAN_FRONTEND="noninteractive"
 
-ARG DEBIAN_FRONTEND="noninteractive" 
-ARG TZ="America/New_York"
+LABEL version=${VERSION} \
+      description="Docker image for interoperability test"
 
-USER dt_user
-ENV USER="dt_user"
+ENV USER="dt_user" \
+    LANG=en_US.UTF-8 \
+    LC_ALL=en_US.UTF-8 \
+    PATH="/home/dt_user/.local/bin:$PATH"
 
-WORKDIR /home/$USER
+WORKDIR /home/dt_user
 
 USER root
 
-RUN apt update && apt install -y software-properties-common
-
-
-# INSTALL apt packages 
-RUN apt clean && \
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+        apt-utils \
+        software-properties-common && \
+    add-apt-repository ppa:sumo/stable && \
+    add-apt-repository ppa:deadsnakes/ppa && \
     apt-get update && \
-    # add sumo repo 
-    apt install -y software-properties-common && \
-    add-apt-repository ppa:sumo/stable && apt-get update && \
-    apt install -y \
-    # install apt utils for installing packages (mostly for TENA console)
-    apt-utils \
-    # install qt packages
-    libxcb-xinerama0 libfreetype6 libfontconfig libsm6 libxi6 libx11-xcb1 libxcb-cursor0 libxcb-icccm4 libxcb-image0 libxcb-keysyms1 libxcb-randr0 libxcb-render-util0 libxcb-shape0 libxcb-sync1 libxcb-xfixes0 libxcb-xkb1 libxkbcommon-x11-0 libjpeg8 libtiff5 \
-    # install debug tools
-    iputils-ping nano tshark git tcpdump nethogs rsync \
-    # install sumo tools
-    sumo sumo-tools sumo-doc \
-    # install iproute2
-    iproute2 \
-    # install dumb init to enable gracefully stopping container processes
-    dumb-init \
-    # install locales and set to UTF-8 for JSON Streamer 
-    locales && \
+    apt-get install -y --no-install-recommends \
+        libxcb-xinerama0 libfreetype6 libfontconfig1 libsm6 libxi6 libx11-xcb1 \
+        libxcb-cursor0 libxcb-icccm4 libxcb-image0 libxcb-keysyms1 libxcb-randr0 \
+        libxcb-render-util0 libxcb-shape0 libxcb-sync1 libxcb-xfixes0 libxcb-xkb1 \
+        libxkbcommon-x11-0 libjpeg8 libtiff5 \
+        iputils-ping nano tshark git tcpdump nethogs rsync \
+        sumo sumo-tools sumo-doc \
+        iproute2 \
+        dumb-init \
+        locales \
+        python3.10 python3.10-dev python3.10-venv python3-pip \
+        libevdev-dev gcc g++ curl && \
     locale-gen en_US.UTF-8 && \
     update-locale LANG=en_US.UTF-8 && \
-    # cleanup apt lists
+    update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.10 100 && \
     rm -rf /var/lib/apt/lists/*
 
-# Set ENV for locales to UTF-8
-ENV LANG=en_US.UTF-8 LC_ALL=en_US.UTF-8
+COPY --chown=dt_user:dt_user --from=build /home/dt_user/TENA ./TENA
+RUN DSTROOT=/home/dt_user ./TENA/postinst-DV && \
+    DSTROOT=/home/dt_user ./TENA/postinst-TDCS && \
+    sed -i '/^chown -R root/d;/^chgrp -R root/d' ./TENA/postinst-JSON && \
+    DSTROOT=/home/dt_user ./TENA/postinst-JSON
 
-# Install Python 3.7 and clean NumPy
-RUN apt-get clean && \
-    add-apt-repository -y ppa:deadsnakes/ppa && \
-    apt-get update && \
-    apt-get purge -y python3-numpy && \
-    rm -rf /usr/lib/python3*/dist-packages/numpy* && \
-    apt-get install -y \
-        python3.7 \
-        python3.7-dev \
-        python3.7-distutils \
-        libevdev-dev gcc g++\
-        curl && \
-    update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.7 100 && \
-    update-alternatives --set python3 /usr/bin/python3.7 && \
-    curl -sS https://bootstrap.pypa.io/pip/3.7/get-pip.py | python3.7 && \
-    python3.7 -m pip install --upgrade "pip<23.1" "setuptools<68" "wheel<0.41"
+COPY --from=build /home/dt_user/carla_wheels /tmp/carla_wheels
+RUN pip3 install --no-cache-dir /tmp/carla_wheels/carla-*cp310*.whl && \
+    rm -rf /tmp/carla_wheels
 
-# Switch to non-root user
+COPY --chown=dt_user:dt_user ./lib/COPY /home/dt_user
+RUN chmod +x /home/dt_user/start_scripts/*
+
 USER dt_user
-ENV PATH="/home/dt_user/.local/bin:$PATH"
 
-# Install Python packages as dt_user
-RUN python3 -m pip install --no-cache-dir --user --force-reinstall "numpy<=1.21.6" && \
-    python3 -m pip install --no-cache-dir --user \
-        "pygame==2.1.3" \
+RUN pip3 install --no-cache-dir --user \
+        numpy \
+        pygame-ce \
         pycrate \
         traci \
         pynput \
         requests \
         scapy \
         shapely \
-        "lxml==4.9.4" \
-        "networkx==2.6.3" \
-        "matplotlib<=3.5.3" && \
-    python3 -m pip install --no-cache-dir --user "pandas==1.3.5" && \
-    rm -rf /home/dt_user/.cache
+        lxml \
+        networkx \
+        matplotlib \
+        pandas
 
-USER root
-RUN rm -rf /home/$USER/TENA
-USER $USER
+RUN echo 'source /home/dt_user/start_scripts/setup-docker.sh' >> /home/dt_user/.bashrc
 
-COPY --chown=dt_user:dt_user --from=build /home/$USER/TENA /home/$USER/TENA
-
-RUN DSTROOT=/home/dt_user ./TENA/postinst-DV
-RUN DSTROOT=/home/dt_user ./TENA/postinst-TDCS
-RUN sed -i '/^chown -R root/d;/^chgrp -R root/d' ./TENA/postinst-JSON
-RUN DSTROOT=/home/dt_user ./TENA/postinst-JSON
-
-COPY --chown=dt_user:dt_user --from=build /home/$USER/CARLA /home/$USER/CARLA
-
-COPY --chown=dt_user:dt_user ./lib/COPY /home/$USER
-
-# Make Start Scripts executable
-
-USER root
-RUN chmod a+x -R /home/$USER/start_scripts/
-USER dt_user
-
-# CLEANUP
-
-RUN echo 'source /home/$USER/start_scripts/setup-docker.sh' >> /home/$USER/.bashrc
-
-
-CMD ["/usr/bin/dumb-init","-v","--","/bin/bash","-l","-c","/home/$USER/start_scripts/startup-apps.sh"]
+CMD ["/usr/bin/dumb-init", "-v", "--", "/bin/bash", "-l", "-c", "/home/dt_user/start_scripts/startup-apps.sh"]
