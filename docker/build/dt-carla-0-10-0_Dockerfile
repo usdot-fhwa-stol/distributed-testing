@@ -9,9 +9,7 @@ LABEL version=${VERSION} \
 SHELL ["/bin/bash", "-ec"]
 
 USER root
-RUN rm /etc/apt/sources.list.d/cuda.list \
-       /etc/apt/sources.list.d/nvidia-ml.list && \
-    apt-get update && \
+RUN apt-get update && \
     apt-get install -y --no-install-recommends \
         vulkan-tools \
         iproute2 && \
