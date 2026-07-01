@@ -11,12 +11,14 @@ RUN apt-get update && \
         python3-pip \
         rsync \
         zstd \
-        unzip && \
+        unzip \
+        binutils && \
     rm -rf /var/lib/apt/lists/*
 
 ARG DV_VERSION="v1.5.4"
-ARG TDCS_VERSION="DOT_OSTR-Combined-DataCollectionDistribution-v1.2.3"
-ARG JSON_VERSION="DOT_OSTR-Combined-JSONtoolsDistribution-v1.2.4"
+ARG TDCS_VERSION="VUG-Combined-DataCollectionDistribution-v1.3.2"
+ARG JSON_VERSION="VUG-Combined-JSONtoolsDistribution-v1.3.2"
+ARG MW_VERSION="v6.0.9"
 
 WORKDIR /home/dt_user/INSTALL/DV
 RUN --mount=type=bind,from=assets,source=.,target=/mnt/build,readonly \
@@ -42,6 +44,9 @@ RUN --mount=type=bind,from=assets,source=.,target=/mnt/build,readonly \
     tar xf control.tar.* && \
     mv ./postinst ./opt/TENA/postinst-JSON
 
+RUN mkdir -p /home/dt_user/TENA/executionManager-${MW_VERSION}/log && \
+    chown -R dt_user:dt_user /home/dt_user/TENA
+
 WORKDIR /home/dt_user
 RUN rsync -a \
         INSTALL/DV/opt/TENA/ \
@@ -53,7 +58,7 @@ RUN rsync -a \
 RUN --mount=type=bind,from=assets,source=.,target=/mnt/build,readonly \
     set -euo pipefail && \
     unzip -j /mnt/build/CARLA_0.10.0.zip \
-        'CARLA_0.10.0/PythonAPI/carla/dist/carla-0.10.0-cp310-cp310-linux_x86_64.whl' \
+        '*/carla-0.10.0-cp310-cp310-linux_x86_64.whl' \
         -d /home/dt_user/carla_wheels && \
     chown -R dt_user:dt_user /home/dt_user/carla_wheels
 
@@ -81,9 +86,10 @@ USER root
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
         apt-utils \
+        gnupg \
         software-properties-common && \
-    add-apt-repository ppa:sumo/stable && \
-    add-apt-repository ppa:deadsnakes/ppa && \
+    add-apt-repository -y ppa:sumo/stable && \
+    add-apt-repository -y ppa:deadsnakes/ppa && \
     apt-get update && \
     apt-get install -y --no-install-recommends \
         libxcb-xinerama0 libfreetype6 libfontconfig1 libsm6 libxi6 libx11-xcb1 \
