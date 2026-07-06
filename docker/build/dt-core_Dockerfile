@@ -16,8 +16,8 @@ RUN apt-get update && \
     rm -rf /var/lib/apt/lists/*
 
 ARG DV_VERSION="v1.5.4"
-ARG TDCS_VERSION="VUG-Combined-DataCollectionDistribution-v1.3.2"
-ARG JSON_VERSION="VUG-Combined-JSONtoolsDistribution-v1.3.2"
+ARG TDCS_VERSION="VUG-Combined-DataCollectionDistribution-v1.2.2"
+ARG JSON_VERSION="VUG-Combined-JSONstreamerDistribution-v1.2.2"
 ARG MW_VERSION="v6.0.9"
 
 WORKDIR /home/dt_user/INSTALL/DV
@@ -112,7 +112,8 @@ COPY --chown=dt_user:dt_user --from=build /home/dt_user/TENA ./TENA
 RUN DSTROOT=/home/dt_user ./TENA/postinst-DV && \
     DSTROOT=/home/dt_user ./TENA/postinst-TDCS && \
     sed -i '/^chown -R root/d;/^chgrp -R root/d' ./TENA/postinst-JSON && \
-    DSTROOT=/home/dt_user ./TENA/postinst-JSON
+    DSTROOT=/home/dt_user ./TENA/postinst-JSON $$ \
+    chown -R dt_user:dt_user /home/dt_user/TENA
 
 COPY --from=build /home/dt_user/carla_wheels /tmp/carla_wheels
 RUN pip3 install --no-cache-dir /tmp/carla_wheels/carla-*cp310*.whl && \
