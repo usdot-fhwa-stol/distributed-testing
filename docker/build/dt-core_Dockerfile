@@ -3,7 +3,7 @@
 #
 
 # ----------------------- BUILD STAGE ----------------------- #
-FROM harbor.distributedtesting.org/distributed-testing-dev/dt-base:0.3.0 AS build
+FROM harbor.distributedtesting.org/distributed-testing/dt-base:latest AS build
 
 SHELL ["/bin/bash", "-ec"]
 
@@ -84,7 +84,7 @@ RUN --mount=type=bind,from=assets,source=.,target=/mnt/build,readonly \
     mv CARLA_0.9.15 $HOME/CARLA
 
 # ----------------------- RUNTIME STAGE ----------------------- #
-FROM harbor.distributedtesting.org/distributed-testing-dev/dt-base:dev-latest
+FROM harbor.distributedtesting.org/distributed-testing/dt-base:latest
 
 ARG VERSION=dev
 LABEL version=${VERSION}
