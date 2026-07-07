@@ -23,9 +23,23 @@
 
   </vehicles>
 
-  <simulations>
+  <pedestrians>
+    <pedestrian name="DEFAULT-P-1" bsmid="f03ad618" type="walker.pedestrian.0001" owner="CARLA-DEFAULT-1" material="Aluminum" lvcIndicator="Virtual">
+        <userData>
+            <CARLA manual="false" generate_bsms="true"></CARLA>
+        </userData>
+        <initialTSPI>
+            <GeodeticPosition latitudeInDegrees="0.001535" longitudeInDegrees="0.001661" heightAboveEllipsoidInMeters="2.521041"> </GeodeticPosition>
+            <Heading>90</Heading>
+        </initialTSPI>
+    </pedestrian>
+  </pedestrians>
 
-    <simulation name="DEFAULT-1" type="CARLA">
+  <simulations>
+    <simulation name="DEFAULT-1" type="V2X-HUB">
+      <WeatherState>ClearNoon</WeatherState>
+    </simulation>
+    <simulation name="DEFAULT-2" type="V2X-HUB">
       <WeatherState>ClearNoon</WeatherState>
     </simulation>
 
