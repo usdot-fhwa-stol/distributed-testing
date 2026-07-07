@@ -1,0 +1,58 @@
+#
+# BUILD COMMAND: VERSION=0.1.0 && source build-assets.env && sudo DOCKER_BUILDKIT=1 docker build --secret id=usdotfhwastol_token,src=usdotfhwastol_token --build-arg VERSION=$VERSION --build-context assets="$BUILD_DIR" -t harbor.distributedtesting.org/distributed-testing/dt-v2xhub-base:$VERSION . --progress=plain -f dt-v2xhub-base_Dockerfile
+#
+
+FROM usdotfhwaops/v2xhub:7.11.1 AS build
+
+WORKDIR /home/plugin
+
+USER root
+
+RUN apt-get update && \
+    apt-get install -y zstd
+
+USER plugin
+
+ARG TENA_VERSION="TENA-MiddlewareSDK-v6.0.11"
+# INSTALL TENA deb
+RUN --mount=type=bind,from=assets,source=.,target=/mnt/build,readonly \
+    set -eu; \
+    dpkg -x --force-overwrite /mnt/build/${TENA_VERSION}@Product@u2204-gcc11-64-*.deb . && \
+    ar -x /mnt/build/${TENA_VERSION}@Product@u2204-gcc11-64-*.deb && \
+    tar xf control.tar.* && \
+    mv ./postinst ./opt/TENA/postinst-MW
+
+ARG DIST_VERSION="VUG-Combined-Distribution-v1.3.3"
+# Install DT OMs
+RUN --mount=type=bind,from=assets,source=.,target=/mnt/build,readonly \
+    set -eu; \
+    dpkg -x --force-overwrite /mnt/build/${DIST_VERSION}@Product@u2204-gcc11-64-*.deb . && \
+    ar -x /mnt/build/${DIST_VERSION}@Product@u2204-gcc11-64-*.deb && \
+    tar xf control.tar.* && \
+    mv ./postinst ./opt/TENA/postinst-DIST
+
+FROM usdotfhwaops/v2xhub:7.11.1
+
+WORKDIR /home/plugin
+
+USER root
+
+COPY --from=build --chown=plugin:adm /home/plugin/opt/TENA /home/plugin/TENA
+RUN mkdir /home/plugin/TENA/log && chown plugin:adm /home/plugin/TENA/log
+RUN --mount=from=build,source=/home/plugin/opt/TENA,target=/mnt/TENA,rw \
+    cp -a /mnt/TENA /home/plugin/TENA && \
+    DSTROOT=/home/plugin ./TENA/postinst-MW && \
+    DSTROOT=/home/plugin ./TENA/postinst-DIST && \
+    chown -R plugin:adm /home/plugin/TENA
+
+USER plugin
+
+ARG VERSION=dev
+LABEL version=${VERSION}
+LABEL description="Base V2XHub Distributed Testing Docker Image"
+
+RUN echo 'source /home/plugin/TENA/6.0.11/scripts/tenaenv-u2204-gcc11-64-v6.0.11.sh' >> /home/plugin/.bashrc
+
+WORKDIR /var/log/tmx
+
+ENTRYPOINT ["/usr/local/bin/service.sh"]
