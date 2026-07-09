@@ -221,6 +221,13 @@ if [[ $VUG_DOCKER_START_ENTITY_GENERATOR == true ]]; then
    sleep 5s
 fi
 
+if [[ $VUG_DOCKER_START_GNSS_EMULATOR == true ]]; then
+   echo "STARTING TENA GNSS EMULATOR"
+   $HOME/distributed-testing/scripts/run_scripts/start-gnss-emulator.sh &
+
+   sleep 5s
+fi
+
 if [[ $VUG_DOCKER_START_MANUAL_CARLA_VEHICLE == true ]]; then
    echo "STARTING MANUAL CARLA VEHICLE"
 

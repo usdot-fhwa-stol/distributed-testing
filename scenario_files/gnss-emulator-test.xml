@@ -1,31 +1,13 @@
 <?xml version="1.0.0" encoding="UTF-8"?>
 <scenario>
   <identifier>
-    <name>DEFAULT</name>
+    <name>HWIL GNSS Emulator Test</name>
   </identifier>
   <OpenDrive>
     <MapFileName name="Town04.xodr">
       <MapOrigin latitudeInDegrees="0" longitudeInDegrees="0" heightAboveEllipsoidInMeters="0"> </MapOrigin>
     </MapFileName>
   </OpenDrive>
-
-  <vehicles>
-    <vehicle name="DEFAULT-M-1" bsmid="f03ad658" type="vehicle.toyota.prius" simulationIdentifier="CARLA-DEFAULT-1" material="Aluminum" lvcIndicator="Constructive" generate_bsms="true" organization="DEFAULT">
-      <initialTSPI>
-        <GeodeticPosition latitudeInDegrees="0.001800" longitudeInDegrees="0.001122" heightAboveEllipsoidInMeters="1"> </GeodeticPosition>
-        <Heading>21.85235</Heading>
-      </initialTSPI>
-    </vehicle>
-  </vehicles>
-
-  <pedestrians>
-    <pedestrian name="DEFAULT-P-1" safetyid="12345678" identifierType="psm" type="walker.pedestrian.0001" organization="DEFAULT" lvcIndicator="Live">
-      <initialTSPI>
-        <GeodeticPosition latitudeInDegrees="0.001532" longitudeInDegrees="0.001931" heightAboveEllipsoidInMeters="1"> </GeodeticPosition>
-        <Heading>38</Heading>
-      </initialTSPI>
-    </pedestrian>
-  </pedestrians>
 
   <radios>
     <radio name="DEFAULT-R-1" lvcIndicator="Live" simulationIdentifier="GNSSEmulator-R-1" organization="DEFAULT" scmsEnrolled="true">
@@ -35,22 +17,6 @@
       </initialTSPI>
     </radio>
   </radios>
-
-  <intersectionSignalControllers>
-    <intersectionSignalController name="Town04_Main" adapterName="V2XEG-1" lvcIndicator="Live">
-      <controller name="" id="0"/>
-    </intersectionSignalController>
-  </intersectionSignalControllers>
-
-  <phaseSignalMappings>
-    <configuration name="Town04_Main Configuration" controllerName="Town04_Main">
-      <GeodeticPosition latitudeInDegrees="39.682130" longitudeInDegrees="-75.747327" heightAboveEllipsoidInMeters="0"/>
-      <mapping signalId="1629" phase="4"/> <!-- SB, Actor 135 -->
-      <mapping signalId="1628" phase="2"/> <!-- EB, Actor 118 -->
-      <mapping signalId="1627" phase="6"/> <!-- NB, Actor 122 -->
-      <mapping signalId="1626" phase="8"/> <!-- WB, Actor 124 -->
-    </configuration>
-  </phaseSignalMappings>
 
   <simulations>
     <simulation name="DEFAULT-1" type="CARLA">
