@@ -9,14 +9,16 @@
 # Make a file named `usdotfhwastol_token` under distributed-testing/docker/
 # Copy your token into that file
 
-FROM usdotfhwaops/v2xhub:7.8.1 AS build
+FROM usdotfhwaops/v2xhub:7.11.1 AS build
 
 WORKDIR /home/plugin
+
+USER root
 
 RUN apt update && \
     apt install -y python3-pip \
     # add some build packages
-    zstd 
+    zstd
 
 RUN pip3 install gdown
 
@@ -28,7 +30,7 @@ RUN --mount=type=bind,from=assets,source=.,target=/mnt/build,readonly \
     ar -x /mnt/build/${TENA_VERSION}@Product@u2204-gcc11-64-*.deb && \
     tar xf control.tar.* && \
     # move the postinst script into TENA dir to make it easier to copy and run later on final container
-    mv ./postinst ./opt/TENA/postinst-MW 
+    mv ./postinst ./opt/TENA/postinst-MW
 
 ARG DIST_VERSION="VUG-Combined-Distribution-v1.3.3"
 # Install DT OMs
@@ -40,24 +42,19 @@ RUN --mount=type=bind,from=assets,source=.,target=/mnt/build,readonly \
     # move the postinst script into TENA dir to make it easier to copy and run later on final container
     mv ./postinst ./opt/TENA/postinst-DIST
 
-FROM usdotfhwaops/v2xhub:7.8.1
+FROM usdotfhwaops/v2xhub:7.11.1
 
 WORKDIR /home/plugin
+
+USER root
 
 # All done as one RUN command to save space in the final container
 # Mounts files in a temporary space with rw perms, copies them to container, runs postinst scripts, changes ownership
 COPY --from=build --chown=plugin:adm /home/plugin/opt/TENA /home/plugin/TENA
 RUN mkdir /home/plugin/TENA/log && chown plugin:adm /home/plugin/TENA/log
-RUN --mount=from=build,source=/home/plugin/opt/TENA,target=/mnt/TENA,rw \
-    cp -a /mnt/TENA /home/plugin/TENA && \
-    DSTROOT=/home/plugin ./TENA/postinst-MW && \
+RUN DSTROOT=/home/plugin ./TENA/postinst-MW && \
     DSTROOT=/home/plugin ./TENA/postinst-DIST && \
     chown -R plugin:adm /home/plugin/TENA
-
-# COPY --from=build --chown=plugin:adm /home/plugin/opt/TENA /home/plugin/TENA
-# RUN DSTROOT=/home/plugin ./TENA/postinst-MW
-# RUN DSTROOT=/home/plugin ./TENA/postinst-DIST
-# RUN mkdir /home/plugin/TENA/log
 
 RUN apt update && apt-get install -y \
     cmake cmake-data git build-essential libboost-all-dev clang g++ lld ninja-build \
@@ -68,7 +65,7 @@ RUN --mount=type=secret,id=usdotfhwastol_token \
     USDOTFHWASTOL_TOKEN=$(cat /run/secrets/usdotfhwastol_token) && \
     git clone https://${USDOTFHWASTOL_TOKEN}@github.com/usdot-fhwa-stol/vug-cmake-package.git cmake_temp && \
     mv cmake_temp/cmake/ /home/plugin/TENA/lib/ && \
-	rm -rf cmake_temp  
+	rm -rf cmake_temp
 
 USER plugin
 
@@ -79,6 +76,6 @@ LABEL description="V2XHub Distributed Testing Docker Image"
 # COPY lib/TenaV2Xplugin.zip /usr/local/plugins/TenaV2Xplugin.zip
 RUN echo 'source /home/plugin/TENA/6.0.11/scripts/tenaenv-u2204-gcc11-64-v6.0.11.sh' >> /home/plugin/.bashrc
 
-WORKDIR /var/log/tmx 
+WORKDIR /var/log/tmx
 
 ENTRYPOINT ["/usr/local/bin/service.sh"]
