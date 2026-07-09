@@ -4,6 +4,7 @@
 
 FROM usdotfhwaops/v2xhub:7.8.1 AS build
 
+USER root
 WORKDIR /home/plugin
 
 RUN apt update && \
@@ -11,7 +12,7 @@ RUN apt update && \
     # add some build packages
     zstd 
 
-RUN pip3 install gdown
+# USER plugin
 
 # TENA-MiddlewareSDK-v6.0.9.A@Product@u2204-gcc11-64-va3bc16dc.deb
 RUN gdown 1WrMDiZ1YkaK0MpHlOVrkHC2vMWN8COBQ
@@ -34,6 +35,7 @@ RUN mv ./postinst ./opt/TENA/postinst-DIST
 
 FROM usdotfhwaops/v2xhub:7.8.1
 
+USER root
 WORKDIR /home/plugin
 
 USER plugin
@@ -54,13 +56,13 @@ RUN --mount=type=secret,id=usdotfhwastol_token \
     USDOTFHWASTOL_TOKEN=$(cat /run/secrets/usdotfhwastol_token) && \
     git clone https://${USDOTFHWASTOL_TOKEN}@github.com/usdot-fhwa-stol/vug-cmake-package.git cmake_temp && \
     mv cmake_temp/cmake/ /home/plugin/TENA/lib/ && \
-	rm -rf cmake_temp   
+	rm -rf cmake_temp
 
 ARG VERSION=dev
 LABEL version=${VERSION}
 LABEL description="V2XHub Distributed Testing Docker Image"
 
-COPY lib/TenaV2Xplugin.zip /usr/local/plugins/TenaV2Xplugin.zip
+# COPY lib/TenaV2Xplugin.zip /usr/local/plugins/TenaV2Xplugin.zip
 RUN echo 'source /home/plugin/TENA/6.0.9/scripts/tenaenv-u2204-gcc11-64-v6.0.9.sh' >> /home/plugin/.bashrc
 
 WORKDIR /var/log/tmx 
