@@ -28,11 +28,12 @@ function print_help {
 	echo "Application Indices:"
 	echo "    [1]  vug-threads-library"
 	echo "    [2]  vug-udp-protocolio"
-	echo "    [3]  scenario-publisher"
+	echo "    [3]  vug-scenario-publisher"
 	echo "    [4]  vug-carla-adapter"
-	echo "    [5]  tena-v2x-adapter"
-	echo "    [6]  tena-entity-generator"
-	echo "    [7]  v2xhub-tena-v2x-plugin"
+	echo "    [5]  vug-v2x-adapter"
+	echo "    [6]  vug-entity-generator"
+	echo "    [7]  vug-v2xhub-v2x-plugin"
+	echo "    [8]  HWILgnssEmulator"
 	echo
 	echo "Examples:"
 	echo "    # Build vug-carla-adapter in release mode:"
@@ -145,17 +146,6 @@ middlewareVersion="MiddlewareSDK-v6.0.11"
 vugThreadsVersion="vug-threads-2.2.0"
 vugUdpProtocolioVersion="vug-udp-protocolio-2.2.1"
 
-
-v2xhubGitUrl="https://github.com/usdot-fhwa-OPS/V2X-Hub.git"
-
-# if [[ -f $VUG_TENA_SOURCE_SCRIPT_FILE ]]; then
-# 	source $VUG_TENA_SOURCE_SCRIPT_FILE
-# else
-# 	echo
-# 	echo "TENA Source script not found..."
-# 	exit
-# fi
-
 vug_carla_adapter_name="vug-carla-adapter"
 
 if [[ -n "$arg_app_index" ]]; then
@@ -166,20 +156,21 @@ else
 	echo 
 	echo "    [1]  vug-threads-library"
 	echo "    [2]  vug-udp-protocolio"
-	echo "    [3]  scenario-publisher"
+	echo "    [3]  vug-scenario-publisher"
 	echo "    [4]  $vug_carla_adapter_name"
-	echo "    [5]  tena-v2x-adapter"
-	echo "    [6]  tena-entity-generator"
-	echo "    [7]  v2xhub-tena-v2x-plugin"
+	echo "    [5]  vug-v2x-adapter"
+	echo "    [6]  vug-entity-generator"
+	echo "    [7]  vug-v2xhub-v2x-plugin"
+	echo "    [8]  HWILgnssEmulator"
 	echo
 	read -p "--> " tenaAppIndex
 fi
 
 carlaTenaAdapterGitUrl="git@github.com:usdot-fhwa-stol/vug-carla-adapter.git"
 
-buildGeneralImage="harbor.distributedtesting.org/distributed-testing/dt-build-general:latest"
-buildCarlaImage="harbor.distributedtesting.org/distributed-testing/dt-build-carla:latest"
-buildV2xImage="usdotfhwaops/v2xhubamd:dt-P-1.1.0"
+buildGeneralImage="harbor.distributedtesting.org/distributed-testing-dev/dt-build-general:dev-latest"
+buildCarlaImage="harbor.distributedtesting.org/distributed-testing-dev/dt-build-carla:dev-latest"
+buildV2xImage="harbor.distributedtesting.org/distributed-testing-dev/v2xhub-v2xplugin:dev-latest"
 
 if [[ $tenaAppIndex == 1 ]]; then
 	tenaApp=vug-threads-library
@@ -212,7 +203,7 @@ elif [[ $tenaAppIndex == 3 ]]; then
 	requiresProtocolio=false
 	defaultBranch='develop'
 	noBuildVersion=false
-	applicationFolderName=scenario-publisher
+	applicationFolderName=vug-scenario-publisher
 
 elif [[ $tenaAppIndex == 4 ]]; then
 	tenaApp=$vug_carla_adapter_name
@@ -256,7 +247,18 @@ elif [[ $tenaAppIndex == 7 ]]; then
 	requiresProtocolio=false
 	defaultBranch='develop'
 	noBuildVersion=false
-	applicationFolderName=v2xhub-bsm-plugin # Need to find actual name
+	applicationFolderName=TenaV2XPlugin # Need to find actual name
+
+elif [[ $tenaAppIndex == 8 ]]; then
+	tenaApp=DT4ITS-RadioHWIL
+	gitCloneUrl="git@github.com:usdot-fhwa-stol/DT4ITS-RadioHWIL.git"
+	dockerContainer=$buildGeneralImage
+	remoteAppDir=/home/dt_user/$tenaApp	#DO NOT CHANGE: internal docker directory mapped to localAppDir
+	isV2xhubPlugin=false
+	requiresProtocolio=false
+	defaultBranch='develop'
+	noBuildVersion=false
+	applicationFolderName=DT4ITS-RadioHWIL
 
 else
 	echo "Invalid selection, try again..."
