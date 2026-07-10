@@ -71,7 +71,7 @@ cleanup() {
     sleep 1
   done
 
-  if ((${#alive[@]:-0} > 0)); then
+  if ((${#alive[@]} > 0)); then
     for pid in "${alive[@]}"; do
       echo "KILL -> PID $pid  $(ps -p "$pid" -o cmd=)"
       kill -KILL "$pid" 2>/dev/null || true
