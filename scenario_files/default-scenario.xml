@@ -28,7 +28,7 @@
   </pedestrians>
 
   <radios>
-    <radio name="DEFAULT-R-1" lvcIndicator="Live" organization="DEFAULT" scmsEnrolled="true">
+    <radio name="DEFAULT-R-1" adapterIdentifier="GNSSEMU-1" lvcIndicator="Live" organization="DEFAULT" scmsEnrolled="true">
       <initialTSPI>
         <GeodeticPosition latitudeInDegrees="0.002066" longitudeInDegrees="0.002291" heightAboveEllipsoidInMeters="1"> </GeodeticPosition>
         <Heading>90</Heading>
