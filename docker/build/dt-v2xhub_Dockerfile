@@ -1,5 +1,5 @@
 #
-# BUILD COMMAND: source build-assets_hass.env && sudo DOCKER_BUILDKIT=1 docker build --secret id=usdotfhwastol_token,src=usdotfhwastol_token --build-arg VERSION=$VERSION --build-context assets="$BUILD_DIR" -t harbor.distributedtesting.org/distributed-testing/dt-v2xhub-v2xplugin:0.0.1 . --progress=plain -f dt-v2xhub_hass_Dockerfile
+# BUILD COMMAND: source build-assets_hass.env && sudo DOCKER_BUILDKIT=1 docker build --secret id=usdotfhwastol_token,src=usdotfhwastol_token --build-arg VERSION=$VERSION --build-context assets="$BUILD_DIR" -t harbor.distributedtesting.org/distributed-testing-dev/dt-v2xhub:0.0.3 . --progress=plain -f dt-v2xhub_Dockerfile
 #
 
 FROM usdotfhwaops/v2xhub:7.8.1 AS build
