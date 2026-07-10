@@ -1,0 +1,93 @@
+#
+# BUILD COMMAND: VERSION=0.0.1 && source build-assets.env && sudo DOCKER_BUILDKIT=1 docker build --build-arg VERSION=$VERSION --build-context assets="$BUILD_DIR" -t harbor.distributedtesting.org/distributed-testing/dt-simdis:$VERSION . --progress=plain -f dt-simdis_Dockerfile
+#
+
+# ----------------------- BUILD STAGE ----------------------- #
+FROM ubuntu:22.04 AS build
+
+SHELL ["/bin/bash", "-ec"]
+
+RUN useradd -ms /bin/bash dt_user
+WORKDIR /home/dt_user
+
+USER root
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    zstd curl binutils
+
+USER dt_user
+WORKDIR /home/dt_user
+
+ARG TENA_VERSION="TENA-MiddlewareSDK-v6.0.11"
+# INSTALL TENA deb
+RUN --mount=type=bind,from=assets,source=.,target=/mnt/build,readonly \
+    set -euo pipefail; \
+    dpkg -x --force-overwrite /mnt/build/${TENA_VERSION}@Product@u2204-gcc11-64-*.deb . && \
+    ar -x /mnt/build/${TENA_VERSION}@Product@u2204-gcc11-64-*.deb && \
+    tar xf control.tar.* && \
+    # move the postinst script into TENA dir to make it easier to copy and run later on final container
+    mv ./postinst ./opt/TENA/postinst-MW 
+
+ARG SDTP_VERSION="SIMDIS-TENApluginRuntime-v2.5.20"
+# Install SIMDIS TENA Plugin
+RUN --mount=type=bind,from=assets,source=.,target=/mnt/build,readonly \
+    set -eu; \
+    dpkg -x --force-overwrite /mnt/build/${SDTP_VERSION}@Product@u2204-gcc11-64-*.deb . && \
+    ar -x /mnt/build/${SDTP_VERSION}@Product@u2204-gcc11-64-*.deb && \
+    tar xf control.tar.* && \
+    # move the postinst script into TENA dir to make it easier to copy and run later on final container
+    mv ./postinst ./opt/TENA/postinst-SDTP 
+
+# ----------------------- RUNTIME STAGE ----------------------- #
+FROM ubuntu:22.04
+
+RUN useradd -ms /bin/bash dt_user
+USER dt_user
+ARG USER="dt_user"
+
+USER root
+WORKDIR /home/dt_user
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    libx11-6 libglx0 libopengl0 libgl1 libxrender1 libxi6 libxrandr2 \
+    libxinerama1 libxcursor1 libxfixes3 libxcomposite1 libxdamage1 libxkbcommon0 \
+    libxkbcommon-x11-0 libfontconfig1 libfreetype6 libegl1 libglib2.0-0 libdbus-1-3 \
+    libglu1-mesa libpulse0 libxcb-cursor0 libxcb-icccm4 libxcb-keysyms1 libxcb-shape0 \
+    x11-utils mesa-utils \
+    && rm -rf /var/lib/apt/lists/*
+
+USER dt_user
+
+ARG SIMDIS_VERSION="NRL_SIMDIS_v10.0_STABLE_2026-06"
+RUN --mount=type=bind,from=assets,source=.,target=/mnt/build,readonly \
+    set -eu; \
+    /mnt/build/${SIMDIS_VERSION}_linux64_abi-cxx11.tar.run --prefix /home/dt_user/SIMDIS --createDesktopIcons 0 --setPath 1 --installRemoveSettings 0
+
+USER root
+
+# All done as one RUN command to save space in the final container
+# Mounts files in a temporary space with rw perms, copies them to container, runs postinst scripts, changes ownership
+# RUN --mount=from=build,source=/home/dt_user/opt/TENA,target=/mnt/TENA,rw \
+RUN --mount=from=build,source=/home/dt_user,target=/mnt/dt_user,rw \
+    cp -a /mnt/dt_user/opt/TENA /home/dt_user/TENA && \
+    cp -a /mnt/dt_user/opt/TENA /home/dt_user/TENA && \
+    DSTROOT=/home/dt_user ./TENA/postinst-MW && \
+    DSTROOT=/home/dt_user SIMDIS_DIR=/home/dt_user/SIMDIS ./TENA/postinst-SDTP && \
+    chown -R dt_user:dt_user /home/dt_user/TENA
+    #  && \
+    # cp -a /mnt/dt_user/~/.config/Naval\ Research\ Laboratory/home /home/dt_user/.config/Naval\ Research\ Laboratory/
+
+USER dt_user
+
+ARG VERSION=dev
+LABEL version=${VERSION}
+LABEL description="Base Distributed Testing Docker image with base tena installation"
+
+SHELL ["/bin/bash", "-ec"]
+
+ARG DEBIAN_FRONTEND="noninteractive"
+ARG TZ="America/New_York"
+
+RUN echo 'source /home/dt_user/TENA/6.0.11/scripts/tenaenv-u2204-gcc11-64-v6.0.11.sh' >> /home/dt_user/.bashrc
+
+CMD ["/bin/bash","-l","-c","cd /home/dt_user/SIMDIS && sleep 10000000000"]
