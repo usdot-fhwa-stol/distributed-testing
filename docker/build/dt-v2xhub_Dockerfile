@@ -1,5 +1,5 @@
 #
-# BUILD COMMAND: VERSION=P-0.0.3 && sudo DOCKER_BUILDKIT=1 docker build --secret id=usdotfhwastol_token,src=usdotfhwastol_token --build-arg VERSION=$VERSION -t usdotfhwaops/v2xhub:dt-$VERSION . --progress=plain -f base_v2xhub_Dockerfile_P_1-1-0
+# BUILD COMMAND: source build-assets_hass.env && sudo DOCKER_BUILDKIT=1 docker build --secret id=usdotfhwastol_token,src=usdotfhwastol_token --build-arg VERSION=$VERSION --build-context assets="$BUILD_DIR" -t harbor.distributedtesting.org/distributed-testing/dt-v2xhub-v2xplugin:0.0.1 . --progress=plain -f dt-v2xhub_hass_Dockerfile
 #
 
 FROM usdotfhwaops/v2xhub:7.8.1 AS build
@@ -11,26 +11,25 @@ RUN apt update && \
     # add some build packages
     zstd 
 
-RUN pip3 install gdown
-
-# TENA-MiddlewareSDK-v6.0.9.A@Product@u2204-gcc11-64-va3bc16dc.deb
-RUN gdown 1WrMDiZ1YkaK0MpHlOVrkHC2vMWN8COBQ
-
-# VUG-P???-Combined-Distribution-v1.1.0@Product@u2204-gcc11-64
-RUN gdown 1pXts1PIQeSyf10MTK462H4nTeANI5edQ
-
+ARG TENA_VERSION="TENA-MiddlewareSDK-v6.0.9.A"
 # INSTALL TENA deb
-RUN dpkg -x --force-overwrite ./TENA-MiddlewareSDK-v6.0.9.A@Product@u2204-gcc11-64-*.deb .
-RUN ar -x ./TENA-MiddlewareSDK-v6.0.9.A@Product@u2204-gcc11-64-*.deb
-RUN tar xf control.tar.zst
-# move the postinst script into TENA dir to make it easier to copy and run later on final container
-RUN mv ./postinst ./opt/TENA/postinst-MW
+RUN --mount=type=bind,from=assets,source=.,target=/mnt/build,readonly \
+    set -eu; \
+    dpkg -x --force-overwrite /mnt/build/${TENA_VERSION}@Product@u2204-gcc11-64-*.deb . && \
+    ar -x /mnt/build/${TENA_VERSION}@Product@u2204-gcc11-64-*.deb && \
+    tar xf control.tar.* && \
+    # move the postinst script into TENA dir to make it easier to copy and run later on final container
+    mv ./postinst ./opt/TENA/postinst-MW 
 
-RUN dpkg -x --force-overwrite ./VUG-P???-Combined-Distribution-v1.1.0@Product@u2204-gcc11-64-*.deb .
-RUN ar -x ./VUG-P???-Combined-Distribution-v1.1.0@Product@u2204-gcc11-64-*.deb
-RUN tar xf control.tar.zst
-# move the postinst script into TENA dir to make it easier to copy and run later on final container
-RUN mv ./postinst ./opt/TENA/postinst-DIST
+ARG DIST_VERSION="DOT_OSTR-Combined-Distribution-v1.2.3"
+# Install DT OMs
+RUN --mount=type=bind,from=assets,source=.,target=/mnt/build,readonly \
+    set -eu; \
+    dpkg -x --force-overwrite /mnt/build/${DIST_VERSION}@Product@u2204-gcc11-64-*.deb . && \
+    ar -x /mnt/build/${DIST_VERSION}@Product@u2204-gcc11-64-*.deb && \
+    tar xf control.tar.* && \
+    # move the postinst script into TENA dir to make it easier to copy and run later on final container
+    mv ./postinst ./opt/TENA/postinst-DIST
 
 FROM usdotfhwaops/v2xhub:7.8.1
 
@@ -60,8 +59,8 @@ ARG VERSION=dev
 LABEL version=${VERSION}
 LABEL description="V2XHub Distributed Testing Docker Image"
 
-COPY lib/TenaV2Xplugin.zip /usr/local/plugins/TenaV2Xplugin.zip
-RUN echo 'source /home/plugin/TENA/6.0.9/scripts/tenaenv-u2204-gcc11-64-v6.0.9.sh' >> /home/plugin/.bashrc
+# COPY lib/TenaV2Xplugin.zip /usr/local/plugins/TenaV2Xplugin.zip
+RUN echo 'source /home/plugin/TENA/6.0.9/scripts/tenaenv-u2204-gcc11-64-v6.0.9.sh' >> /root/.bashrc
 
 WORKDIR /var/log/tmx 
 
