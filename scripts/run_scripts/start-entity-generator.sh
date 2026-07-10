@@ -46,7 +46,7 @@ if [ -L ${dt_site_config} ] && [ -L ${dt_scenario_config} ]; then
 		fi
 
         echo "Site Config: "$site_link_base_name
-        echo "Scenario Config: "$site_link_base_name
+        echo "Scenario Config: "$scenario_link_base_name
     else
         echo "[!!!] .dt_site_config or .dt_scenario_config link is broken"
         echo "Site Config: "$(readlink -f $site_link_base_name)

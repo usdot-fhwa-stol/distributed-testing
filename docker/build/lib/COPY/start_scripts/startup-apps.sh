@@ -99,7 +99,7 @@ fi
 
 if [[ $VUG_DOCKER_START_CONSOLE == true ]]; then
    echo "STARTING TENA CONSOLE"
-   $VUG_LOCAL_TENA_PATH/Console-v2.0.1/start.sh -emEndpoints $VUG_EM_ADDRESS:$VUG_EM_PORT -listenEndpoints $VUG_LOCAL_ADDRESS -autoConnect &
+   $VUG_LOCAL_TENA_PATH/Console-v2.0.4/start.sh -emEndpoints $VUG_EM_ADDRESS:$VUG_EM_PORT -listenEndpoints $VUG_LOCAL_ADDRESS -autoConnect &
 
    sleep 5s
 fi
@@ -152,7 +152,7 @@ fi
 
 if [[ $VUG_DOCKER_START_CANARY == true ]]; then
    echo "STARTING TENA CANARY"
-   $VUG_LOCAL_TENA_PATH/tenaCanary-v1.0.13/start.sh -emEndpoints $VUG_EM_ADDRESS:$VUG_EM_PORT -listenEndpoints $VUG_LOCAL_ADDRESS -auto 2>&1 | awk '{ print "TENA CANARY: ", $0; fflush(); }' &
+   $VUG_LOCAL_TENA_PATH/tenaCanary-v1.0.15/start.sh -emEndpoints $VUG_EM_ADDRESS:$VUG_EM_PORT -listenEndpoints $VUG_LOCAL_ADDRESS -auto 2>&1 | awk '{ print "TENA CANARY: ", $0; fflush(); }' &
 
    sleep 5s
 fi
