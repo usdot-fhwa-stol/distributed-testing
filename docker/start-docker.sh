@@ -339,6 +339,15 @@ else
     docker_compose_file='no-carla_docker-compose.yml'
 fi
 
+echo
+if [[ $VUG_DOCKER_START_SIMDIS == 'local' ]]; then
+    echo "Using SIMDIS docker-compose"
+    docker_compose_file='simdis_docker-compose.yml'
+else
+    echo "Using NO SIMDIS docker-compose"
+    docker_compose_file='no-carla_docker-compose.yml'
+fi
+
 
 trap stopDocker SIGINT
 
