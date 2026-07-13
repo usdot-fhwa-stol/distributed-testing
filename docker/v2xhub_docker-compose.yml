@@ -1,44 +1,88 @@
 services:
   db:
-    image: mysql:8.0
+    image: mysql:8.0.40
     container_name: mysql
     environment:
+      - TZ=${TZ:-America/New_York}
       - MYSQL_DATABASE=IVP
       - MYSQL_USER=IVP
       - MYSQL_PASSWORD_FILE=/run/secrets/mysql_password
       - MYSQL_RANDOM_ROOT_PASSWORD=yes
-    network_mode: host
+    networks:
+      - v2xhub_data_internal
     secrets:
       - mysql_password
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "db", "-u", "IVP", "-p$$(cat /run/secrets/mysql_password)"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
     volumes:
       - ./mysql/localhost.sql:/docker-entrypoint-initdb.d/localhost.sql
-      - /etc/localtime:/etc/localtime:ro 
-      - /etc/timezone:/etc/timezone:ro 
       - mysql-datavolume:/var/lib/mysql
-
   php:
     image: usdotfhwaops/php:${V2XHUB_VERSION:-develop}
     container_name: php
-    network_mode: host
+    networks:
+      - v2xhub_web_external
+    ports:
+      - "80:80"
+      - "443:443"
     restart: always
     depends_on:
       - db
       - v2xhub
     stdin_open: true
     tty: true
+    environment:
+      - TZ=${TZ:-America/New_York}
     volumes:
-      - /etc/localtime:/etc/localtime:ro 
-      - /etc/timezone:/etc/timezone:ro 
       - ssl-certs-volume:/etc/apache2/ssl:ro
-
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS -I http://127.0.0.1/ >/dev/null || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 30s
 
   v2xhub:
-    image: harbor.distributedtesting.org/distributed-testing-dev/dt-v2xhub-base:0.1.0
+    image: harbor.distributedtesting.org/distributed-testing-dev/dt-v2xhub:0.0.1
     container_name: v2xhub
-    network_mode: host
+    networks:
+      - v2xhub_data_internal
+      - v2xhub_app_external
+    ports:
+      # Command Plugin
+      - "19760:19760"        # Command WebSocket
+
+      # Message Receiver Plugin
+      - "26780-26800:26780-26800/udp" # MessageReceiver (Range 26789 ±10)
+
+      # SPaT Plugin
+      - "6053:6053/udp"      # TSC sends UDP
+      - "5050:5050/udp"      # SNMP polling
+
+      # TIM Plugin
+      - "10000:10000/tcp"    # TIM WebServicePort
+
+      # CARMA Cloud Plugin
+      - "22222:22222/tcp"
+
+      # CDASim Adapter Plugin (simulation mode)
+      - "6767:6767/udp"   # CDASim registration
+      - "7575:7575/udp"   # time sync
+      - "5757:5757/udp"   # SIM_V2X (simulated V2X out)
+
+      # MUST Sensor Driver Plugin
+      - "4545:4545/udp"      # MUST detection receiver port
+
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     restart: always
     depends_on:
-      - db
+      db:
+        condition: service_healthy
     ulimits:
       nofile:
         soft: 2560
@@ -50,11 +94,15 @@ services:
         reservations:
           memory: 1g
     environment:
+      - MYSQL_HOST=db
+      - MYSQL_PORT=3306
+      - MYSQL_DATABASE=IVP
+      - MYSQL_USER=IVP
       - MYSQL_PASSWORD=/run/secrets/mysql_password
       - SIMULATION_MODE=${SIMULATION_MODE:-false}
       - SIMULATION_IP=${SIMULATION_IP:-127.0.0.1}
       - SIMULATION_REGISTRATION_PORT=6767
-      - LOCAL_IP=${V2XHUB_IP:-127.0.0.1}
+      - V2XHUB_IP=${V2XHUB_IP:-0.0.0.0}
       - TIME_SYNC_TOPIC=time_sync
       - TIME_SYNC_PORT=7575
       - SIM_V2X_PORT=5757
@@ -65,14 +113,19 @@ services:
       - SENSOR_JSON_FILE_PATH=${SENSOR_JSON_FILE_PATH:-/var/www/download/sensors.json}
       - V2XHUB_USERNAME=${V2XHUB_USERNAME:-v2xadmin}
       - V2XHUB_PASSWORD=${V2XHUB_PASSWORD}
+      - TZ=${TZ:-America/New_York}
     secrets:
       - mysql_password
     volumes:
       - v2xhub-logs-volume:/var/log/tmx:rw
       - v2xhub-download-volume:/var/www/download/:rw
-      - /etc/localtime:/etc/localtime:ro 
-      - /etc/timezone:/etc/timezone:ro 
       - ssl-certs-volume:/var/www/plugins/ssl:rw
+    healthcheck:
+      test: ["CMD-SHELL", "ps -ef | grep -v grep | grep -q tmxcore && ps -ef | grep -v grep | grep -q CommandPlugin || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 30s
 
 secrets:
     mysql_password:
@@ -84,26 +137,36 @@ volumes:
     # To access/set SSL certifications on host machine setup local mapping to ssl directory.
     # NOTE: Ensure directory exists and has non-root privileges before running 
     # docker compose to prevent permission issues
-    # driver: local
-    # driver_opts:
-    #   type: 'none'
-    #   o: 'bind'
-    #   device: './ssl' # Specify the absolute path on your host
+    driver: local
+    driver_opts:
+      type: 'none'
+      o: 'bind'
+      device: '${V2XHUB_VOLUME_PATH:-/tmp/v2xhub_data}/ssl' # Specify the absolute path on your host
   v2xhub-download-volume:
     # To access V2X Hub uploaded files on host machine setup local mapping to download directory.
     # NOTE: Ensure directory exists and has non-root privileges before running 
     # docker compose to prevent permission issues
-    # driver: local
-    # driver_opts:
-    #   type: 'none'
-    #   o: 'bind'
-    #   device: './download' # Specify the absolute path on your host
+    driver: local
+    driver_opts:
+      type: 'none'
+      o: 'bind'
+      device: '${V2XHUB_VOLUME_PATH:-/tmp/v2xhub_data}/download' # Specify the absolute path on your host
   v2xhub-logs-volume:
     # To access log files on host machine setup local mapping to logs directory.
     # NOTE: Ensure directory exists and has non-root privileges before running 
     # docker compose to prevent permission issues
-    # driver: local
-    # driver_opts:
-    #   type: 'none'
-    #   o: 'bind'
-    #   device: './logs' # Specify the absolute path on your host
+    driver: local
+    driver_opts:
+      type: 'none'
+      o: 'bind'
+      device: '${V2XHUB_VOLUME_PATH:-/tmp/v2xhub_data}/logs' # Specify the absolute path on your host
+
+# Networks: separated by purpose
+networks:
+  v2xhub_web_external:
+    driver: bridge
+  v2xhub_app_external:
+    driver: bridge
+  v2xhub_data_internal:
+    driver: bridge
+    internal: true  # No external internet access - only inter-service communication
