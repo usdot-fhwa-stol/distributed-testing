@@ -134,6 +134,7 @@ tenaBuildVersion=u2204-gcc11-64
 remoteTenaDir=/home/dt_user/TENA			#DO NOT CHANGE: internal docker directory mapped to localTenaDir
 remoteInstallDir=/home/dt_user/INSTALL		#DO NOT CHANGE: internal docker directory mapped to localInstallDir	
 remoteCarlaDir=/home/dt_user/carla
+remoteCarlaBuildDir=$remoteCarlaDir/Build
 #--------------------------------------------------------#
 
 middlewareVersion="MiddlewareSDK-v6.0.11"
@@ -178,7 +179,7 @@ fi
 carlaTenaAdapterGitUrl="git@github.com:usdot-fhwa-stol/vug-carla-adapter.git"
 
 buildGeneralImage="harbor.distributedtesting.org/distributed-testing/dt-build-general:latest"
-buildCarlaImage="harbor.distributedtesting.org/distributed-testing/dt-build-carla:latest"
+buildCarlaImage="harbor.distributedtesting.org/distributed-testing/dt-build-carla:0.10.0-0.0.1"
 buildV2xImage="usdotfhwaops/v2xhubamd:dt-P-1.1.0"
 
 if [[ $tenaAppIndex == 1 ]]; then
@@ -504,7 +505,7 @@ echo "#### Running CMAKE ####"
 
 echo
 
-if ! ( set -x ; docker run --entrypoint /bin/bash --rm -v $localAppDir:$remoteAppDir  -v $localInstallDir:$remoteInstallDir $dockerContainer -c "cd $remoteAppDir/build; export TENA_PLATFORM=$tenaBuildVersion; export TENA_HOME=$remoteTenaDir; export TENA_VERSION=$tenaVersion; export CARLA_HOME=$remoteCarlaDir; cmake -D CMAKE_EXPORT_COMPILE_COMMANDS=ON $buildVersionDirArg $buildVersionCmakeArg -D CMAKE_PREFIX_PATH='$remoteTenaDir/lib/cmake;$remoteInstallDir;/opt/carma/cmake;/opt/carma/lib' -D CMAKE_MODULE_PATH='/opt/carma/cmake' -D VUG_INSTALL_DIR=$remoteInstallDir -D tmx-plugin_DIR=/usr/local/share/tmx/ ../" ); then
+if ! ( set -x ; docker run --entrypoint /bin/bash --rm -v $localAppDir:$remoteAppDir  -v $localInstallDir:$remoteInstallDir $dockerContainer -c "cd $remoteAppDir/build; export TENA_PLATFORM=$tenaBuildVersion; export TENA_HOME=$remoteTenaDir; export TENA_VERSION=$tenaVersion; export CARLA_HOME=$remoteCarlaDir; export CARLA_BUILD_DIR=$remoteCarlaBuildDir; export CC=/usr/bin/gcc-11; export CXX=/usr/bin/g++-11; cmake -D CMAKE_EXPORT_COMPILE_COMMANDS=ON -D CMAKE_C_COMPILER=\$CC -D CMAKE_CXX_COMPILER=\$CXX -D CARLA_ROOT=\$CARLA_HOME -D FETCHCONTENT_BASE_DIR=\$CARLA_BUILD_DIR/_deps $buildVersionDirArg $buildVersionCmakeArg -D CMAKE_PREFIX_PATH='$remoteTenaDir/lib/cmake;$remoteInstallDir;/opt/carma/cmake;/opt/carma/lib' -D CMAKE_MODULE_PATH='/opt/carma/cmake' -D VUG_INSTALL_DIR=$remoteInstallDir -D tmx-plugin_DIR=/usr/local/share/tmx/ ../" ); then
 	echo
 	echo "[!!!] CMAKE FAILED"
 	exit 1
