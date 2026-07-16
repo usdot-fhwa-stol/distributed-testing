@@ -1,5 +1,7 @@
 #
-# VERSION=0.0.1 && source build-assets.env && DOCKER_BUILDKIT=1 docker build --secret id=usdotfhwastol_token,src=usdotfhwastol_token --build-arg VERSION=$VERSION --build-context assets="$BUILD_DIR" -t harbor.distributedtesting.org/distributed-testing/dt-v2xhub:$VERSION . --progress=plain -f dt-v2xhub_Dockerfile
+# VERSION=0.0.2 && sudo docker build --secret id=usdotfhwastol_token,src=usdotfhwastol_token --build-arg VERSION=$VERSION -t harbor.distributedtesting.org/distributed-testing/dt-build-general:$VERSION . --progress=plain -f dt-build-general_Dockerfile
+# source build-assets.env && sudo DOCKER_BUILDKIT=1 docker build --secret id=usdotfhwastol_token,src=usdotfhwastol_token --build-context assets="$BUILD_DIR" -t harbor.distributedtesting.org/distributed-testing/v2xhub-v2xplugin-dev:0.0.2-dev . --progress=plain -f dt-v2xhub_Dockerfile
+# docker tag harbor.distributedtesting.org/distributed-testing/v2xhub-v2xplugin-dev:0.0.1-dev harbor.distributedtesting.org/distributed-testing/v2xhub-v2xplugin:latest
 #
 
 # Secret instructions:
