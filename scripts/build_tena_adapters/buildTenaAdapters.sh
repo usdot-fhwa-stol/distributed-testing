@@ -505,7 +505,17 @@ echo "#### Running CMAKE ####"
 
 echo
 
-if ! ( set -x ; docker run --entrypoint /bin/bash --rm -v $localAppDir:$remoteAppDir  -v $localInstallDir:$remoteInstallDir $dockerContainer -c "cd $remoteAppDir/build; export TENA_PLATFORM=$tenaBuildVersion; export TENA_HOME=$remoteTenaDir; export TENA_VERSION=$tenaVersion; export CARLA_HOME=$remoteCarlaDir; export CARLA_BUILD_DIR=$remoteCarlaBuildDir; export CC=/usr/bin/gcc-11; export CXX=/usr/bin/g++-11; cmake -D CMAKE_EXPORT_COMPILE_COMMANDS=ON -D CMAKE_C_COMPILER=\$CC -D CMAKE_CXX_COMPILER=\$CXX -D CARLA_ROOT=\$CARLA_HOME -D FETCHCONTENT_BASE_DIR=\$CARLA_BUILD_DIR/_deps $buildVersionDirArg $buildVersionCmakeArg -D CMAKE_PREFIX_PATH='$remoteTenaDir/lib/cmake;$remoteInstallDir;/opt/carma/cmake;/opt/carma/lib' -D CMAKE_MODULE_PATH='/opt/carma/cmake' -D VUG_INSTALL_DIR=$remoteInstallDir -D tmx-plugin_DIR=/usr/local/share/tmx/ ../" ); then
+additionalBuildEnv=""
+additionalCmakeArgs=""
+
+# CARLA 0.10.0 is built through its native CMake project. Keep these settings
+# scoped to the CARLA adapter so builds for the other adapters remain unchanged.
+if [[ $tenaAppIndex == 4 ]]; then
+    additionalBuildEnv="export CARLA_BUILD_DIR=$remoteCarlaBuildDir; export CC=/usr/bin/gcc-11; export CXX=/usr/bin/g++-11;"
+    additionalCmakeArgs="-D CMAKE_C_COMPILER=/usr/bin/gcc-11 -D CMAKE_CXX_COMPILER=/usr/bin/g++-11 -D CARLA_ROOT=$remoteCarlaDir -D FETCHCONTENT_BASE_DIR=$remoteCarlaBuildDir/_deps"
+fi
+
+if ! ( set -x ; docker run --entrypoint /bin/bash --rm -v $localAppDir:$remoteAppDir  -v $localInstallDir:$remoteInstallDir $dockerContainer -c "cd $remoteAppDir/build; export TENA_PLATFORM=$tenaBuildVersion; export TENA_HOME=$remoteTenaDir; export TENA_VERSION=$tenaVersion; export CARLA_HOME=$remoteCarlaDir; $additionalBuildEnv cmake -D CMAKE_EXPORT_COMPILE_COMMANDS=ON $additionalCmakeArgs $buildVersionDirArg $buildVersionCmakeArg -D CMAKE_PREFIX_PATH='$remoteTenaDir/lib/cmake;$remoteInstallDir;/opt/carma/cmake;/opt/carma/lib' -D CMAKE_MODULE_PATH='/opt/carma/cmake' -D VUG_INSTALL_DIR=$remoteInstallDir -D tmx-plugin_DIR=/usr/local/share/tmx/ ../" ); then
 	echo
 	echo "[!!!] CMAKE FAILED"
 	exit 1
