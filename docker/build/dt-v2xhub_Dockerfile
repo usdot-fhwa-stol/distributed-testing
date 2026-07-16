@@ -6,7 +6,7 @@
 # Make a file named `usdotfhwastol_token` under distributed-testing/docker/
 # Copy your token into that file
 
-FROM usdotfhwaops/v2xhub:develop AS build
+FROM harbor.distributedtesting.org/distributed-testing/dt-build-v2xhub:latest AS build
 
 SHELL ["/bin/bash", "-ec"]
 
@@ -39,7 +39,7 @@ RUN --mount=type=bind,from=assets,source=.,target=/mnt/build,readonly \
     # move the postinst script into TENA dir to make it easier to copy and run later on final container
     mv ./postinst ./opt/TENA/postinst-DIST
 
-FROM usdotfhwaops/v2xhub:develop
+FROM harbor.distributedtesting.org/distributed-testing/dt-build-v2xhub:latest
 
 WORKDIR /home/plugin
 
