@@ -46,7 +46,7 @@ def process_and_plot_results(
         data_type.lower(),
         "".join(c for c in data_type if c.isupper()),
     )
-    plots_dir = root_dir / f"{folder_prefix.rstrip('-')}-RALL-{data_abrv}_results"
+    plots_dir = root_dir / f"plots/{folder_prefix.rstrip('-')}-RALL-{data_abrv}_results"
     print(plots_dir)
 
     result = load_and_parse_csv_data(root_dir, folder_prefix, data_type)

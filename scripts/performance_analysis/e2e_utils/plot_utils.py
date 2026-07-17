@@ -144,7 +144,7 @@ def plot_grouped_histogram(
         for container in getattr(ax, "containers", []):
             labels = [f"{int(bar.get_height())}" if bar.get_height() > 0 else "" for bar in container]
             if g_data_label:
-                ax.bar_label(container, labels=labels, rotation=90, padding=4, fontsize=7)
+                ax.bar_label(container, labels=labels, rotation=90, padding=4, fontsize=12)
 
         ax.set_ylim(top=ax.get_ylim()[-1] * 1.18)
 
@@ -296,7 +296,7 @@ def plot_cumulative_histogram(
                         textcoords="offset points",
                         ha="center",
                         va="bottom",
-                        fontsize=7,
+                        fontsize=12,
                         color=color,
                         alpha=0.85,
                     )
