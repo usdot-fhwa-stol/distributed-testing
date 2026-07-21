@@ -1,0 +1,140 @@
+#
+# BUILD COMMAND: VERSION=0.0.1 && source build-assets.env && DOCKER_BUILDKIT=1 docker build --build-arg version=$VERSION --build-context assets="$BUILD_DIR" -t harbor.distributedtesting.org/distributed-testing/dt-core:$VERSION . --progress=plain -f dt-core_Dockerfile
+#
+
+# ===================== BUILD STAGE ===================== #
+FROM harbor.distributedtesting.org/distributed-testing/dt-base:latest AS build
+
+SHELL ["/bin/bash", "-ec"]
+ARG DEBIAN_FRONTEND="noninteractive"
+
+USER root
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+        apt-utils \
+        python3-pip \
+        rsync \
+        zstd \
+        unzip \
+        binutils && \
+    rm -rf /var/lib/apt/lists/*
+
+ARG DV_VERSION="v1.5.4"
+ARG TDCS_VERSION="VUG-Combined-DataCollectionDistribution-v1.3.3"
+ARG JSON_VERSION="VUG-Combined-JSONstreamerDistribution-v1.3.3"
+ARG MW_VERSION="v6.0.11"
+
+WORKDIR /home/dt_user/INSTALL/DV
+RUN --mount=type=bind,from=assets,source=.,target=/mnt/build,readonly \
+    set -euo pipefail && \
+    dpkg -x --force-overwrite /mnt/build/TDCS-DataView-${DV_VERSION}@Product@u2204-gcc11-64*.deb . && \
+    ar -x /mnt/build/TDCS-DataView-${DV_VERSION}@Product@u2204-gcc11-64*.deb && \
+    tar xf control.tar.* && \
+    mv ./postinst ./opt/TENA/postinst-DV
+
+WORKDIR /home/dt_user/INSTALL/TDCS
+RUN --mount=type=bind,from=assets,source=.,target=/mnt/build,readonly \
+    set -euo pipefail && \
+    dpkg -x --force-overwrite /mnt/build/${TDCS_VERSION}@Product@u2204-gcc11-64*.deb . && \
+    ar -x /mnt/build/${TDCS_VERSION}@Product@u2204-gcc11-64*.deb && \
+    tar xf control.tar.* && \
+    mv ./postinst ./opt/TENA/postinst-TDCS
+
+WORKDIR /home/dt_user/INSTALL/JSON
+RUN --mount=type=bind,from=assets,source=.,target=/mnt/build,readonly \
+    set -euo pipefail && \
+    dpkg -x --force-overwrite /mnt/build/${JSON_VERSION}@Product@u2204-gcc11-64*.deb . && \
+    ar -x /mnt/build/${JSON_VERSION}@Product@u2204-gcc11-64*.deb && \
+    tar xf control.tar.* && \
+    mv ./postinst ./opt/TENA/postinst-JSON
+
+RUN mkdir -p /home/dt_user/TENA/executionManager-${MW_VERSION}/log && \
+    chown -R dt_user:dt_user /home/dt_user/TENA
+
+WORKDIR /home/dt_user
+RUN rsync -a \
+        INSTALL/DV/opt/TENA/ \
+        INSTALL/TDCS/opt/TENA/ \
+        INSTALL/JSON/opt/TENA/ \
+        TENA/ && \
+    chown -R dt_user:dt_user TENA
+
+RUN --mount=type=bind,from=assets,source=.,target=/mnt/build,readonly \
+    set -euo pipefail && \
+    unzip -j /mnt/build/CARLA_0.10.0.zip \
+        '*/carla-0.10.0-cp310-cp310-linux_x86_64.whl' \
+        -d /home/dt_user/carla_wheels && \
+    chown -R dt_user:dt_user /home/dt_user/carla_wheels
+
+
+# ===================== RUNTIME STAGE ===================== #
+FROM harbor.distributedtesting.org/distributed-testing/dt-base:latest
+
+SHELL ["/bin/bash", "-ec"]
+
+ARG VERSION=dev
+ARG DEBIAN_FRONTEND="noninteractive"
+
+LABEL version=${VERSION} \
+      description="Docker image for interoperability test"
+
+ENV USER="dt_user" \
+    LANG=en_US.UTF-8 \
+    LC_ALL=en_US.UTF-8 \
+    PATH="/home/dt_user/.local/bin:$PATH"
+
+WORKDIR /home/dt_user
+
+USER root
+
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+        libxcb-xinerama0 libfreetype6 libfontconfig1 libsm6 libxi6 libx11-xcb1 \
+        libxcb-cursor0 libxcb-icccm4 libxcb-image0 libxcb-keysyms1 libxcb-randr0 \
+        libxcb-render-util0 libxcb-shape0 libxcb-sync1 libxcb-xfixes0 libxcb-xkb1 \
+        libxkbcommon-x11-0 libjpeg8 libtiff5 \
+        iputils-ping tshark tcpdump nethogs curl \
+        iproute2 \
+        dumb-init locales \
+        git \
+        build-essential \
+        python3.10 python3-pip && \
+    locale-gen en_US.UTF-8 && \
+    update-locale LANG=en_US.UTF-8 && \
+    update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.10 100 && \
+    rm -rf /var/lib/apt/lists/*
+
+COPY --chown=dt_user:dt_user --from=build /home/dt_user/TENA ./TENA
+RUN DSTROOT=/home/dt_user ./TENA/postinst-DV && \
+    DSTROOT=/home/dt_user ./TENA/postinst-TDCS && \
+    sed -i '/^chown -R root/d;/^chgrp -R root/d' ./TENA/postinst-JSON && \
+    DSTROOT=/home/dt_user ./TENA/postinst-JSON $$ \
+    chown -R dt_user:dt_user /home/dt_user/TENA
+
+COPY --from=build /home/dt_user/carla_wheels /tmp/carla_wheels
+RUN pip3 install --no-cache-dir /tmp/carla_wheels/carla-*cp310*.whl && \
+    rm -rf /tmp/carla_wheels
+
+COPY --chown=dt_user:dt_user ./lib/COPY /home/dt_user
+RUN chmod +x /home/dt_user/start_scripts/*
+
+USER dt_user
+
+RUN pip3 install --no-cache-dir --user --upgrade pip setuptools wheel
+
+RUN pip3 install --no-cache-dir --user \
+        requests \
+        networkx \
+        scapy \
+        numpy \
+        pandas \
+        shapely \
+        pygame-ce \
+        pycrate \
+        pynput \
+        lxml
+
+        
+RUN echo 'source /home/dt_user/start_scripts/setup-docker.sh' >> /home/dt_user/.bashrc
+
+CMD ["/usr/bin/dumb-init", "-v", "--", "/bin/bash", "-l", "-c", "/home/dt_user/start_scripts/startup-apps.sh"]
