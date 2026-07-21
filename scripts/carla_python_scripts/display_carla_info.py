@@ -1,252 +1,227 @@
-import glob
+"""Overlay vehicle role names and traffic signal states in the CARLA simulation world."""
+
+import argparse
 import os
 import sys
 import time
-
-from find_carla_egg import find_carla_egg
-
-carla_egg_file = find_carla_egg()
-
-sys.path.append(carla_egg_file)
+from typing import cast
 
 import carla
 
-import argparse
+MAP_HEIGHT_DICT: dict[str, dict[str, float]] = {
+    "mcity_map_voices_v2-2-21": {"bottom_line": 230.0, "spawn_line": 245.0}
+}
 
-map_height_dict = { "mcity_map_voices_v2-2-21": {"bottom_line" : 230, "spawn_line" : 245}
 
-                  }
+def parse_arguments() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument(
+        "--host",
+        metavar="<hostname>",
+        default="127.0.0.1",
+        help="IP of the host server (default: 127.0.0.1)",
+    )
+    parser.add_argument(
+        "-p",
+        "--port",
+        metavar="<port>",
+        default=2000,
+        type=int,
+        help="TCP port to listen to (default: 2000)",
+    )
+    parser.add_argument(
+        "--filterv",
+        metavar="PATTERN",
+        default="vehicle.*",
+        help='Vehicles filter (default: "vehicle.*")',
+    )
+    parser.add_argument(
+        "--filterw",
+        metavar="PATTERN",
+        default="walker.pedestrian.*",
+        help='Pedestrians filter (default: "walker.pedestrian.*")',
+    )
+    parser.add_argument(
+        "-d",
+        "--duration",
+        metavar="<seconds>",
+        default=10,
+        type=int,
+        help="Duration in seconds to display overlay text (use 0 for continuous update loop, default: 10)",
+    )
+    parser.add_argument(
+        "--show-vehicles",
+        action="store_true",
+        help="Display vehicle role names (overrides VUG_DISPLAY_VEHICLE_ROLENAMES env var)",
+    )
+    parser.add_argument(
+        "--show-signals",
+        action="store_true",
+        help="Display traffic light states (overrides VUG_DISPLAY_TRAFFIC_SIGNAL_STATES env var)",
+    )
+    parser.add_argument(
+        "-v",
+        "--verbose",
+        action="store_true",
+        help="Display actor details each iteration in standard output",
+    )
+    return parser.parse_args()
 
-argparser = argparse.ArgumentParser(
-    description=__doc__)
-argparser.add_argument(
-    '--host',
-    metavar='<hostname>',
-    default='127.0.0.1',
-    help='IP of the host server (default: 127.0.0.1)')
-argparser.add_argument(
-    '-p', '--port',
-    metavar='<port>',
-    default=2000,
-    type=int,
-    help='TCP port to listen to (default: 2000)')
-argparser.add_argument(
-    '--filterv',
-    metavar='PATTERN',
-    default='vehicle.*',
-    help='vehicles filter (default: "vehicle.*")')
-argparser.add_argument(
-    '--filterw',
-    metavar='PATTERN',
-    default='walker.pedestrian.*',
-    help='pedestrians filter (default: "walker.pedestrian.*")')
-argparser.add_argument(
-    '--sync',
-    action='store_true',
-    help='Synchronous mode execution')
-argparser.add_argument(
-    '-d', '--duration',
-    metavar='<duration in s>',
-    default=10,
-    type=int,
-    help='duration to display vehicle rolenames - use 0 for indefinite (default: 10)')
-argparser.add_argument(
-    '-v', '--verbose',
-    default=False,
-    action='store_true',
-    help='display actor details each iteration (default: false)')
 
-args = argparser.parse_args()
+def display_vehicle_rolenames(
+    world: carla.World,
+    args: argparse.Namespace,
+    map_string: str,
+) -> None:
+    text_offset = carla.Location(x=5.0, y=0.0, z=2.0)
+    vehicle_list = world.get_actors().filter(args.filterv)
+    label_duration = 0.5 if args.duration == 0 else float(args.duration)
 
-def display_vehicle_rolenames():
+    if not vehicle_list:
+        if args.verbose:
+            print("    NO VEHICLES FOUND")
+        return
 
-    text_offset = carla.Location(x=5, y=0, z=2)
+    if args.verbose:
+        print("\nCARLA VEHICLES:")
 
-    vehicle_list = world.get_actors().filter('vehicle.*')
-        # Print all index corresponding to all traffic vehicles in scene (CarlaUE4)
+    for vehicle in vehicle_list:
+        role_name = vehicle.attributes.get("role_name", "unknown")
 
-    if args.duration == 0:
-        label_duration = 0.5
-    else:
-        label_duration = args.duration
+        cleaned_veh_name = (
+            role_name.replace("-MAN-", "-")
+            .replace("TFHRC", "FHWA")
+            .replace("carma_1", "FHWA")
+        )
 
-    if len(vehicle_list) == 0:
+        if cleaned_veh_name == "MCITY-TERASIM-01":
+            cleaned_veh_name = "MCITY-TERASIM-02"
+        elif cleaned_veh_name == "MCITY-TERASIM-02":
+            cleaned_veh_name = "MCITY-TERASIM-01"
 
         if args.verbose:
-            print("    NO VEHICLES")
+            print(f"    ID {vehicle.id}: {vehicle.attributes}")
 
-    else:
-        if args.verbose:
-            print("\nCARLA VEHICLES: ")
+        veh_location = vehicle.get_location()
 
-        for index, vehicle in enumerate(vehicle_list, start=1):
-
-            cleaned_veh_name = str(vehicle.attributes["role_name"].replace("-MAN-","-").replace("TFHRC","FHWA").replace("carma_1","FHWA"))
-            
-            # TEMP, SWAP TERASIM 1 AND 2
-            if cleaned_veh_name == "MCITY-TERASIM-01":
-                cleaned_veh_name = "MCITY-TERASIM-02"
-            elif cleaned_veh_name == "MCITY-TERASIM-02":
-                cleaned_veh_name = "MCITY-TERASIM-01"
-            # else:
-            #     cleaned_veh_name = cleaned_veh_name.split('-', 1)[0]
-
-            if args.verbose:
-                print("    " + str(vehicle.attributes))
-            if map_string in map_height_dict:
-                if vehicle.get_location().z < map_height_dict[map_string]["bottom_line"]:
-                    continue
-                elif vehicle.get_location().z > map_height_dict[map_string]["spawn_line"]:
-                    color = carla.Color(r=0, g=0, b=255)
-                else:
-                    color = carla.Color(r=255, g=0, b=0)
-
-                world.debug.draw_string(
-                    vehicle.get_location() + text_offset,
-                    cleaned_veh_name,
-                    draw_shadow=False,color=color,
-                    life_time=label_duration,
-                    persistent_lines=True)
-            else:
-                world.debug.draw_string(
-                    vehicle.get_location() + text_offset,
-                    cleaned_veh_name,
-                    draw_shadow=False,color=carla.Color(r=255,g=0,b=0),
-                    life_time=label_duration,
-                    persistent_lines=True)
-
-
-def display_traffic_signal_state():
-    signal_list = world.get_actors().filter('traffic.traffic_light')
-    # Print all index corresponding to all traffic signals in scene (CarlaUE4)
-
-    if args.duration == 0:
-        label_duration = 0.5
-    else:
-        label_duration = args.duration
-    
-    
-    if len(signal_list) == 0:
-
-        if args.verbose:
-            print("    NO TRAFFIC SIGNALS")
-
-    else:
-        if args.verbose:
-            print("\nTRAFFIC SIGNALS: ")
-
-        for index, signal in enumerate(signal_list, start=1):
-            
-            if args.verbose:
-                print(signal)
-                print("    " + str(signal.attributes))
-
-            signal_state = signal.get_state()
-            signal_state_display = str(signal_state).upper()
-
-            if signal_state_display == "OFF":
+        if map_string in MAP_HEIGHT_DICT:
+            height_limits = MAP_HEIGHT_DICT[map_string]
+            if veh_location.z < height_limits["bottom_line"]:
                 continue
-
-
-            if signal_state == carla.TrafficLightState.Green:
-                signal_color = carla.Color(r=0, g=255, b=0)
-            elif signal_state == carla.TrafficLightState.Red:
-                signal_color = carla.Color(r=255, g=0, b=0)
-            elif signal_state == carla.TrafficLightState.Yellow:
-                signal_color = carla.Color(r=255, g=255, b=0)
+            elif veh_location.z > height_limits["spawn_line"]:
+                color = carla.Color(r=0, g=0, b=255)
             else:
+                color = carla.Color(r=255, g=0, b=0)
+        else:
+            color = carla.Color(r=255, g=0, b=0)
+
+        world.debug.draw_string(
+            veh_location + text_offset,
+            cleaned_veh_name,
+            draw_shadow=False,
+            color=color,
+            life_time=label_duration,
+            persistent_lines=True,
+        )
+
+
+def display_traffic_signal_state(world: carla.World, args: argparse.Namespace) -> None:
+    signal_list = world.get_actors().filter("traffic.traffic_light")
+    label_duration = 0.5 if args.duration == 0 else float(args.duration)
+
+    if not signal_list:
+        if args.verbose:
+            print("    NO TRAFFIC SIGNALS FOUND")
+        return
+
+    if args.verbose:
+        print("\nTRAFFIC SIGNALS:")
+
+    for signal in signal_list:
+        signal = cast(carla.TrafficLight, signal)
+
+        if args.verbose:
+            print(f"    Signal ID {signal.id}: {signal.attributes}")
+
+        signal_state = signal.get_state()
+        signal_state_display = str(signal_state).upper()
+
+        if signal_state_display == "OFF":
+            continue
+
+        match signal_state:
+            case carla.TrafficLightState.Green:
+                signal_color = carla.Color(r=0, g=255, b=0)
+            case carla.TrafficLightState.Red:
+                signal_color = carla.Color(r=255, g=0, b=0)
+            case carla.TrafficLightState.Yellow:
+                signal_color = carla.Color(r=255, g=255, b=0)
+            case _:
                 signal_color = carla.Color(r=0, g=0, b=255)
 
-            signal_draw_loc = signal.get_location() + carla.Location(x=0, y=0, z=10)
+        signal_draw_loc = signal.get_location() + carla.Location(x=0.0, y=0.0, z=10.0)
 
-            
-            
-            # box_center = signal_draw_loc + carla.Location(x=0, y=0.5, z=0)
+        world.debug.draw_string(
+            signal_draw_loc,
+            signal_state_display,
+            draw_shadow=False,
+            color=signal_color,
+            life_time=label_duration,
+            persistent_lines=True,
+        )
 
-            # box = carla.BoundingBox(box_center,carla.Vector3D(0.1,0.2,0))
 
-            # world.debug.draw_box(
-            #     box, 
-            #     carla.Rotation(0,0,0),
-            #     0.5,
-            #     # draw_shadow=False,
-            #     color=carla.Color(r=0, g=0, b=0), 
-            #     life_time=label_duration,
-            #     persistent_lines=True)
-            
-            world.debug.draw_string(
-                signal_draw_loc, 
-                str(signal_state_display), 
-                draw_shadow=False,
-                color=signal_color, 
-                life_time=label_duration,
-                persistent_lines=True)
+def main() -> None:
+    args = parse_arguments()
 
- 
+    env_signals = os.getenv("VUG_DISPLAY_TRAFFIC_SIGNAL_STATES", "").lower() == "true"
+    env_vehicles = os.getenv("VUG_DISPLAY_VEHICLE_ROLENAMES", "").lower() == "true"
 
-try:
-    client = carla.Client(args.host, args.port)
-    client.set_timeout(5.0)
+    show_signals = args.show_signals or env_signals
+    show_vehicles = args.show_vehicles or env_vehicles
 
-    map_string = client.get_world().get_map().name
+    if not show_signals and not show_vehicles:
+        print("Neither vehicle role names nor traffic signal states are enabled.")
+        print("Use --show-vehicles / --show-signals or set environment variables.")
+        sys.exit(0)
 
-    if map_string not in map_height_dict:
-        print("The height limits for map %s are unknown. Drawing all vehicle names as red..." % (map_string))
-
-    
-
-    display_traffic_signals_env = os.getenv("VUG_DISPLAY_TRAFFIC_SIGNAL_STATES")
-
-    if display_traffic_signals_env == "true":
-        display_traffic_signals_env = True
-        print('\n----- DISPLAYING TRAFFIC LIGHT STATES -----\n')
-    else:
-        display_traffic_signals_env = False
-
-    display_vehicle_rolenames_env = os.getenv("VUG_DISPLAY_VEHICLE_ROLENAMES")
-    
-    if display_vehicle_rolenames_env == "true": 
-        display_vehicle_rolenames_env = True
-        print('\n----- DISPLAYING VEHICLE ROLENAMES -----\n')
-    else:
-        display_vehicle_rolenames_env = False
-
-    if not display_traffic_signals_env and not display_vehicle_rolenames_env:
-        print("NOT DISPLAYING VEHICLE ROLENAMES OR TRAFFIC SIGNAL STATES")
-        sys.exit()
-
-    # world = client.get_world()
-    # world.debug.draw_string(
-    #             carla.Location(0,0,0),
-    #             "ORIGIN",
-    #             draw_shadow=False,color=carla.Color(r=255,g=0,b=0),
-    #             life_time=0,
-    #             persistent_lines=True)
-
-    while (True):
+    try:
+        client = carla.Client(args.host, args.port)
+        client.set_timeout(10.0)
         world = client.get_world()
-        # Get actor information (Vehicles)
 
-        if display_traffic_signals_env:
-            display_traffic_signal_state()
+        map_string = world.get_map().name
+        if map_string not in MAP_HEIGHT_DICT:
+            print(
+                f"Notice: Map '{map_string}' vertical bounds are unconfigured. Rendering vehicle labels as red."
+            )
 
-        if display_vehicle_rolenames_env:
-            display_vehicle_rolenames()                        
+        if show_signals:
+            print("----- DISPLAYING TRAFFIC LIGHT STATES -----")
+        if show_vehicles:
+            print("----- DISPLAYING VEHICLE ROLENAMES -----")
 
-        if args.duration != 0:
-            sys.exit()
+        while True:
+            current_world = client.get_world()
 
-        time.sleep(0.5)
+            if show_signals:
+                display_traffic_signal_state(current_world, args)
 
-except KeyboardInterrupt:
-        print('\nCancelled by user. Bye!')
+            if show_vehicles:
+                display_vehicle_rolenames(current_world, args, map_string)
 
-except Exception as err_msg:
-    print(str(err_msg))
-    print("\nERROR CONNECTING TO CARLA")
+            if args.duration != 0:
+                break
+
+            time.sleep(0.5)
+
+    except RuntimeError as e:
+        print(f"\nCARLA Connection Error: {e}", file=sys.stderr)
+        sys.exit(1)
 
 
-
-    ################################################################################################
-    # Once you see all index number, you can manually change its states and timimg.
-    # Your signal control scripts.
+if __name__ == "__main__":
+    try:
+        main()
+    except KeyboardInterrupt:
+        print("\nCancelled by user. Bye!")

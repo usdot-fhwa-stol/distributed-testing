@@ -6,124 +6,111 @@
 # This work is licensed under the terms of the MIT license.
 # For a copy, see <https://opensource.org/licenses/MIT>.
 
-"""Spawn NPCs into the simulation"""
+"""Set or inspect the spectator camera view for Mcity in CARLA."""
 
-import glob
-import os
+import argparse
 import sys
 import time
 
-from find_carla_egg import find_carla_egg
-
-carla_egg_file = find_carla_egg()
-
-sys.path.append(carla_egg_file)
-
 import carla
 
-import argparse
-import logging
-from numpy import random
+DEFAULT_LOCATION = carla.Location(x=99.919708, y=-34.552490, z=453.469788)
+DEFAULT_ROTATION = carla.Rotation(pitch=-88.999451, yaw=4.830535, roll=0.0)
 
-def main():
-    argparser = argparse.ArgumentParser(
-        description=__doc__)
+
+def main() -> None:
+    argparser = argparse.ArgumentParser(description=__doc__)
     argparser.add_argument(
-        '--host',
-        metavar='H',
-        default='127.0.0.1',
-        help='IP of the host server (default: 127.0.0.1)')
+        "--host",
+        metavar="H",
+        default="127.0.0.1",
+        help="IP of the host server (default: 127.0.0.1)",
+    )
     argparser.add_argument(
-        '-p', '--port',
-        metavar='P',
+        "-p",
+        "--port",
+        metavar="P",
         default=2000,
         type=int,
-        help='TCP port to listen to (default: 2000)')
+        help="TCP port to listen to (default: 2000)",
+    )
     argparser.add_argument(
-        '-n', '--number-of-vehicles',
-        metavar='N',
-        default=10,
-        type=int,
-        help='number of vehicles (default: 10)')
+        "-g",
+        "--get",
+        action="store_true",
+        help="Print the current spectator transform instead of setting it",
+    )
     argparser.add_argument(
-        '-w', '--number-of-walkers',
-        metavar='W',
-        default=50,
-        type=int,
-        help='number of walkers (default: 50)')
+        "--x",
+        type=float,
+        default=DEFAULT_LOCATION.x,
+        help=f"Spectator X coordinate (default: {DEFAULT_LOCATION.x})",
+    )
     argparser.add_argument(
-        '--safe',
-        action='store_true',
-        help='avoid spawning vehicles prone to accidents')
+        "--y",
+        type=float,
+        default=DEFAULT_LOCATION.y,
+        help=f"Spectator Y coordinate (default: {DEFAULT_LOCATION.y})",
+    )
     argparser.add_argument(
-        '--filterv',
-        metavar='PATTERN',
-        default='vehicle.*',
-        help='vehicles filter (default: "vehicle.*")')
+        "--z",
+        type=float,
+        default=DEFAULT_LOCATION.z,
+        help=f"Spectator Z coordinate (default: {DEFAULT_LOCATION.z})",
+    )
     argparser.add_argument(
-        '--filterw',
-        metavar='PATTERN',
-        default='walker.pedestrian.*',
-        help='pedestrians filter (default: "walker.pedestrian.*")')
+        "--pitch",
+        type=float,
+        default=DEFAULT_ROTATION.pitch,
+        help=f"Spectator pitch angle (default: {DEFAULT_ROTATION.pitch})",
+    )
     argparser.add_argument(
-        '--tm-port',
-        metavar='P',
-        default=8000,
-        type=int,
-        help='port to communicate with TM (default: 8000)')
+        "--yaw",
+        type=float,
+        default=DEFAULT_ROTATION.yaw,
+        help=f"Spectator yaw angle (default: {DEFAULT_ROTATION.yaw})",
+    )
     argparser.add_argument(
-        '--sync',
-        action='store_true',
-        help='Synchronous mode execution')
-    argparser.add_argument(
-        '--hybrid',
-        action='store_true',
-        help='Enanble')
-    argparser.add_argument(
-        '-s', '--seed',
-        metavar='S',
-        type=int,
-        help='Random device seed')
-    argparser.add_argument(
-        '--car-lights-on',
-        action='store_true',
-        default=False,
-        help='Enanble car lights')
+        "--roll",
+        type=float,
+        default=DEFAULT_ROTATION.roll,
+        help=f"Spectator roll angle (default: {DEFAULT_ROTATION.roll})",
+    )
     args = argparser.parse_args()
 
-    logging.basicConfig(format='%(levelname)s: %(message)s', level=logging.INFO)
-
-    vehicles_list = []
-    walkers_list = []
-    all_id = []
     client = carla.Client(args.host, args.port)
     client.set_timeout(10.0)
-    synchronous_master = False
-    random.seed(args.seed if args.seed is not None else int(time.time()))
 
     try:
         world = client.get_world()
-        
-        # Retrieve the spectator object
         spectator = world.get_spectator()
 
-        # Get the location and rotation of the spectator through its transform
-        # spec_transform = spectator.get_transform()
+        if args.get:
+            transform = spectator.get_transform()
+            loc, rot = transform.location, transform.rotation
+            print("\n----- CURRENT SPECTATOR TRANSFORM -----")
+            print(f"Location: x={loc.x:.6f}, y={loc.y:.6f}, z={loc.z:.6f}")
+            print(
+                f"Rotation: pitch={rot.pitch:.6f}, yaw={rot.yaw:.6f}, roll={rot.roll:.6f}\n"
+            )
+        else:
+            target_location = carla.Location(x=args.x, y=args.y, z=args.z)
+            target_rotation = carla.Rotation(
+                pitch=args.pitch, yaw=args.yaw, roll=args.roll
+            )
+            target_transform = carla.Transform(target_location, target_rotation)
 
-        # print(str(spec_transform))
-        spec_location = carla.Location(x=99.919708, y=-34.552490, z=453.469788)
-        spec_rotation = carla.Rotation(pitch=-88.999451, yaw=4.830535, roll=0.0000)
+            spectator.set_transform(target_transform)
+            print("\n----- SUCCESSFULLY SET SPECTATOR VIEW -----\n")
 
-        # # Set the spectator with an empty transform
-        spectator.set_transform(carla.Transform(spec_location,spec_rotation))
-
+    except RuntimeError as e:
+        print(f"CARLA Error: {e}", file=sys.stderr)
     finally:
-        print('\n----- SUCCESSFULLY SET SPECTATOR VIEW -----\n')
         time.sleep(0.5)
 
-if __name__ == '__main__':
 
+if __name__ == "__main__":
     try:
         main()
     except KeyboardInterrupt:
-        pass
+        print("\nCancelled by user. Bye!")
