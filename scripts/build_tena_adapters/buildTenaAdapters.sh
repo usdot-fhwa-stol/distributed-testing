@@ -178,7 +178,7 @@ fi
 
 carlaTenaAdapterGitUrl="git@github.com:usdot-fhwa-stol/vug-carla-adapter.git"
 
-buildGeneralImage="harbor.distributedtesting.org/distributed-testing/dt-build-general:latest"
+buildGeneralImage="harbor.distributedtesting.org/distributed-testing-dev/dt-build-general:0.3.0"
 buildCarlaImage="harbor.distributedtesting.org/distributed-testing/dt-build-carla:0.10.0-0.0.1"
 buildV2xImage="usdotfhwaops/v2xhubamd:dt-P-1.1.0"
 

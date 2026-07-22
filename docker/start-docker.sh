@@ -90,6 +90,7 @@ else
     echo "ERROR: Error occurred while validating configuration. See $CONFIG_VALIDATION_LOG for more details"
 fi
 
+sudo chown -R 1000:1000 "$VUG_LOCAL_DT_PATH"
 
 # Check if openvpn3 is installed
 if ! command -v openvpn3 &> /dev/null

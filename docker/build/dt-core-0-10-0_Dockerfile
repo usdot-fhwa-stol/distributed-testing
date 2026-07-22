@@ -3,7 +3,7 @@
 #
 
 # ===================== BUILD STAGE ===================== #
-FROM harbor.distributedtesting.org/distributed-testing/dt-base:latest AS build
+FROM harbor.distributedtesting.org/distributed-testing-dev/dt-base:0.3.0 AS build
 
 SHELL ["/bin/bash", "-ec"]
 ARG DEBIAN_FRONTEND="noninteractive"
@@ -21,7 +21,7 @@ RUN apt-get update && \
 
 ARG DV_VERSION="v1.5.4"
 ARG TDCS_VERSION="VUG-Combined-DataCollectionDistribution-v1.3.3"
-ARG JSON_VERSION="VUG-Combined-JSONstreamerDistribution-v1.3.3"
+ARG JSON_VERSION="VUG-Combined-JSONtoolsDistribution-v1.3.3"
 ARG MW_VERSION="v6.0.11"
 
 WORKDIR /home/dt_user/INSTALL/DV
@@ -98,7 +98,8 @@ RUN apt-get update && \
         dumb-init locales \
         git \
         build-essential \
-        python3.10 python3-pip && \
+        libevdev-dev \ 
+        python3.10 python3.10-dev python3-pip && \
     locale-gen en_US.UTF-8 && \
     update-locale LANG=en_US.UTF-8 && \
     update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.10 100 && \
@@ -108,7 +109,7 @@ COPY --chown=dt_user:dt_user --from=build /home/dt_user/TENA ./TENA
 RUN DSTROOT=/home/dt_user ./TENA/postinst-DV && \
     DSTROOT=/home/dt_user ./TENA/postinst-TDCS && \
     sed -i '/^chown -R root/d;/^chgrp -R root/d' ./TENA/postinst-JSON && \
-    DSTROOT=/home/dt_user ./TENA/postinst-JSON $$ \
+    DSTROOT=/home/dt_user ./TENA/postinst-JSON && \
     chown -R dt_user:dt_user /home/dt_user/TENA
 
 COPY --from=build /home/dt_user/carla_wheels /tmp/carla_wheels
