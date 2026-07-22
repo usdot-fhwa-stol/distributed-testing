@@ -8,6 +8,9 @@ logs/
 #ignore all pycache
 **/__pycache__/
 
+#ignore venv
+venv/
+
 #ignore all pcap and sqlite data files
 **.pcap
 **.sqlite
@@ -49,6 +52,10 @@ docker/build/lib/MAPS
 docker/build/lib/MAPS_915
 docker/build/lib/OLD
 docker/build/lib/CARLA_TFHRC
+
+#ignore site configs except the default
+config/site_config/*
+!config/site_config/default_site.config
 
 # ignore config backups
 config/site_config/*.bak

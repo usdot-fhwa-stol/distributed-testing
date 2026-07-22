@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<scenario>
+
+    <identifier>
+        <name>Cohort 2 - Integration Test</name>
+    </identifier>
+
+    <OpenDrive>
+        <MapFileName name="Town04.umap">
+            <MapOrigin latitudeInDegrees="0" longitudeInDegrees="0" heightAboveEllipsoidInMeters="0"> </MapOrigin>
+        </MapFileName>
+    </OpenDrive>
+
+    <vehicles>
+        <!-- NOTE: type must match vehicle -->
+        <vehicle name="VW-M-1" bsmid="f03ad638" type="vehicle.toyota.prius"
+            simulationIdentifier="CARLA-ORNL-1" material="Aluminum" lvcIndicator="Constructive"
+            generate_bsms="true" organization="ORNL">
+            <initialTSPI>
+                <GeodeticPosition latitudeInDegrees="0.001800" longitudeInDegrees="0.001122"
+                    heightAboveEllipsoidInMeters="1"> </GeodeticPosition>
+                <Heading>21.85235</Heading>
+            </initialTSPI>
+        </vehicle>
+
+        <vehicle name="PATH-M-1" bsmid="f03ad626" type="vehicle.toyota.prius"
+            simulationIdentifier="JSON-ANL-1" material="Aluminum" lvcIndicator="Constructive"
+            generate_bsms="true" organization="ANL">
+            <initialTSPI>
+                <GeodeticPosition latitudeInDegrees="0.001857" longitudeInDegrees="0.000962"
+                    heightAboveEllipsoidInMeters="1"> </GeodeticPosition>
+                <Heading>21.85235</Heading>
+            </initialTSPI>
+        </vehicle>
+
+        <vehicle name="PATH-M-2" bsmid="f03ad636" type="vehicle.toyota.prius"
+            simulationIdentifier="CARLA-ANL-1" material="Aluminum" lvcIndicator="Constructive"
+            generate_bsms="true" organization="ANL">
+            <initialTSPI>
+                <GeodeticPosition latitudeInDegrees="0.001906" longitudeInDegrees="0.000843"
+                    heightAboveEllipsoidInMeters="1"> </GeodeticPosition>
+                <Heading>21.85235</Heading>
+            </initialTSPI>
+        </vehicle>
+
+        <vehicle name="FHWA-M-3" bsmid="f03ad628" type="vehicle.ford.mustang"
+            simulationIdentifier="CARLA-FHWA-3" material="Aluminum" lvcIndicator="Constructive"
+            generate_bsms="true" organization="FHWA">
+            <initialTSPI>
+                <GeodeticPosition latitudeInDegrees="0.001936" longitudeInDegrees="0.000771"
+                    heightAboveEllipsoidInMeters="1"> </GeodeticPosition>
+                <Heading>21.85235</Heading>
+            </initialTSPI>
+        </vehicle>
+
+        <vehicle name="AMG-M-1" bsmid="f03ad610" type="vehicle.toyota.prius"
+            simulationIdentifier="JSON-PITT-1" material="Aluminum" lvcIndicator="Constructive"
+            generate_bsms="true" organization="PITT">
+            <initialTSPI>
+                <GeodeticPosition latitudeInDegrees="0.001821" longitudeInDegrees="0.001168"
+                    heightAboveEllipsoidInMeters="1"> </GeodeticPosition>
+                <Heading>21.85235</Heading>
+            </initialTSPI>
+        </vehicle>
+
+        <vehicle name="UTC-M-1" bsmid="f03ad613" type="vehicle.toyota.prius"
+            simulationIdentifier="JSON-PITT-1" material="Aluminum" lvcIndicator="Constructive"
+            generate_bsms="true" organization="PITT">
+            <initialTSPI>
+                <GeodeticPosition latitudeInDegrees="0.001931" longitudeInDegrees="0.000911"
+                    heightAboveEllipsoidInMeters="1"> </GeodeticPosition>
+                <Heading>21.85235</Heading>
+            </initialTSPI>
+        </vehicle>
+
+    </vehicles>
+
+    <simulations>
+
+        <simulation name="FHWA-M-3" type="CARLA">
+            <WeatherState>ClearNoon</WeatherState>
+        </simulation>
+
+        <simulation name="VW-M-1" type="CARLA">
+            <WeatherState>ClearNoon</WeatherState>
+        </simulation>
+
+        <simulation name="AMG-M-1" type="CARLA">
+            <WeatherState>ClearNoon</WeatherState>
+        </simulation>
+
+        <simulation name="UTC-M-1" type="CARLA">
+            <WeatherState>ClearNoon</WeatherState>
+        </simulation>
+
+        <simulation name="PATH-M-1" type="CARLA">
+            <WeatherState>ClearNoon</WeatherState>
+        </simulation>
+
+        <simulation name="PATH-M-2" type="CARLA">
+            <WeatherState>ClearNoon</WeatherState>
+        </simulation>
+
+    </simulations>
+
+</scenario>
