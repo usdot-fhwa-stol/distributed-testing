@@ -181,7 +181,7 @@ def get_adapter_addresses_by_type(exported_tcs_path,ip_address):
         print(f"\tChecking {file}")
         file_path = os.path.join(exported_tcs_path,file)
 
-        pattern = re.compile(r'DOT_OSTR-(.*?)-202')
+        pattern = re.compile(r'VUG-(.*?)-202')
         match = pattern.search(file)
         
         if match:
