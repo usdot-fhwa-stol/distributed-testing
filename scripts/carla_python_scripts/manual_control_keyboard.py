@@ -63,10 +63,10 @@ import re
 import weakref
 from pathlib import Path
 
-import carla
 import numpy as np
-import pygame
+import carla
 from carla import ColorConverter as cc
+import pygame
 from pygame.locals import (
     K_0,
     K_9,

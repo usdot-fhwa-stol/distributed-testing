@@ -68,7 +68,7 @@ RUN --mount=type=bind,from=assets,source=.,target=/mnt/build,readonly \
 
 
 # ===================== RUNTIME STAGE ===================== #
-FROM harbor.distributedtesting.org/distributed-testing/dt-base:latest
+FROM harbor.distributedtesting.org/distributed-testing-dev/dt-base:0.3.0
 
 SHELL ["/bin/bash", "-ec"]
 
@@ -96,10 +96,12 @@ RUN apt-get update && \
         iputils-ping tshark tcpdump nethogs curl \
         iproute2 \
         dumb-init locales \
+        fontconfig \
         git \
         build-essential \
-        libevdev-dev \ 
-        python3.10 python3.10-dev python3-pip && \
+        libevdev-dev \
+        sumo sumo-tools sumo-doc \
+    python3.10 python3.10-dev python3-pip && \
     locale-gen en_US.UTF-8 && \
     update-locale LANG=en_US.UTF-8 && \
     update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.10 100 && \
@@ -133,9 +135,10 @@ RUN pip3 install --no-cache-dir --user \
         pygame-ce \
         pycrate \
         pynput \
-        lxml
+        lxml \
+        traci
 
-        
+
 RUN echo 'source /home/dt_user/start_scripts/setup-docker.sh' >> /home/dt_user/.bashrc
 
 CMD ["/usr/bin/dumb-init", "-v", "--", "/bin/bash", "-l", "-c", "/home/dt_user/start_scripts/startup-apps.sh"]
