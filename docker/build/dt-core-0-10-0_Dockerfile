@@ -3,7 +3,7 @@
 #
 
 # ===================== BUILD STAGE ===================== #
-FROM harbor.distributedtesting.org/distributed-testing-dev/dt-base:0.3.0 AS build
+FROM harbor.distributedtesting.org/distributed-testing/dt-base:latest AS build
 
 SHELL ["/bin/bash", "-ec"]
 ARG DEBIAN_FRONTEND="noninteractive"
@@ -98,13 +98,13 @@ RUN apt-get update && \
         dumb-init locales \
         fontconfig \
         git \
+        nano \
         build-essential \
         libevdev-dev \
-        sumo sumo-tools sumo-doc \
-    python3.10 python3.10-dev python3-pip && \
+        python3-pip \
+        sumo sumo-tools sumo-doc && \
     locale-gen en_US.UTF-8 && \
     update-locale LANG=en_US.UTF-8 && \
-    update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.10 100 && \
     rm -rf /var/lib/apt/lists/*
 
 COPY --chown=dt_user:dt_user --from=build /home/dt_user/TENA ./TENA
@@ -114,16 +114,17 @@ RUN DSTROOT=/home/dt_user ./TENA/postinst-DV && \
     DSTROOT=/home/dt_user ./TENA/postinst-JSON && \
     chown -R dt_user:dt_user /home/dt_user/TENA
 
-COPY --from=build /home/dt_user/carla_wheels /tmp/carla_wheels
-RUN pip3 install --no-cache-dir /tmp/carla_wheels/carla-*cp310*.whl && \
-    rm -rf /tmp/carla_wheels
-
 COPY --chown=dt_user:dt_user ./lib/COPY /home/dt_user
 RUN chmod +x /home/dt_user/start_scripts/*
+
 
 USER dt_user
 
 RUN pip3 install --no-cache-dir --user --upgrade pip setuptools wheel
+
+COPY --from=build /home/dt_user/carla_wheels /tmp/carla_wheels
+RUN pip3 install --no-cache-dir /tmp/carla_wheels/carla-*cp310*.whl && \
+    rm -rf /tmp/carla_wheels
 
 RUN pip3 install --no-cache-dir --user \
         requests \

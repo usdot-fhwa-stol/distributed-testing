@@ -58,7 +58,7 @@ run_build() {
     echo "================================================================================"
 
     "$BUILD_SCRIPT_PATH" --app_index "$index" --branch "$branch" --"$BUILD_MODE" --auto_download
-    echo ""g
+    echo ""
 }
 
 # Execute builds in order
