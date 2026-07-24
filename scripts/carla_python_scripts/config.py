@@ -108,13 +108,21 @@ def main() -> None:
         help="TCP port of CARLA Simulator (default: 2000)",
     )
     argparser.add_argument(
-        "-d", "--default", action="store_true", help="set default settings"
+        "-d", 
+        "--default", 
+        action="store_true", 
+        help="set default settings"
     )
     argparser.add_argument(
-        "-m", "--map", help="load a new map, use --list to see available maps"
+        "-m", 
+        "--map", 
+        help="load a new map, use --list to see available maps"
     )
     argparser.add_argument(
-        "-r", "--reload-map", action="store_true", help="reload current map"
+        "-r", 
+        "--reload-map", 
+        action="store_true", 
+        help="reload current map"
     )
     argparser.add_argument(
         "--delta-seconds",
@@ -128,24 +136,36 @@ def main() -> None:
         type=float,
         help="set fixed FPS, zero for variable FPS (similar to --delta-seconds)",
     )
-    argparser.add_argument("--rendering", action="store_true", help="enable rendering")
     argparser.add_argument(
-        "--no-rendering", action="store_true", help="disable rendering"
+        "--rendering",
+        action="store_true",
+        help="enable rendering"
     )
     argparser.add_argument(
-        "--sync", action="store_true", help="enable synchronous mode"
+        "--sync",
+        action="store_true",
+        help="enable synchronous mode"
     )
     argparser.add_argument(
-        "--no-sync", action="store_true", help="disable synchronous mode"
+        "--no-sync",
+        action="store_true",
+        help="disable synchronous mode"
     )
     argparser.add_argument(
-        "--weather", help="set weather preset, use --list to see available presets"
+        "--weather",
+        help="set weather preset, use --list to see available presets"
     )
     argparser.add_argument(
-        "-i", "--inspect", action="store_true", help="inspect simulation"
+        "-i",
+        "--inspect",
+        action="store_true",
+        help="inspect simulation"
     )
     argparser.add_argument(
-        "-l", "--list", action="store_true", help="list available options"
+        "-l",
+        "--list",
+        action="store_true",
+        help="list available options"
     )
     argparser.add_argument(
         "-b",
