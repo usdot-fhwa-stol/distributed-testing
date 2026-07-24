@@ -1,3 +1,5 @@
+"""This script is used to modify the metadata timestamps in TDCS .sqlite recordings with pre-defined offsets. Primarily used for latency calculations in testing events where clocks and system times weren't properly aligned."""
+
 import os
 import json
 import pandas as pd

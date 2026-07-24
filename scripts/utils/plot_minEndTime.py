@@ -1,9 +1,9 @@
+"""This script is used to plot the minEndTime field of each phase of received SPaT messages. User is able to specify a specific intersection ID and pass in a .csv of decoded SPaTs"""
+
 import pandas as pd
 import ast
 import matplotlib.pyplot as plt
-
-# Global variable to select intersection
-TARGET_INTERSECTION_ID = 6 
+import argparse
 
 def process_spat_file(file_path, target_id):
     df_raw = pd.read_csv(file_path, header=None)
@@ -47,4 +47,13 @@ def process_spat_file(file_path, target_id):
     plt.tight_layout()
     plt.savefig('spat_plot.png')
 
-process_spat_file('swarco_fixed_spat_2_decoded_packets_SPAT.csv', TARGET_INTERSECTION_ID)
+# ----------------------------
+# main
+# ----------------------------
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-f", "--file", required=True, help="Path to CSV file for processing")
+    parser.add_argument("-i", "--id", required=True, help="intersection id to target")
+    args = parser.parse_args()
+
+    process_spat_file(args.file, args.id)
