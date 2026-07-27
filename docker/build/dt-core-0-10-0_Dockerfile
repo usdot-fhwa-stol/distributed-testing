@@ -48,9 +48,6 @@ RUN --mount=type=bind,from=assets,source=.,target=/mnt/build,readonly \
     tar xf control.tar.* && \
     mv ./postinst ./opt/TENA/postinst-JSON
 
-RUN mkdir -p /home/dt_user/TENA/executionManager-${MW_VERSION}/log && \
-    chown -R dt_user:dt_user /home/dt_user/TENA
-
 WORKDIR /home/dt_user
 RUN rsync -a \
         INSTALL/DV/opt/TENA/ \

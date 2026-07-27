@@ -6,7 +6,7 @@
 # This work is licensed under the terms of the MIT license.
 # For a copy, see <https://opensource.org/licenses/MIT>.
 
-"""Blank traffic signals in the CARLA simulation (set state to Off)."""
+"""Either blanks all traffic signals OR blanks traffic signals with a defined radius of predefined locations"""
 
 import argparse
 import sys
