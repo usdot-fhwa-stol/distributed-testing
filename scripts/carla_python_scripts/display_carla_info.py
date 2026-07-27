@@ -40,7 +40,7 @@ WALKER_COLOR = carla.Color(r=128, g=0, b=128)
 TRAFFIC_GREEN_COLOR = carla.Color(r=0, g=255, b=0)
 TRAFFIC_RED_COLOR = carla.Color(r=255, g=0, b=0)
 TRAFFIC_YELLOW_COLOR = carla.Color(r=255, g=255, b=0)
-TRAFFIC_UNKNOWN_COLOR = carla.Color(r=0, g=0, b=0)
+TRAFFIC_UNKNOWN_COLOR = carla.Color(r=255, g=255, b=255)
 
 
 def env_bool(name: str, default: bool = False) -> bool:
@@ -446,16 +446,14 @@ def resolve_display_option(
     argument_value: Optional[bool],
     environment_variable: str,
 ) -> bool:
-    """
-    Resolve a display setting.
-
-    Command-line values override environment variables, including explicit
-    negations such as --no-show-vehicles.
-    """
     if argument_value is not None:
         return argument_value
 
-    return env_bool(environment_variable)
+    env_val = os.getenv(environment_variable)
+    if env_val is not None:
+        return env_bool(environment_variable)
+
+    return True
 
 
 def main() -> None:
