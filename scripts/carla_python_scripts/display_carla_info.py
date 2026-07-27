@@ -449,13 +449,18 @@ def resolve_display_option(
     if argument_value is not None:
         return argument_value
 
-    env_val = os.getenv(environment_variable)
-    if env_val is not None:
-        return env_bool(environment_variable)
+    return env_bool(environment_variable)
 
-    return True
-
-
+def clear_all_labels(world: carla.World) -> None:
+    world.debug.draw_string(
+        location=carla.Location(x=0, y=0, z=0),
+        text="",
+        draw_shadow=False,
+        color=carla.Color(r=0, g=0, b=0, a=0),
+        life_time=0.001,
+        persistent_lines=False,
+    )
+    
 def main() -> None:
     """Connect to CARLA and draw selected overlays."""
     args = parse_arguments()
@@ -512,6 +517,8 @@ def main() -> None:
         while True:
             world = client.get_world()
             world_map = world.get_map()
+
+            clear_all_labels(world)
 
             if world_map.name != last_map_name:
                 print(f"Active CARLA map: {world_map.name}")
