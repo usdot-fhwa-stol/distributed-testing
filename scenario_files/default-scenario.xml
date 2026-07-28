@@ -4,7 +4,7 @@
     <name>DEFAULT</name>
   </identifier>
   <OpenDrive>
-    <MapFileName name="Town04.xodr">
+    <MapFileName name="Town10HD_Opt.xodr">
       <MapOrigin latitudeInDegrees="0" longitudeInDegrees="0" heightAboveEllipsoidInMeters="0"> </MapOrigin>
     </MapFileName>
   </OpenDrive>
@@ -37,36 +37,36 @@
   </radios>
 
   <intersectionSignalControllers>
-    <intersectionSignalController name="Town04_Main" adapterName="V2XEG-1" lvcIndicator="Live">
+    <intersectionSignalController name="Town10_Main" adapterName="V2XEG-1" lvcIndicator="Live">
       <controller name="" id="0"/>
     </intersectionSignalController>
   </intersectionSignalControllers>
-
+  
   <phaseSignalMappings>
-    <configuration name="Town04_Main Configuration" controllerName="Town04_Main">
-      <GeodeticPosition latitudeInDegrees="39.682130" longitudeInDegrees="-75.747327" heightAboveEllipsoidInMeters="0"/>
-      <mapping signalId="1629" phase="4"/> <!-- SB, Actor 135 -->
-      <mapping signalId="1628" phase="2"/> <!-- EB, Actor 118 -->
-      <mapping signalId="1627" phase="6"/> <!-- NB, Actor 122 -->
-      <mapping signalId="1626" phase="8"/> <!-- WB, Actor 124 -->
+    <configuration name="Town10_Main Configuration" controllerName="Town10_Main">
+      <GeodeticPosition latitudeInDegrees="0.000000" longitudeInDegrees="0.000000" heightAboveEllipsoidInMeters="0"/>
+      <mapping signalId="22" phase="4"/> <!-- SB, Actor 22 -->
+      <mapping signalId="14" phase="2"/> <!-- EB, Actor 14 -->
+      <mapping signalId="15" phase="6"/> <!-- NB, Actor 15 -->
+      <mapping signalId="16" phase="8"/> <!-- WB, Actor 16 -->
     </configuration>
   </phaseSignalMappings>
-
+  
   <simulations>
     <simulation name="DEFAULT-1" type="CARLA">
       <WeatherState>ClearNoon</WeatherState>
     </simulation>
   </simulations>
-
+  
   <routes>
     <route name="DEFAULT-Route-1" entityIdentifier="DEFAULT-R-1" csvRoute="route_files/test_route.csv"/>
     <route name="DEFAULT-Route-2" entityIdentifier="DEFAULT-P-1">
-      <waypoint latitudeInDegrees="0.000000000" longitudeInDegrees="0.000000000" heightAboveEllipsoidInMeters="1" heading="90.0" time="0"/>
-      <waypoint latitudeInDegrees="0.000000000" longitudeInDegrees="0.000080317" heightAboveEllipsoidInMeters="1" heading="90.0" time="1"/>
-      <waypoint latitudeInDegrees="0.000000000" longitudeInDegrees="0.000160633" heightAboveEllipsoidInMeters="1" heading="90.0" time="2"/>
-      <waypoint latitudeInDegrees="0.000000000" longitudeInDegrees="0.000240950" heightAboveEllipsoidInMeters="1" heading="90.0" time="3"/>
-      <waypoint latitudeInDegrees="0.000000000" longitudeInDegrees="0.000321266" heightAboveEllipsoidInMeters="1" heading="90.0" time="4"/>
-      <waypoint latitudeInDegrees="0.000000000" longitudeInDegrees="0.000401583" heightAboveEllipsoidInMeters="1" heading="90.0" time="5"/>
+        <waypoint latitudeInDegrees="-0.000314457" longitudeInDegrees="0.000984800" heightAboveEllipsoidInMeters="0" heading="-89.6" time="0"/>
+        <waypoint latitudeInDegrees="-0.000269543" longitudeInDegrees="0.000985107" heightAboveEllipsoidInMeters="0" heading="-89.6" time="1"/>
+        <waypoint latitudeInDegrees="-0.000224628" longitudeInDegrees="0.000985413" heightAboveEllipsoidInMeters="0" heading="-89.6" time="2"/>
+        <waypoint latitudeInDegrees="-0.000179713" longitudeInDegrees="0.000985719" heightAboveEllipsoidInMeters="0" heading="-89.6" time="3"/>
+        <waypoint latitudeInDegrees="-0.000134798" longitudeInDegrees="0.000986026" heightAboveEllipsoidInMeters="0" heading="-89.6" time="4"/>
+        <waypoint latitudeInDegrees="-0.000089884" longitudeInDegrees="0.000986332" heightAboveEllipsoidInMeters="0" heading="-89.6" time="5"/>
     </route>
   </routes>
 </scenario>
