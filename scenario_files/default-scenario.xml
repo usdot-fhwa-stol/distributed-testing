@@ -37,58 +37,172 @@
   </radios>
 
   <intersectionSignalControllers>
-    <intersectionSignalController name="J023" adapterName="V2XEG-1" lvcIndicator="Live">
-      <controller name="" id="0"/>
-    </intersectionSignalController>
-    <intersectionSignalController name="J189" adapterName="V2XEG-1" lvcIndicator="Live">
-      <controller name="" id="0"/>
-    </intersectionSignalController>
-    <intersectionSignalController name="J468" adapterName="V2XEG-1" lvcIndicator="Live">
-      <controller name="" id="0"/>
-    </intersectionSignalController>
-    <intersectionSignalController name="J532" adapterName="V2XEG-1" lvcIndicator="Live">
-      <controller name="" id="0"/>
-    </intersectionSignalController>
-    <intersectionSignalController name="J719" adapterName="V2XEG-1" lvcIndicator="Live">
-      <controller name="" id="0"/>
-    </intersectionSignalController>
+      <intersectionSignalController name="J023" adapterType="spat-adapter" adapterName="SPAT-1" lvcIndicator="Live">
+        <userData>
+          <CARLA>
+            <controllers>
+              <controller name="" id="1"/>
+            </controllers>
+          </CARLA>
+        </userData>
+      </intersectionSignalController>
+  
+      <intersectionSignalController name="J189" adapterType="spat-adapter" adapterName="SPAT-1" lvcIndicator="Live">
+        <userData>
+          <CARLA>
+            <controllers>
+              <controller name="" id="2"/>
+            </controllers>
+          </CARLA>
+        </userData>
+      </intersectionSignalController>
+  
+      <intersectionSignalController name="J468" adapterType="spat-adapter" adapterName="SPAT-1" lvcIndicator="Live">
+        <userData>
+          <CARLA>
+            <controllers>
+              <controller name="" id="3"/>
+            </controllers>
+          </CARLA>
+        </userData>
+      </intersectionSignalController>
+  
+      <intersectionSignalController name="J532" adapterType="spat-adapter" adapterName="SPAT-1" lvcIndicator="Live">
+        <userData>
+          <CARLA>
+            <controllers>
+              <controller name="" id="4"/>
+            </controllers>
+          </CARLA>
+        </userData>
+      </intersectionSignalController>
+  
+      <intersectionSignalController name="J719" adapterType="spat-adapter" adapterName="SPAT-1" lvcIndicator="Live">
+        <userData>
+          <CARLA>
+            <controllers>
+              <controller name="" id="5"/>
+            </controllers>
+          </CARLA>
+        </userData>
+      </intersectionSignalController>
   </intersectionSignalControllers>
   
   <phaseSignalMappings>
-    <configuration name="J023 Configuration" controllerName="J023">
-      <GeodeticPosition latitudeInDegrees="0.000527" longitudeInDegrees="-0.000419" heightAboveEllipsoidInMeters="0"/>
-      <mapping signalId="66" phase="2"/> 
-      <mapping signalId="59" phase="8"/> 
-      <mapping signalId="58" phase="6"/> 
-    </configuration>
+      <configuration name="J023 Configuration" controllerName="J023">
+        <GeodeticPosition latitudeInDegrees="0.000527" longitudeInDegrees="-0.000419" heightAboveEllipsoidInMeters="0">
+        </GeodeticPosition>
+        <!-- MAIN-A, Actor 42 -->
+        <controller name="" id="">
+          <control signalId="945" type="">
+            <userData><phase>2</phase></userData>
+          </control>
+        </controller>
+        <!-- SIDE-B, Actor 35 -->
+        <controller name="" id="">
+          <control signalId="944" type="">
+            <userData><phase>8</phase></userData>
+          </control>
+        </controller>
+        <!-- MAIN-B, Actor 34 -->
+        <controller name="" id="">
+          <control signalId="943" type="">
+            <userData><phase>6</phase></userData>
+          </control>
+        </controller>
+      </configuration>
   
-    <configuration name="J189 Configuration" controllerName="J189">
-      <GeodeticPosition latitudeInDegrees="-0.000183" longitudeInDegrees="-0.000427" heightAboveEllipsoidInMeters="0"/>
-      <mapping signalId="70" phase="2"/> 
-      <mapping signalId="64" phase="4"/> 
-      <mapping signalId="63" phase="6"/> 
-      <mapping signalId="62" phase="8"/> 
-    </configuration>
+      <configuration name="J189 Configuration" controllerName="J189">
+        <GeodeticPosition latitudeInDegrees="-0.000183" longitudeInDegrees="-0.000427" heightAboveEllipsoidInMeters="0">
+        </GeodeticPosition>
+        <!-- MAIN-A, Actor 46 -->
+        <controller name="" id="">
+          <control signalId="949" type="">
+            <userData><phase>2</phase></userData>
+          </control>
+        </controller>
+        <!-- SIDE-A, Actor 40 -->
+        <controller name="" id="">
+          <control signalId="951" type="">
+            <userData><phase>4</phase></userData>
+          </control>
+        </controller>
+        <!-- MAIN-B, Actor 39 -->
+        <controller name="" id="">
+          <control signalId="952" type="">
+            <userData><phase>6</phase></userData>
+          </control>
+        </controller>
+        <!-- SIDE-B, Actor 38 -->
+        <controller name="" id="">
+          <control signalId="950" type="">
+            <userData><phase>8</phase></userData>
+          </control>
+        </controller>
+      </configuration>
   
-    <configuration name="J468 Configuration" controllerName="J468">
-      <GeodeticPosition latitudeInDegrees="-0.001211" longitudeInDegrees="-0.000543" heightAboveEllipsoidInMeters="0"/>
-      <mapping signalId="69" phase="2"/> 
-      <mapping signalId="68" phase="8"/> 
-    </configuration>
+      <configuration name="J468 Configuration" controllerName="J468">
+        <GeodeticPosition latitudeInDegrees="-0.001211" longitudeInDegrees="-0.000543" heightAboveEllipsoidInMeters="0">
+        </GeodeticPosition>
+        <!-- MAIN-A, Actor 45 -->
+        <controller name="" id="">
+          <control signalId="954" type="">
+            <userData><phase>2</phase></userData>
+          </control>
+        </controller>
+        <!-- SIDE-B, Actor 44 -->
+        <controller name="" id="">
+          <control signalId="953" type="">
+            <userData><phase>8</phase></userData>
+          </control>
+        </controller>
+      </configuration>
   
-    <configuration name="J532 Configuration" controllerName="J532">
-      <GeodeticPosition latitudeInDegrees="-0.000231" longitudeInDegrees="0.000957" heightAboveEllipsoidInMeters="0"/>
-      <mapping signalId="72" phase="2"/> 
-      <mapping signalId="61" phase="4"/> 
-      <mapping signalId="60" phase="8"/> 
-    </configuration>
+      <configuration name="J532 Configuration" controllerName="J532">
+        <GeodeticPosition latitudeInDegrees="-0.000231" longitudeInDegrees="0.000957" heightAboveEllipsoidInMeters="0">
+        </GeodeticPosition>
+        <!-- MAIN-A, Actor 48 -->
+        <controller name="" id="">
+          <control signalId="959" type="">
+            <userData><phase>2</phase></userData>
+          </control>
+        </controller>
+        <!-- SIDE-A, Actor 37 -->
+        <controller name="" id="">
+          <control signalId="957" type="">
+            <userData><phase>4</phase></userData>
+          </control>
+        </controller>
+        <!-- SIDE-B, Actor 36 -->
+        <controller name="" id="">
+          <control signalId="958" type="">
+            <userData><phase>8</phase></userData>
+          </control>
+        </controller>
+      </configuration>
   
-    <configuration name="J719 Configuration" controllerName="J719">
-      <GeodeticPosition latitudeInDegrees="-0.000133" longitudeInDegrees="-0.000998" heightAboveEllipsoidInMeters="0"/>
-      <mapping signalId="71" phase="2"/> 
-      <mapping signalId="67" phase="8"/> 
-      <mapping signalId="65" phase="4"/> 
-    </configuration>
+      <configuration name="J719 Configuration" controllerName="J719">
+        <GeodeticPosition latitudeInDegrees="-0.000133" longitudeInDegrees="-0.000998" heightAboveEllipsoidInMeters="0">
+        </GeodeticPosition>
+        <!-- MAIN-A, Actor 47 -->
+        <controller name="" id="">
+          <control signalId="960" type="">
+            <userData><phase>2</phase></userData>
+          </control>
+        </controller>
+        <!-- SIDE-B, Actor 43 -->
+        <controller name="" id="">
+          <control signalId="962" type="">
+            <userData><phase>8</phase></userData>
+          </control>
+        </controller>
+        <!-- SIDE-A, Actor 41 -->
+        <controller name="" id="">
+          <control signalId="961" type="">
+            <userData><phase>4</phase></userData>
+          </control>
+        </controller>
+      </configuration>
   </phaseSignalMappings>
   
   <simulations>
