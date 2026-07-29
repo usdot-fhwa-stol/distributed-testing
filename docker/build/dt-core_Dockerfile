@@ -2,8 +2,13 @@
 # BUILD COMMAND: VERSION=0.0.1 && source build-assets.env && DOCKER_BUILDKIT=1 docker build --build-arg version=$VERSION --build-context assets="$BUILD_DIR" -t harbor.distributedtesting.org/distributed-testing/dt-core:$VERSION . --progress=plain -f dt-core_Dockerfile
 #
 
+# Which harbor org/tag to pull the dt-base base image from, e.g. distributed-testing-dev:latest
+# vs distributed-testing:0.0.1. Overridable so this Dockerfile can build against a dev registry org.
+ARG DOCKER_ORG="distributed-testing"
+ARG DOCKER_TAG="latest"
+
 # ----------------------- BUILD STAGE ----------------------- #
-FROM harbor.distributedtesting.org/distributed-testing/dt-base:latest AS build
+FROM harbor.distributedtesting.org/${DOCKER_ORG}/dt-base:${DOCKER_TAG} AS build
 
 SHELL ["/bin/bash", "-ec"]
 
@@ -84,7 +89,7 @@ RUN --mount=type=bind,from=assets,source=.,target=/mnt/build,readonly \
     mv CARLA_0.9.15 $HOME/CARLA
 
 # ----------------------- RUNTIME STAGE ----------------------- #
-FROM harbor.distributedtesting.org/distributed-testing/dt-base:latest
+FROM harbor.distributedtesting.org/${DOCKER_ORG}/dt-base:${DOCKER_TAG}
 
 ARG VERSION=dev
 LABEL version=${VERSION}

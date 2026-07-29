@@ -9,7 +9,12 @@
 # Make a file named `usdotfhwastol_token` under distributed-testing/docker/
 # Copy your token into that file
 
-FROM harbor.distributedtesting.org/distributed-testing/dt-build-v2xhub:latest AS build
+# Which harbor org/tag to pull the dt-build-v2xhub base image from, e.g. distributed-testing-dev:latest
+# vs distributed-testing:0.0.1. Overridable so this Dockerfile can build against a dev registry org.
+ARG DOCKER_ORG="distributed-testing"
+ARG DOCKER_TAG="latest"
+
+FROM harbor.distributedtesting.org/${DOCKER_ORG}/dt-build-v2xhub:${DOCKER_TAG} AS build
 
 SHELL ["/bin/bash", "-ec"]
 
@@ -20,7 +25,7 @@ USER root
 RUN apt-get update && \
     apt-get install -y python3-pip \
     # add some build packages
-    zstd 
+    zstd
 
 ARG TENA_VERSION="TENA-MiddlewareSDK-v6.0.11"
 # INSTALL TENA deb
@@ -30,7 +35,7 @@ RUN --mount=type=bind,from=assets,source=.,target=/mnt/build,readonly \
     ar -x /mnt/build/${TENA_VERSION}@Product@u2204-gcc11-64-*.deb && \
     tar xf control.tar.* && \
     # move the postinst script into TENA dir to make it easier to copy and run later on final container
-    mv ./postinst ./opt/TENA/postinst-MW 
+    mv ./postinst ./opt/TENA/postinst-MW
 
 ARG DIST_VERSION="VUG-Combined-Distribution-v1.3.3"
 # Install DT OMs
@@ -42,7 +47,9 @@ RUN --mount=type=bind,from=assets,source=.,target=/mnt/build,readonly \
     # move the postinst script into TENA dir to make it easier to copy and run later on final container
     mv ./postinst ./opt/TENA/postinst-DIST
 
-FROM harbor.distributedtesting.org/distributed-testing/dt-build-v2xhub:latest
+FROM harbor.distributedtesting.org/${DOCKER_ORG}/dt-build-v2xhub:${DOCKER_TAG}
+
+SHELL ["/bin/bash", "-ec"]
 
 WORKDIR /home/plugin
 
@@ -62,7 +69,25 @@ RUN --mount=type=secret,id=usdotfhwastol_token \
     USDOTFHWASTOL_TOKEN=$(cat /run/secrets/usdotfhwastol_token) && \
     git clone https://${USDOTFHWASTOL_TOKEN}@github.com/usdot-fhwa-stol/vug-cmake-package.git cmake_temp && \
     mv cmake_temp/cmake/ /home/plugin/TENA/lib/ && \
-	rm -rf cmake_temp  
+	rm -rf cmake_temp
+
+ARG PLUGIN_BRANCH="feature/dt-to-v2xhub-develop"
+COPY checkout.bash /home/plugin/checkout.bash
+
+# Clone and build the TENA V2X Plugin using its own build.sh, which installs
+# straight into /usr/local/plugins so the image ships with it baked in.
+# Delete the source code after building to keep the image size down.
+RUN --mount=type=secret,id=usdotfhwastol_token \
+    export USDOTFHWASTOL_TOKEN=$(cat /run/secrets/usdotfhwastol_token) && \
+    ./checkout.bash vug-v2xhub-v2x-plugin -b "${PLUGIN_BRANCH}" -r /workspace && \
+    cd /workspace && chmod +x build.sh && ./build.sh && \
+    chown -R plugin:plugin /usr/local/plugins && \
+    rm -rf /workspace
+
+# Everything above ran as root and wrote into /home/plugin/TENA (postinst
+# scripts, the log dir, the cmake package), so re-assert ownership once here
+# rather than chowning after each step.
+RUN chown -R plugin:plugin /home/plugin/TENA
 
 USER plugin
 
@@ -70,11 +95,8 @@ ARG VERSION=dev
 LABEL version=${VERSION}
 LABEL description="V2XHub Distributed Testing Docker Image"
 
-# Once you have the built TENA V2X Plugin, uncomment the line below to copy it directly into the Docker image
-# COPY lib/TenaV2Xplugin.zip /usr/local/plugins/TenaV2Xplugin.zip
-
 RUN echo 'source /home/plugin/TENA/6.0.11/scripts/tenaenv-u2204-gcc11-64-v6.0.11.sh' >> /home/plugin/.bashrc
 
-WORKDIR /var/log/tmx 
+WORKDIR /var/log/tmx
 
 ENTRYPOINT ["/usr/local/bin/service.sh"]

@@ -3,9 +3,14 @@
 # VERSION=0.0.2 && docker tag harbor.distributedtesting.org/distributed-testing/dt-build-carla:$VERSION harbor.distributedtesting.org/distributed-testing/dt-build-carla:latest
 #
 
-FROM harbor.distributedtesting.org/distributed-testing/dt-build-general:latest
+# Which harbor org/tag to pull the dt-build-general base image from, e.g. distributed-testing-dev:latest
+# vs distributed-testing:0.0.1. Overridable so this Dockerfile can build against a dev registry org.
+ARG DOCKER_ORG="distributed-testing"
+ARG DOCKER_TAG="latest"
 
-ARG DEBIAN_FRONTEND="noninteractive" 
+FROM harbor.distributedtesting.org/${DOCKER_ORG}/dt-build-general:${DOCKER_TAG}
+
+ARG DEBIAN_FRONTEND="noninteractive"
 ARG TZ="America/New_York"
 
 USER root
