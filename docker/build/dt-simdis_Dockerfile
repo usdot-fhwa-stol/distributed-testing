@@ -1,5 +1,5 @@
 #
-# BUILD COMMAND: VERSION=0.0.1 && source build-assets.env && sudo DOCKER_BUILDKIT=1 docker build --build-arg VERSION=$VERSION --build-context assets="$BUILD_DIR" -t harbor.distributedtesting.org/distributed-testing/dt-simdis:$VERSION . --progress=plain -f dt-simdis_Dockerfile
+# BUILD COMMAND: VERSION=0.0.1 && source build-assets_hass.env && sudo DOCKER_BUILDKIT=1 docker build --build-arg VERSION=$VERSION --build-context assets="$BUILD_DIR" -t harbor.distributedtesting.org/distributed-testing/dt-simdis:$VERSION . --progress=plain -f dt-simdis_Dockerfile
 #
 
 # ----------------------- BUILD STAGE ----------------------- #
@@ -15,10 +15,10 @@ USER root
 RUN apt-get update && apt-get install -y --no-install-recommends \
     zstd curl binutils
 
-USER dt_user
+USER root
 WORKDIR /home/dt_user
 
-ARG TENA_VERSION="TENA-MiddlewareSDK-v6.0.11"
+ARG TENA_VERSION="TENA-MiddlewareSDK-v6.0.9.A"
 # INSTALL TENA deb
 RUN --mount=type=bind,from=assets,source=.,target=/mnt/build,readonly \
     set -euo pipefail; \
@@ -26,7 +26,7 @@ RUN --mount=type=bind,from=assets,source=.,target=/mnt/build,readonly \
     ar -x /mnt/build/${TENA_VERSION}@Product@u2204-gcc11-64-*.deb && \
     tar xf control.tar.* && \
     # move the postinst script into TENA dir to make it easier to copy and run later on final container
-    mv ./postinst ./opt/TENA/postinst-MW 
+    mv ./postinst ./opt/TENA/postinst-MW
 
 ARG SDTP_VERSION="SIMDIS-TENApluginRuntime-v2.5.20"
 # Install SIMDIS TENA Plugin
@@ -36,7 +36,7 @@ RUN --mount=type=bind,from=assets,source=.,target=/mnt/build,readonly \
     ar -x /mnt/build/${SDTP_VERSION}@Product@u2204-gcc11-64-*.deb && \
     tar xf control.tar.* && \
     # move the postinst script into TENA dir to make it easier to copy and run later on final container
-    mv ./postinst ./opt/TENA/postinst-SDTP 
+    mv ./postinst ./opt/TENA/postinst-SDTP
 
 # ----------------------- RUNTIME STAGE ----------------------- #
 FROM ubuntu:22.04
@@ -56,23 +56,24 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     x11-utils mesa-utils \
     && rm -rf /var/lib/apt/lists/*
 
-USER dt_user
+USER root
 
 ARG SIMDIS_VERSION="NRL_SIMDIS_v10.0_STABLE_2026-06"
 RUN --mount=type=bind,from=assets,source=.,target=/mnt/build,readonly \
     set -eu; \
-    /mnt/build/${SIMDIS_VERSION}_linux64_abi-cxx11.tar.run --prefix /home/dt_user/SIMDIS --createDesktopIcons 0 --setPath 1 --installRemoveSettings 0
-
-USER root
+    cp /mnt/build/${SIMDIS_VERSION}_linux64_abi-cxx11.tar.run /tmp/simdis_installer.run && \
+    chmod +x /tmp/simdis_installer.run && \
+    /tmp/simdis_installer.run --prefix /home/dt_user/SIMDIS --createDesktopIcons 0 --setPath 1 --installRemoveSettings 0 && \
+    rm -f /tmp/simdis_installer.run && \
+    chown -R dt_user:dt_user /home/dt_user/SIMDIS
 
 # All done as one RUN command to save space in the final container
 # Mounts files in a temporary space with rw perms, copies them to container, runs postinst scripts, changes ownership
 # RUN --mount=from=build,source=/home/dt_user/opt/TENA,target=/mnt/TENA,rw \
 RUN --mount=from=build,source=/home/dt_user,target=/mnt/dt_user,rw \
     cp -a /mnt/dt_user/opt/TENA /home/dt_user/TENA && \
-    cp -a /mnt/dt_user/opt/TENA /home/dt_user/TENA && \
-    DSTROOT=/home/dt_user ./TENA/postinst-MW && \
-    DSTROOT=/home/dt_user SIMDIS_DIR=/home/dt_user/SIMDIS ./TENA/postinst-SDTP && \
+    env USER=dt_user DSTROOT=/home/dt_user /home/dt_user/TENA/postinst-MW && \
+    env USER=dt_user DSTROOT=/home/dt_user SIMDIS_DIR=/home/dt_user/SIMDIS /home/dt_user/TENA/postinst-SDTP && \
     chown -R dt_user:dt_user /home/dt_user/TENA
     #  && \
     # cp -a /mnt/dt_user/~/.config/Naval\ Research\ Laboratory/home /home/dt_user/.config/Naval\ Research\ Laboratory/
@@ -88,6 +89,7 @@ SHELL ["/bin/bash", "-ec"]
 ARG DEBIAN_FRONTEND="noninteractive"
 ARG TZ="America/New_York"
 
-RUN echo 'source /home/dt_user/TENA/6.0.11/scripts/tenaenv-u2204-gcc11-64-v6.0.11.sh' >> /home/dt_user/.bashrc
+RUN TENAENV_SH="$(find /home/dt_user/TENA -maxdepth 3 -name 'tenaenv-*.sh')" && \
+    echo "source ${TENAENV_SH}" >> /home/dt_user/.bashrc
 
 CMD ["/bin/bash","-l","-c","cd /home/dt_user/SIMDIS && sleep 10000000000"]
