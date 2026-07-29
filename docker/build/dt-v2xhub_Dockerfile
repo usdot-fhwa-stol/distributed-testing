@@ -56,7 +56,7 @@ WORKDIR /home/plugin
 USER root
 
 # Mounts files in a temporary space with rw perms, copies them to container, runs postinst scripts, changes ownership
-COPY --from=build --chown=plugin:plugin /home/plugin/opt/TENA /home/plugin/TENA
+COPY --from=build --chown=plugin:nogroup /home/plugin/opt/TENA /home/plugin/TENA
 RUN DSTROOT=/home/plugin ./TENA/postinst-MW
 RUN DSTROOT=/home/plugin ./TENA/postinst-DIST
 RUN mkdir /home/plugin/TENA/log
@@ -81,13 +81,13 @@ RUN --mount=type=secret,id=usdotfhwastol_token \
     export USDOTFHWASTOL_TOKEN=$(cat /run/secrets/usdotfhwastol_token) && \
     ./checkout.bash vug-v2xhub-v2x-plugin -b "${PLUGIN_BRANCH}" -r /workspace && \
     cd /workspace && chmod +x build.sh && ./build.sh && \
-    chown -R plugin:plugin /usr/local/plugins && \
+    chown -R plugin:nogroup /usr/local/plugins && \
     rm -rf /workspace
 
 # Everything above ran as root and wrote into /home/plugin/TENA (postinst
 # scripts, the log dir, the cmake package), so re-assert ownership once here
 # rather than chowning after each step.
-RUN chown -R plugin:plugin /home/plugin/TENA
+RUN chown -R plugin:nogroup /home/plugin/TENA
 
 USER plugin
 
