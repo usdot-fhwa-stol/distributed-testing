@@ -88,7 +88,7 @@ FROM base AS runtime
 
 USER root
 
-ARG PLUGIN_BRANCH="feature/dt-to-v2xhub-develop"
+ARG PLUGIN_BRANCH="develop"
 COPY checkout.bash /home/plugin/checkout.bash
 
 # Clone and build the TENA V2X Plugin using its own build.sh, which installs
