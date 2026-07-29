@@ -18,7 +18,13 @@ build-image.sh                            # main entry point; dispatches to one 
 │       └── lib/COPY                 # copied in
 │
 ├── dt-v2xhub_Dockerfile             # FROM dt-build-v2xhub (external, hand-committed image; see file header)
-│   └── checkout.bash                # copied in, clones vug-v2xhub-v2x-plugin using USDOTFHWASTOL_TOKEN
+│   ├── checkout.bash                # copied in, clones vug-v2xhub-v2x-plugin using USDOTFHWASTOL_TOKEN
+│   └── stages: assets -> base -> runtime (default)
+│       # "base" has TENA/DIST installed but no plugin baked in - always builds even if the
+│       # plugin is broken. Build it directly with `./build-image.sh v2xhub -v DEV --target base`
+│       # for a devcontainer; mount your local plugin checkout in and build/debug interactively.
+│       # "runtime" (the default target) additionally clones and builds the plugin - this is
+│       # the deployable dt-v2xhub image, and only builds when the plugin builds cleanly.
 │
 ├── dt-carla_Dockerfile              # FROM carlasim/carla:0.9.10
 │   └── lib/MAPS, lib/CARLA_TFHRC, lib/COPY   # mounted/copied in

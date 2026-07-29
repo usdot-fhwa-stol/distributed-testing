@@ -14,7 +14,7 @@
 ARG DOCKER_ORG="distributed-testing"
 ARG DOCKER_TAG="latest"
 
-FROM harbor.distributedtesting.org/${DOCKER_ORG}/dt-build-v2xhub:${DOCKER_TAG} AS build
+FROM harbor.distributedtesting.org/${DOCKER_ORG}/dt-build-v2xhub:${DOCKER_TAG} AS assets
 
 SHELL ["/bin/bash", "-ec"]
 
@@ -47,7 +47,11 @@ RUN --mount=type=bind,from=assets,source=.,target=/mnt/build,readonly \
     # move the postinst script into TENA dir to make it easier to copy and run later on final container
     mv ./postinst ./opt/TENA/postinst-DIST
 
-FROM harbor.distributedtesting.org/${DOCKER_ORG}/dt-build-v2xhub:${DOCKER_TAG}
+# "base" has TENA/DIST + the cmake package installed but no plugin baked in,
+# so it always builds even when the plugin itself is broken. Target this
+# stage directly (`docker build --target base`) for a devcontainer image;
+# mount your local plugin checkout into it and build/debug interactively.
+FROM harbor.distributedtesting.org/${DOCKER_ORG}/dt-build-v2xhub:${DOCKER_TAG} AS base
 
 SHELL ["/bin/bash", "-ec"]
 
@@ -56,7 +60,7 @@ WORKDIR /home/plugin
 USER root
 
 # Mounts files in a temporary space with rw perms, copies them to container, runs postinst scripts, changes ownership
-COPY --from=build --chown=plugin:nogroup /home/plugin/opt/TENA /home/plugin/TENA
+COPY --from=assets --chown=plugin:nogroup /home/plugin/opt/TENA /home/plugin/TENA
 RUN DSTROOT=/home/plugin ./TENA/postinst-MW
 RUN DSTROOT=/home/plugin ./TENA/postinst-DIST
 RUN mkdir /home/plugin/TENA/log
@@ -71,6 +75,19 @@ RUN --mount=type=secret,id=usdotfhwastol_token \
     mv cmake_temp/cmake/ /home/plugin/TENA/lib/ && \
 	rm -rf cmake_temp
 
+# Everything above ran as root and wrote into /home/plugin/TENA (postinst
+# scripts, the log dir, the cmake package), so re-assert ownership once here
+# rather than chowning after each step.
+RUN chown -R plugin:nogroup /home/plugin/TENA
+
+# "runtime" is the deployable image: it builds on "base" by baking in the
+# TENA V2X Plugin. It only builds successfully when the plugin itself builds
+# cleanly - for interactive plugin development/debugging, use the "base"
+# target above instead.
+FROM base AS runtime
+
+USER root
+
 ARG PLUGIN_BRANCH="feature/dt-to-v2xhub-develop"
 COPY checkout.bash /home/plugin/checkout.bash
 
@@ -83,11 +100,6 @@ RUN --mount=type=secret,id=usdotfhwastol_token \
     cd /workspace && chmod +x build.sh && ./build.sh && \
     chown -R plugin:nogroup /usr/local/plugins && \
     rm -rf /workspace
-
-# Everything above ran as root and wrote into /home/plugin/TENA (postinst
-# scripts, the log dir, the cmake package), so re-assert ownership once here
-# rather than chowning after each step.
-RUN chown -R plugin:nogroup /home/plugin/TENA
 
 USER plugin
 

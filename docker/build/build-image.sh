@@ -10,6 +10,9 @@
 #   <image>            One of: base, build-general, build-carla, core, v2xhub, carla, carla-0-9-15
 #   -v, --version      Image version tag (required)
 #   --plugin-branch    v2xhub only: vug-v2xhub-v2x-plugin branch to build (default develop)
+#   --target           Dockerfile stage to build, e.g. v2xhub's "base" (plugin not baked in,
+#                       always builds - use for a devcontainer) vs "runtime" (default; the
+#                       full deployable image, requires the plugin to build cleanly)
 #   --tag-latest       Also tag the image as :latest
 #   -h, --help         Show this help
 #
@@ -85,6 +88,7 @@ usage() {
       echo "  image            one of: ${!DOCKERFILE[*]}"
       echo "  -v, --version    image version tag (required)"
       echo "  --plugin-branch  v2xhub only: vug-v2xhub-v2x-plugin branch to build (default develop)"
+      echo "  --target         Dockerfile stage to build, e.g. v2xhub's 'base' vs 'runtime' (default)"
       echo "  --tag-latest     also tag the image as :latest"
       echo "  -h, --help       show this help"
       exit 1
@@ -99,6 +103,7 @@ shift
 
 VERSION=""
 PLUGIN_BRANCH="develop"
+TARGET=""
 TAG_LATEST=0
 
 while [[ $# -gt 0 ]]; do
@@ -111,6 +116,11 @@ while [[ $# -gt 0 ]]; do
             ;;
             --plugin-branch)
                   PLUGIN_BRANCH="$2"
+                  shift
+                  shift
+            ;;
+            --target)
+                  TARGET="$2"
                   shift
                   shift
             ;;
@@ -139,11 +149,15 @@ if [[ -z "$VERSION" ]]; then
 fi
 
 DOCKERFILE_PATH="${DOCKERFILE[$IMAGE]}"
-TAG="${TAG_PREFIX[$IMAGE]:-}${VERSION}"
+TAG="${TAG_PREFIX[$IMAGE]:-}${VERSION}${TARGET:+-$TARGET}"
 FULL_TAG="${REGISTRY}/${IMAGE_NAME[$IMAGE]}:${TAG}"
 
 BUILD_ARGS=(--build-arg "VERSION=${VERSION}")
 EXTRA_ARGS=()
+
+if [[ -n "$TARGET" ]]; then
+      EXTRA_ARGS+=(--target "$TARGET")
+fi
 
 if [[ "${NEEDS_ASSETS[$IMAGE]:-0}" -eq 1 ]]; then
       # shellcheck disable=SC1090
