@@ -2,6 +2,7 @@ services:
   dt-core:
     container_name: dt-core
     image: harbor.distributedtesting.org/distributed-testing/dt-core:0.1.6
+    profiles: ["core"]
     tty: true
     ipc: "host"
     network_mode: "host"

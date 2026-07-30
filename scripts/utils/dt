@@ -33,14 +33,29 @@ echoerr() { echo "$@" 1>&2; }
 
 ##
 # Populates the global array COMPOSE_PROFILE_ARGS with --profile flags matching
-# VUG_DOCKER_START_CARLA / VUG_DOCKER_START_SIMDIS, mirroring the selection logic in
-# docker/start-docker.sh. There's a single docker-compose.yml with dt-carla/dt-simdis gated
-# behind Compose profiles, so stop/ps/download need the same --profile flags "dt start" used
-# in order to see/manage those services (docker compose only operates on the default,
-# unprofiled services unless matching --profile flags are passed).
+# VUG_DOCKER_START_CARLA / VUG_DOCKER_START_SIMDIS / the dt-core-needing flags below,
+# mirroring the selection logic in docker/start-docker.sh. There's a single
+# docker-compose.yml with dt-core/dt-carla/dt-simdis gated behind Compose profiles, so
+# stop/ps/download need the same --profile flags "dt start" used in order to see/manage
+# those services (docker compose only operates on the default, unprofiled services unless
+# matching --profile flags are passed).
+#
+# dt-core has no single dedicated "start dt-core" flag. It hosts a set of TENA apps that
+# are each started inside the container by docker/build/lib/COPY/start_scripts/startup-apps.sh
+# based on their own individual VUG_DOCKER_START_* flags, so dt-core is only needed if at
+# least one of those flags is enabled.
 ##
 _dt_set_compose_profile_args() {
     COMPOSE_PROFILE_ARGS=()
+
+    if [[ $VUG_DOCKER_START_EM == true || $VUG_DOCKER_START_CONSOLE == true || $VUG_DOCKER_START_CANARY == true || \
+          $VUG_DOCKER_START_TDCS == true || $VUG_DOCKER_START_TENA_PLAYBACK == true || $VUG_DOCKER_START_DATAVIEW == true || \
+          $VUG_DOCKER_START_SCENARIO_PUBLISHER == true || $VUG_DOCKER_START_V2X_ADAPTER == true || $VUG_DOCKER_START_TENA_CARLA_ADAPTER == true || \
+          $VUG_DOCKER_START_JSON_STREAMER == true || $VUG_DOCKER_START_JSON_PUBLISHER == true || $VUG_DOCKER_START_ENTITY_GENERATOR == true || \
+          $VUG_DOCKER_START_MANUAL_CARLA_VEHICLE == true || $VUG_DOCKER_START_SUMO == true || \
+          $VUG_DOCKER_START_CARLA == 'local' || $VUG_DOCKER_START_CARLA == 'remote' ]]; then
+        COMPOSE_PROFILE_ARGS+=(--profile core)
+    fi
 
     [[ $VUG_DOCKER_START_CARLA == 'local' ]] && COMPOSE_PROFILE_ARGS+=(--profile carla)
     [[ $VUG_DOCKER_START_SIMDIS == 'local' ]] && COMPOSE_PROFILE_ARGS+=(--profile simdis)

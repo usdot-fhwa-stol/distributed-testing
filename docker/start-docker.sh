@@ -335,6 +335,21 @@ docker_compose_file='docker-compose.yml'
 compose_profile_args=()
 
 echo
+# dt-core hosts a set of TENA apps that are each started inside the container by
+# start_scripts/startup-apps.sh based on their own individual VUG_DOCKER_START_* flags,
+# so dt-core is only needed if at least one of those flags is enabled.
+if [[ $VUG_DOCKER_START_EM == true || $VUG_DOCKER_START_CONSOLE == true || $VUG_DOCKER_START_CANARY == true || \
+      $VUG_DOCKER_START_TDCS == true || $VUG_DOCKER_START_TENA_PLAYBACK == true || $VUG_DOCKER_START_DATAVIEW == true || \
+      $VUG_DOCKER_START_SCENARIO_PUBLISHER == true || $VUG_DOCKER_START_V2X_ADAPTER == true || $VUG_DOCKER_START_TENA_CARLA_ADAPTER == true || \
+      $VUG_DOCKER_START_JSON_STREAMER == true || $VUG_DOCKER_START_JSON_PUBLISHER == true || $VUG_DOCKER_START_ENTITY_GENERATOR == true || \
+      $VUG_DOCKER_START_MANUAL_CARLA_VEHICLE == true || $VUG_DOCKER_START_SUMO == true || \
+      $VUG_DOCKER_START_CARLA == 'local' || $VUG_DOCKER_START_CARLA == 'remote' ]]; then
+    echo "Enabling dt-core profile"
+    compose_profile_args+=(--profile core)
+else
+    echo "dt-core profile not enabled"
+fi
+
 if [[ $VUG_DOCKER_START_CARLA == 'local' ]]; then
     echo "Enabling CARLA profile"
     compose_profile_args+=(--profile carla)
