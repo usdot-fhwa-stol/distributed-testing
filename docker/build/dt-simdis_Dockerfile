@@ -18,7 +18,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 USER root
 WORKDIR /home/dt_user
 
-ARG TENA_VERSION="TENA-MiddlewareSDK-v6.0.9.A"
+ARG TENA_VERSION="TENA-MiddlewareSDK-v6.0.11"
 # INSTALL TENA deb
 RUN --mount=type=bind,from=assets,source=.,target=/mnt/build,readonly \
     set -euo pipefail; \
