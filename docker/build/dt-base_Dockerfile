@@ -40,10 +40,10 @@ RUN curl -L "https://archives.boost.io/release/${BOOST_VERSION}/source/${BOOST_P
 # Package the installed tree to preserve symlinks for the COPY
 RUN tar -C /opt -czf /tmp/boost-runtime.tgz "$(basename ${BOOST_PREFIX})"
 
-USER dt_user
+USER root
 WORKDIR /home/dt_user
 
-ARG TENA_VERSION="TENA-MiddlewareSDK-v6.0.9.A"
+ARG TENA_VERSION="TENA-MiddlewareSDK-v6.0.11"
 # INSTALL TENA deb
 RUN --mount=type=bind,from=assets,source=.,target=/mnt/build,readonly \
     set -euo pipefail; \
@@ -83,13 +83,16 @@ ENV BOOST_ROOT=/opt/boost \
 # Boost runtime linker cache
 RUN echo "/opt/boost/lib" > /etc/ld.so.conf.d/boost.conf && ldconfig
 
-USER dt_user
+USER root
 
 WORKDIR /home/dt_user
 
 COPY --from=build --chown=dt_user:dt_user /home/dt_user/opt/TENA /home/dt_user/TENA
 RUN DSTROOT=/home/dt_user ./TENA/postinst-MW
-RUN DSTROOT=/home/dt_user ./TENA/postinst-DIST
+RUN DSTROOT=/home/dt_user ./TENA/postinst-DIST && \
+    chown -R dt_user:dt_user /home/dt_user/TENA
+
+USER dt_user
 
 ARG VERSION=dev
 LABEL version=${VERSION}
@@ -100,5 +103,6 @@ SHELL ["/bin/bash", "-ec"]
 ARG DEBIAN_FRONTEND="noninteractive"
 ARG TZ="America/New_York"
 
-RUN echo 'source /home/dt_user/TENA/6.0.9/scripts/tenaenv-u2204-gcc11-64-v6.0.9.sh' >> /home/dt_user/.bashrc
+RUN TENAENV_SH="$(find /home/dt_user/TENA -maxdepth 3 -name 'tenaenv-*.sh')" && \
+    echo "source ${TENAENV_SH}" >> /home/dt_user/.bashrc
 

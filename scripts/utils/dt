@@ -31,6 +31,31 @@
 ##
 echoerr() { echo "$@" 1>&2; }
 
+##
+# Resolves which docker compose file is actually in use, mirroring the selection logic in
+# docker/start-docker.sh (based on VUG_DOCKER_START_CARLA / VUG_DOCKER_START_SIMDIS). Used by
+# stop/ps/download so they target whatever compose file "dt start" actually used - otherwise
+# e.g. "dt stop" silently misses services (like dt-simdis) that only exist in
+# simdis_docker-compose.yml.
+##
+_dt_resolve_compose_file() {
+    local compose_file
+
+    if [[ $VUG_DOCKER_START_CARLA == 'local' ]]; then
+        compose_file="$VUG_LOCAL_DT_PATH/docker/docker-compose.yml"
+    else
+        compose_file="$VUG_LOCAL_DT_PATH/docker/no-carla_docker-compose.yml"
+    fi
+
+    if [[ $VUG_DOCKER_START_SIMDIS == 'local' ]]; then
+        compose_file="$VUG_LOCAL_DT_PATH/docker/simdis_docker-compose.yml"
+    else
+        compose_file="$VUG_LOCAL_DT_PATH/docker/no-carla_docker-compose.yml"
+    fi
+
+    echo "$compose_file"
+}
+
 # dt-config__edit() {
 #     if ! docker container inspect carma-config > /dev/null 2>&1; then
 #         echo "No existing CARMA configuration found, nothing to edit. Please set a config."
@@ -329,18 +354,14 @@ dt__download() {
         return 1
     fi
 
-    if [[ $VUG_DOCKER_START_CARLA == 'local' ]]; then 
-        COMPOSE_FILE="$VUG_LOCAL_DT_PATH/docker/docker-compose.yml"
-    else
-        COMPOSE_FILE="$VUG_LOCAL_DT_PATH/docker/no-carla_docker-compose.yml"
-    fi
+    COMPOSE_FILE="$(_dt_resolve_compose_file)"
 
     if [[ ! -f "$COMPOSE_FILE" ]]; then
         echo "Error: Cannot find docker compose file at $COMPOSE_FILE"
         return 1
     fi
 
-    echo "Stopping DT Containers:"
+    echo "Pulling DT Containers:"
     echo ""
     # run the docker compose pull, pass any extra args
     # using script to simulate a TTY to get the proper formatting
@@ -368,7 +389,7 @@ dt__stop() {
         return 1
     fi
 
-    COMPOSE_FILE="$VUG_LOCAL_DT_PATH/docker/docker-compose.yml"
+    COMPOSE_FILE="$(_dt_resolve_compose_file)"
 
     if [[ ! -f "$COMPOSE_FILE" ]]; then
         echo "Error: Cannot find docker-compose.yml at $COMPOSE_FILE"
@@ -394,7 +415,7 @@ dt__ps() {
         return 1
     fi
 
-    COMPOSE_FILE="$VUG_LOCAL_DT_PATH/docker/docker-compose.yml"
+    COMPOSE_FILE="$(_dt_resolve_compose_file)"
 
     if [[ ! -f "$COMPOSE_FILE" ]]; then
         echo "Error: Cannot find docker-compose.yml at $COMPOSE_FILE"
