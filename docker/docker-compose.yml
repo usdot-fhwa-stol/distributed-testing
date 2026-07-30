@@ -1,7 +1,29 @@
 services:
+  dt-core:
+    container_name: dt-core
+    image: harbor.distributedtesting.org/distributed-testing/dt-core:0.1.6
+    profiles: ["core"]
+    tty: true
+    ipc: "host"
+    network_mode: "host"
+    environment:
+      - DISPLAY=$DISPLAY
+      - SDL_VIDEODRIVER=x11
+      - XAUTHORITY=~/.Xauthority
+      - VUG_CONTAINER_IMAGE=dt-core
+      - VUG_SITE_CONFIG_FILE=${VUG_SITE_CONFIG_FILE}
+      - VUG_SCENARIO_CONFIG_FILE=${VUG_SCENARIO_CONFIG_FILE}
+      - VUG_VPN_LOCAL_ADDRESS=${VUG_VPN_LOCAL_ADDRESS}
+      - VUG_VPN_EM_ADDRESS=${VUG_VPN_EM_ADDRESS}
+    volumes:
+      - /tmp/.X11-unix:/tmp/.X11-unix:rw
+      - ${VUG_LOCAL_DT_PATH}:/home/dt_user/distributed-testing
+    stop_grace_period: 30s
+
   dt-carla:
     container_name: dt-carla
-    image: harbor.distributedtesting.org/distributed-testing/dt-carla:latest
+    image: harbor.distributedtesting.org/distributed-testing/dt-carla:0-9-15-0.0.6
+    profiles: ["carla"]
     privileged: true
     network_mode: "host"
     environment:
@@ -25,19 +47,17 @@ services:
               count: 1
               capabilities: [gpu]
 
-  dt-core:
-    container_name: dt-core
-    image: harbor.distributedtesting.org/distributed-testing/dt-core:latest
-    tty: true 
-    depends_on:
-      - dt-carla
+  dt-simdis:
+    container_name: dt-simdis
+    image: harbor.distributedtesting.org/distributed-testing/dt-simdis:0.0.1
+    profiles: ["simdis"]
+    privileged: true
     network_mode: "host"
-    ipc: "host"
     environment:
       - DISPLAY=$DISPLAY
       - SDL_VIDEODRIVER=x11
       - XAUTHORITY=~/.Xauthority
-      - VUG_CONTAINER_IMAGE=dt-core
+      - VUG_CONTAINER_IMAGE=dt-simdis
       - VUG_SITE_CONFIG_FILE=${VUG_SITE_CONFIG_FILE}
       - VUG_SCENARIO_CONFIG_FILE=${VUG_SCENARIO_CONFIG_FILE}
       - VUG_VPN_LOCAL_ADDRESS=${VUG_VPN_LOCAL_ADDRESS}
@@ -46,10 +66,11 @@ services:
       - /tmp/.X11-unix:/tmp/.X11-unix:rw
       - ${VUG_LOCAL_DT_PATH}:/home/dt_user/distributed-testing
     stop_grace_period: 30s
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - driver: nvidia
-              count: 1
-              capabilities: [gpu]
+    # Enable on systems with NVIDIA GPUs
+    # deploy:
+    #   resources:
+    #     reservations:
+    #       devices:
+    #         - driver: nvidia
+    #           count: 1
+    #           capabilities: [gpu]

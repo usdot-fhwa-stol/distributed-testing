@@ -3,7 +3,7 @@
 #
 
 # ----------------------- BUILD STAGE ----------------------- #
-FROM harbor.distributedtesting.org/distributed-testing/dt-base:latest AS build
+FROM harbor.distributedtesting.org/distributed-testing/dt-base:0.1.0 AS build
 
 SHELL ["/bin/bash", "-ec"]
 
@@ -50,7 +50,7 @@ RUN --mount=type=bind,from=assets,source=.,target=/mnt/build,readonly \
 ARG JSON_VERSION="DOT_OSTR-Combined-JSONtoolsDistribution-v1.2.4"
 WORKDIR /home/$USER/INSTALL/JSON
 RUN --mount=type=bind,from=assets,source=.,target=/mnt/build,readonly \
-    export ; \    
+    export ; \
     set -euo pipefail; \
     dpkg -x --force-overwrite /mnt/build/${JSON_VERSION}@Product@u2204-gcc11-64*.deb . && \
     ar -x /mnt/build/${JSON_VERSION}@Product@u2204-gcc11-64*.deb && \
@@ -73,13 +73,13 @@ RUN --mount=type=bind,from=assets,source=.,target=/mnt/build,readonly \
     mv CARLA_0.9.15 $HOME/CARLA
 
 # ----------------------- RUNTIME STAGE ----------------------- #
-FROM harbor.distributedtesting.org/distributed-testing/dt-base:latest
+FROM harbor.distributedtesting.org/distributed-testing/dt-base:0.1.0
 
 ARG VERSION=dev
 LABEL version=${VERSION}
 LABEL description="Docker image for interoperability test"
 
-ARG DEBIAN_FRONTEND="noninteractive" 
+ARG DEBIAN_FRONTEND="noninteractive"
 ARG TZ="America/New_York"
 
 USER dt_user
@@ -92,10 +92,10 @@ USER root
 RUN apt update && apt install -y software-properties-common
 
 
-# INSTALL apt packages 
+# INSTALL apt packages
 RUN apt clean && \
     apt-get update && \
-    # add sumo repo 
+    # add sumo repo
     apt install -y software-properties-common && \
     add-apt-repository ppa:sumo/stable && apt-get update && \
     apt install -y \
@@ -111,7 +111,7 @@ RUN apt clean && \
     iproute2 \
     # install dumb init to enable gracefully stopping container processes
     dumb-init \
-    # install locales and set to UTF-8 for JSON Streamer 
+    # install locales and set to UTF-8 for JSON Streamer
     locales && \
     locale-gen en_US.UTF-8 && \
     update-locale LANG=en_US.UTF-8 && \
