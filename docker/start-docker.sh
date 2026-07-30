@@ -5,8 +5,8 @@ stopDocker()
 
 echo
 echo STOPPING AND REMOVING VUG CONTAINERS
-$docker_compose_cmd -f $docker_compose_file down
-if [ $VUG_FORMAL_EVENT = true ]; then 
+$docker_compose_cmd -f $docker_compose_file "${compose_profile_args[@]}" down
+if [ $VUG_FORMAL_EVENT = true ]; then
     source $VUG_LOCAL_DT_PATH/scripts/utils/stop_current_vpn_connection.sh
 fi
 }
@@ -330,27 +330,28 @@ else
 
 fi
 
-echo
-if [[ $VUG_DOCKER_START_CARLA == 'local' ]]; then
-    echo "Using CARLA docker-compose"
-    docker_compose_file='docker-compose.yml'
-else
-    echo "Using NO CARLA docker-compose"
-    docker_compose_file='no-carla_docker-compose.yml'
-fi
+docker_compose_file='docker-compose.yml'
+
+compose_profile_args=()
 
 echo
-if [[ $VUG_DOCKER_START_SIMDIS == 'local' ]]; then
-    echo "Using SIMDIS docker-compose"
-    docker_compose_file='simdis_docker-compose.yml'
+if [[ $VUG_DOCKER_START_CARLA == 'local' ]]; then
+    echo "Enabling CARLA profile"
+    compose_profile_args+=(--profile carla)
 else
-    echo "Using NO SIMDIS docker-compose"
-    docker_compose_file='no-carla_docker-compose.yml'
+    echo "CARLA profile not enabled"
+fi
+
+if [[ $VUG_DOCKER_START_SIMDIS == 'local' ]]; then
+    echo "Enabling SIMDIS profile"
+    compose_profile_args+=(--profile simdis)
+else
+    echo "SIMDIS profile not enabled"
 fi
 
 
 trap stopDocker SIGINT
 
-# $docker_compose_cmd -f $docker_compose_file pull
+# $docker_compose_cmd -f $docker_compose_file "${compose_profile_args[@]}" pull
 
-$docker_compose_cmd -f $docker_compose_file up "${EXTRA_ARGS[@]}"
+$docker_compose_cmd -f $docker_compose_file "${compose_profile_args[@]}" up "${EXTRA_ARGS[@]}"
