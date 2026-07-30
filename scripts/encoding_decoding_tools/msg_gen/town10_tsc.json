@@ -1,0 +1,59 @@
+{
+  "intersections": [
+    {
+      "id": 1,
+      "junction_id": 23,
+      "main_phase_groups": [
+        2,
+        6
+      ],
+      "side_phase_groups": [
+        8
+      ]
+    },
+    {
+      "id": 2,
+      "junction_id": 189,
+      "main_phase_groups": [
+        2,
+        6
+      ],
+      "side_phase_groups": [
+        4,
+        8
+      ]
+    },
+    {
+      "id": 3,
+      "junction_id": 468,
+      "main_phase_groups": [
+        2
+      ],
+      "side_phase_groups": [
+        8
+      ]
+    },
+    {
+      "id": 4,
+      "junction_id": 532,
+      "main_phase_groups": [
+        2
+      ],
+      "side_phase_groups": [
+        4,
+        8
+      ]
+    },
+    {
+      "id": 5,
+      "junction_id": 719,
+      "main_phase_groups": [
+        2
+      ],
+      "side_phase_groups": [
+        4,
+        8
+      ]
+    }
+  ]
+}

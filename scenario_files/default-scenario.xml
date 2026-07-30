@@ -4,7 +4,7 @@
     <name>DEFAULT</name>
   </identifier>
   <OpenDrive>
-    <MapFileName name="Town04.xodr">
+    <MapFileName name="Town10HD_Opt.xodr">
       <MapOrigin latitudeInDegrees="0" longitudeInDegrees="0" heightAboveEllipsoidInMeters="0"> </MapOrigin>
     </MapFileName>
   </OpenDrive>
@@ -37,36 +37,177 @@
   </radios>
 
   <intersectionSignalControllers>
-    <intersectionSignalController name="Town04_Main" adapterName="V2XEG-1" lvcIndicator="Live">
-      <controller name="" id="0"/>
-    </intersectionSignalController>
+      <intersectionSignalController name="J023" adapterType="spat-adapter" adapterName="SPAT-1" lvcIndicator="Live">
+        <userData>
+          <CARLA>
+            <controllers>
+              <controller name="" id="1"/>
+            </controllers>
+          </CARLA>
+        </userData>
+      </intersectionSignalController>
+  
+      <intersectionSignalController name="J189" adapterType="spat-adapter" adapterName="SPAT-1" lvcIndicator="Live">
+        <userData>
+          <CARLA>
+            <controllers>
+              <controller name="" id="2"/>
+            </controllers>
+          </CARLA>
+        </userData>
+      </intersectionSignalController>
+  
+      <intersectionSignalController name="J468" adapterType="spat-adapter" adapterName="SPAT-1" lvcIndicator="Live">
+        <userData>
+          <CARLA>
+            <controllers>
+              <controller name="" id="3"/>
+            </controllers>
+          </CARLA>
+        </userData>
+      </intersectionSignalController>
+  
+      <intersectionSignalController name="J532" adapterType="spat-adapter" adapterName="SPAT-1" lvcIndicator="Live">
+        <userData>
+          <CARLA>
+            <controllers>
+              <controller name="" id="4"/>
+            </controllers>
+          </CARLA>
+        </userData>
+      </intersectionSignalController>
+  
+      <intersectionSignalController name="J719" adapterType="spat-adapter" adapterName="SPAT-1" lvcIndicator="Live">
+        <userData>
+          <CARLA>
+            <controllers>
+              <controller name="" id="5"/>
+            </controllers>
+          </CARLA>
+        </userData>
+      </intersectionSignalController>
   </intersectionSignalControllers>
-
+  
   <phaseSignalMappings>
-    <configuration name="Town04_Main Configuration" controllerName="Town04_Main">
-      <GeodeticPosition latitudeInDegrees="39.682130" longitudeInDegrees="-75.747327" heightAboveEllipsoidInMeters="0"/>
-      <mapping signalId="1629" phase="4"/> <!-- SB, Actor 135 -->
-      <mapping signalId="1628" phase="2"/> <!-- EB, Actor 118 -->
-      <mapping signalId="1627" phase="6"/> <!-- NB, Actor 122 -->
-      <mapping signalId="1626" phase="8"/> <!-- WB, Actor 124 -->
-    </configuration>
+      <configuration name="J023 Configuration" controllerName="J023">
+        <GeodeticPosition latitudeInDegrees="0.000527" longitudeInDegrees="-0.000419" heightAboveEllipsoidInMeters="0">
+        </GeodeticPosition>
+        <!-- MAIN-A, Actor 42 -->
+        <controller name="" id="">
+          <control signalId="945" type="">
+            <userData><phase>2</phase></userData>
+          </control>
+        </controller>
+        <!-- SIDE-B, Actor 35 -->
+        <controller name="" id="">
+          <control signalId="944" type="">
+            <userData><phase>8</phase></userData>
+          </control>
+        </controller>
+        <!-- MAIN-B, Actor 34 -->
+        <controller name="" id="">
+          <control signalId="943" type="">
+            <userData><phase>6</phase></userData>
+          </control>
+        </controller>
+      </configuration>
+  
+      <configuration name="J189 Configuration" controllerName="J189">
+        <GeodeticPosition latitudeInDegrees="-0.000183" longitudeInDegrees="-0.000427" heightAboveEllipsoidInMeters="0">
+        </GeodeticPosition>
+        <!-- MAIN-A, Actor 46 -->
+        <controller name="" id="">
+          <control signalId="949" type="">
+            <userData><phase>2</phase></userData>
+          </control>
+        </controller>
+        <!-- SIDE-A, Actor 40 -->
+        <controller name="" id="">
+          <control signalId="951" type="">
+            <userData><phase>4</phase></userData>
+          </control>
+        </controller>
+        <!-- MAIN-B, Actor 39 -->
+        <controller name="" id="">
+          <control signalId="952" type="">
+            <userData><phase>6</phase></userData>
+          </control>
+        </controller>
+        <!-- SIDE-B, Actor 38 -->
+        <controller name="" id="">
+          <control signalId="950" type="">
+            <userData><phase>8</phase></userData>
+          </control>
+        </controller>
+      </configuration>
+  
+      <configuration name="J468 Configuration" controllerName="J468">
+        <GeodeticPosition latitudeInDegrees="-0.001211" longitudeInDegrees="-0.000543" heightAboveEllipsoidInMeters="0">
+        </GeodeticPosition>
+        <!-- MAIN-A, Actor 45 -->
+        <controller name="" id="">
+          <control signalId="954" type="">
+            <userData><phase>2</phase></userData>
+          </control>
+        </controller>
+        <!-- SIDE-B, Actor 44 -->
+        <controller name="" id="">
+          <control signalId="953" type="">
+            <userData><phase>8</phase></userData>
+          </control>
+        </controller>
+      </configuration>
+  
+      <configuration name="J532 Configuration" controllerName="J532">
+        <GeodeticPosition latitudeInDegrees="-0.000231" longitudeInDegrees="0.000957" heightAboveEllipsoidInMeters="0">
+        </GeodeticPosition>
+        <!-- MAIN-A, Actor 48 -->
+        <controller name="" id="">
+          <control signalId="959" type="">
+            <userData><phase>2</phase></userData>
+          </control>
+        </controller>
+        <!-- SIDE-A, Actor 37 -->
+        <controller name="" id="">
+          <control signalId="957" type="">
+            <userData><phase>4</phase></userData>
+          </control>
+        </controller>
+        <!-- SIDE-B, Actor 36 -->
+        <controller name="" id="">
+          <control signalId="958" type="">
+            <userData><phase>8</phase></userData>
+          </control>
+        </controller>
+      </configuration>
+  
+      <configuration name="J719 Configuration" controllerName="J719">
+        <GeodeticPosition latitudeInDegrees="-0.000133" longitudeInDegrees="-0.000998" heightAboveEllipsoidInMeters="0">
+        </GeodeticPosition>
+        <!-- MAIN-A, Actor 47 -->
+        <controller name="" id="">
+          <control signalId="960" type="">
+            <userData><phase>2</phase></userData>
+          </control>
+        </controller>
+        <!-- SIDE-B, Actor 43 -->
+        <controller name="" id="">
+          <control signalId="962" type="">
+            <userData><phase>8</phase></userData>
+          </control>
+        </controller>
+        <!-- SIDE-A, Actor 41 -->
+        <controller name="" id="">
+          <control signalId="961" type="">
+            <userData><phase>4</phase></userData>
+          </control>
+        </controller>
+      </configuration>
   </phaseSignalMappings>
-
+  
   <simulations>
     <simulation name="DEFAULT-1" type="CARLA">
       <WeatherState>ClearNoon</WeatherState>
     </simulation>
   </simulations>
-
-  <routes>
-    <route name="DEFAULT-Route-1" entityIdentifier="DEFAULT-R-1" csvRoute="route_files/test_route.csv"/>
-    <route name="DEFAULT-Route-2" entityIdentifier="DEFAULT-P-1">
-      <waypoint latitudeInDegrees="0.000000000" longitudeInDegrees="0.000000000" heightAboveEllipsoidInMeters="1" heading="90.0" time="0"/>
-      <waypoint latitudeInDegrees="0.000000000" longitudeInDegrees="0.000080317" heightAboveEllipsoidInMeters="1" heading="90.0" time="1"/>
-      <waypoint latitudeInDegrees="0.000000000" longitudeInDegrees="0.000160633" heightAboveEllipsoidInMeters="1" heading="90.0" time="2"/>
-      <waypoint latitudeInDegrees="0.000000000" longitudeInDegrees="0.000240950" heightAboveEllipsoidInMeters="1" heading="90.0" time="3"/>
-      <waypoint latitudeInDegrees="0.000000000" longitudeInDegrees="0.000321266" heightAboveEllipsoidInMeters="1" heading="90.0" time="4"/>
-      <waypoint latitudeInDegrees="0.000000000" longitudeInDegrees="0.000401583" heightAboveEllipsoidInMeters="1" heading="90.0" time="5"/>
-    </route>
-  </routes>
 </scenario>
