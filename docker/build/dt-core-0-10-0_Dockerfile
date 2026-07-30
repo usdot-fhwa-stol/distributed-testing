@@ -130,7 +130,6 @@ RUN pip3 install --no-cache-dir --user \
         numpy \
         pandas \
         matplotlib \
-        networkx \
         shapely \
         pygame-ce \
         pycrate \
