@@ -37,6 +37,9 @@ import socket
 from dataclasses import dataclass
 from typing import Any, Literal, Optional
 
+import xml.etree.ElementTree as ET
+from pathlib import Path
+
 import carla
 import SDSMDecoder
 
@@ -44,16 +47,31 @@ import SDSMDecoder
 EARTH_RADIUS_M = 6_378_137.0
 
 
+def get_georeference_from_local_xodr(map_name="Town10HD_Opt"):
+    clean_map_name = map_name.split('/')[-1]
+    
+    xodr_path = Path(f"~/carlaCache/0.10.0/Carla/Maps/OpenDrive/{clean_map_name}.xodr").expanduser()
+    print(f"Looking for XODR file at: {xodr_path}")
+    
+    if not xodr_path.exists():
+        print(f"XODR file not found at: {xodr_path}")
+        return None
+
+    try:
+        tree = ET.parse(xodr_path)
+        root = tree.getroot()
+        header = root.find('header')
+        if header is not None:
+            geo_ref = header.find('geoReference')
+            if geo_ref is not None and geo_ref.text:
+                return geo_ref.text.strip()
+    except Exception as e:
+        print(f"Error parsing XODR file: {e}")
+        
+    return None
+
 @dataclass(frozen=True)
 class SdsmAxisConvention:
-    """
-    Defines how decoded SDSM position offsets map to local east/north meters.
-
-    Most common convention:
-        offsetX -> east
-        offsetY -> north
-    """
-
     x_axis: Literal["east", "north"] = "east"
     y_axis: Literal["east", "north"] = "north"
     x_sign: float = 1.0
@@ -64,7 +82,6 @@ class SdsmAxisConvention:
         offset_x: float,
         offset_y: float,
     ) -> tuple[float, float]:
-        """Convert decoded SDSM offsets into east/north displacement meters."""
         adjusted_x = offset_x * self.x_sign
         adjusted_y = offset_y * self.y_sign
 
@@ -132,9 +149,6 @@ class CoordinateMapper:
     ) -> tuple[float, float]:
         """
         Approximate a nearby local ENU position as latitude and longitude.
-
-        This approximation is suitable for typical SDSM object offsets, which
-        are generally tens or hundreds of meters from the SDSM reference point.
         """
         latitude_rad = math.radians(latitude)
 
@@ -221,9 +235,6 @@ class CoordinateMapper:
     ) -> carla.Location:
         """
         Use a manually configured reference point to calculate CARLA X/Y.
-
-        calibration_yaw rotates local east/north coordinates into CARLA X/Y.
-        A yaw of 0 means east maps to CARLA X and north maps to CARLA Y.
         """
         assert self.calibration_latitude is not None
         assert self.calibration_longitude is not None
@@ -259,12 +270,6 @@ class CoordinateMapper:
 
 
 def get_reference_altitude(ref_pos: dict[str, Any]) -> float:
-    """
-    Extract elevation from a decoded SDSM reference position.
-
-    Different decoders may call this field elevation, altitude, or elev. If the
-    decoder does not expose a usable altitude, this returns zero.
-    """
     for key in ("altitude", "elevation", "elev"):
         value = ref_pos.get(key)
 
@@ -604,14 +609,7 @@ def main() -> None:
         )
 
         if args.coordinate_mode == "georef":
-            try:
-                print(f"CARLA map georeference: {carla_map.get_georeference()}")
-            except AttributeError:
-                print(
-                    "Warning: This CARLA version does not expose "
-                    "Map.get_georeference(). Georeference conversion will "
-                    "still be attempted when messages arrive."
-                )
+            print(f"CARLA map georeference: {get_georeference_from_local_xodr(carla_map.name)}")
 
         if args.debug_origin:
             world.debug.draw_string(
@@ -639,7 +637,6 @@ def main() -> None:
                 continue
 
             hex_data = data.hex()
-
 
             if not hex_data.startswith("0029"):
                 if args.debug_coords:

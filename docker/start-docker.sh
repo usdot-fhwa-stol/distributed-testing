@@ -90,15 +90,6 @@ else
     echo "ERROR: Error occurred while validating configuration. See $CONFIG_VALIDATION_LOG for more details"
 fi
 
-echo "Setting up log directory permissions..."
-if command -v setfacl &> /dev/null; then
-    setfacl -R -m u:1000:rwx "$VUG_LOCAL_DT_PATH/logs"
-    setfacl -R -d -m u:1000:rwx "$VUG_LOCAL_DT_PATH/logs"
-else
-    echo "WARNING: 'acl' package not found. Using chmod."
-    chmod -R a+rwX "$VUG_LOCAL_DT_PATH/logs"
-fi
-
 # Check if openvpn3 is installed
 if ! command -v openvpn3 &> /dev/null
 then

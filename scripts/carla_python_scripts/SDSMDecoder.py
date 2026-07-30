@@ -1,4 +1,4 @@
-import SDSM as SDSM
+import J2735
 from binascii import hexlify, unhexlify
 
 
@@ -13,7 +13,7 @@ def sdsm_decoder(hex_sdsm):
         dict: SDSM message in dictionary format
     '''
     # decode SDSM message
-    header_sdsm_msg = SDSM.MessageFrame.MessageFrame
+    header_sdsm_msg = J2735.MessageFrame.MessageFrame
 
     header_sdsm_msg.from_uper_ws(unhexlify(hex_sdsm))
     header_sdsm = header_sdsm_msg()

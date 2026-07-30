@@ -66,6 +66,9 @@ from pathlib import Path
 import numpy as np
 import carla
 from carla import ColorConverter as cc
+
+os.environ["SDL_AUDIODRIVER"] = "dummy"
+
 import pygame
 from pygame.locals import (
     K_0,

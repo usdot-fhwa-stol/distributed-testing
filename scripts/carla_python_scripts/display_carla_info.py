@@ -1,15 +1,11 @@
 """
 Overlay actor labels and traffic signal states in the CARLA simulation world.
 
-The script is map-independent: vehicle height/color classification is based on
-the nearest CARLA road waypoint instead of per-map hard-coded Z coordinates.
+The script is map-independent.
 
 Examples:
 
-    # Show vehicle role names continuously.
-    python carla_overlay.py --show-vehicles --duration 0
-
-    # Show traffic signals and vehicles.
+    # Show traffic signals and vehicles continously.
     python carla_overlay.py --show-signals --show-vehicles --duration 0
 
     # Include walkers and print actor details.
@@ -36,19 +32,18 @@ from typing import Optional, cast
 import carla
 
 
-VEHICLE_SURFACE_COLOR = carla.Color(r=255, g=80, b=80)
-VEHICLE_ABOVE_SURFACE_COLOR = carla.Color(r=80, g=160, b=255)
-VEHICLE_BELOW_SURFACE_COLOR = carla.Color(r=140, g=140, b=140)
-WALKER_COLOR = carla.Color(r=255, g=180, b=70)
+VEHICLE_SURFACE_COLOR = carla.Color(r=0, g=0, b=255)
+VEHICLE_ABOVE_SURFACE_COLOR = carla.Color(r=80, g=160, b=140)
+VEHICLE_BELOW_SURFACE_COLOR = carla.Color(r=160, g=80, b=140)
+WALKER_COLOR = carla.Color(r=128, g=0, b=128)
 
 TRAFFIC_GREEN_COLOR = carla.Color(r=0, g=255, b=0)
 TRAFFIC_RED_COLOR = carla.Color(r=255, g=0, b=0)
 TRAFFIC_YELLOW_COLOR = carla.Color(r=255, g=255, b=0)
-TRAFFIC_UNKNOWN_COLOR = carla.Color(r=100, g=160, b=255)
+TRAFFIC_UNKNOWN_COLOR = carla.Color(r=255, g=255, b=255)
 
 
 def env_bool(name: str, default: bool = False) -> bool:
-    """Read a conventional boolean environment variable."""
     value = os.getenv(name)
 
     if value is None:
@@ -58,7 +53,6 @@ def env_bool(name: str, default: bool = False) -> bool:
 
 
 def parse_arguments() -> argparse.Namespace:
-    """Parse command-line arguments."""
     parser = argparse.ArgumentParser(description=__doc__)
 
     parser.add_argument(
@@ -180,12 +174,6 @@ def parse_arguments() -> argparse.Namespace:
 
 
 def get_label_lifetime(args: argparse.Namespace) -> float:
-    """
-    Return debug label lifetime.
-
-    In continuous mode, labels expire just after the next refresh. This avoids
-    leaving stale text in the world after actors move or are deleted.
-    """
     if args.duration == 0:
         return max(args.refresh_interval * 1.25, 0.1)
 
@@ -193,7 +181,6 @@ def get_label_lifetime(args: argparse.Namespace) -> float:
 
 
 def clean_role_name(role_name: str) -> str:
-    """Normalize known role-name variants for easier display."""
     cleaned_name = (
         role_name.replace("-MAN-", "-")
         .replace("TFHRC", "FHWA")
@@ -215,7 +202,6 @@ def actor_label(
     include_actor_id: bool,
     prefix: str = "",
 ) -> str:
-    """Build a compact, readable actor label."""
     if include_actor_id:
         return f"{prefix}{display_name} [{actor.id}]"
 
@@ -227,19 +213,6 @@ def get_vehicle_color(
     vehicle_location: carla.Location,
     surface_tolerance: float,
 ) -> carla.Color:
-    """
-    Classify a vehicle relative to the nearest road surface.
-
-    Red:
-        Vehicle is within surface_tolerance of its nearest road waypoint.
-
-    Blue:
-        Vehicle is substantially above the nearest road waypoint. This can help
-        identify actors spawning on elevated layers, bridges, or staging areas.
-
-    Gray:
-        Vehicle is substantially below the nearest road waypoint.
-    """
     waypoint = world_map.get_waypoint(
         vehicle_location,
         project_to_road=True,
@@ -268,7 +241,6 @@ def draw_actor_label(
     height_offset: float,
     label_lifetime: float,
 ) -> None:
-    """Draw a debug label directly above an actor."""
     actor_location = actor.get_location()
     label_location = actor_location + carla.Location(z=height_offset)
 
@@ -287,7 +259,6 @@ def display_vehicle_rolenames(
     world_map: carla.Map,
     args: argparse.Namespace,
 ) -> None:
-    """Draw labels for all matching vehicle actors."""
     vehicle_list = world.get_actors().filter(args.filterv)
     label_lifetime = get_label_lifetime(args)
 
@@ -339,7 +310,6 @@ def display_walker_rolenames(
     world: carla.World,
     args: argparse.Namespace,
 ) -> None:
-    """Draw labels for all matching pedestrian actors."""
     walker_list = world.get_actors().filter(args.filterw)
     label_lifetime = get_label_lifetime(args)
 
@@ -384,7 +354,6 @@ def display_walker_rolenames(
 def traffic_signal_display(
     signal_state: carla.TrafficLightState,
 ) -> tuple[str, carla.Color]:
-    """Convert a CARLA traffic-light state into display text and color."""
     match signal_state:
         case carla.TrafficLightState.Green:
             return "[GREEN]", TRAFFIC_GREEN_COLOR
@@ -402,8 +371,7 @@ def display_traffic_signal_state(
     world: carla.World,
     args: argparse.Namespace,
 ) -> None:
-    """Draw state labels for every CARLA traffic light."""
-    signal_list = world.get_actors().filter("traffic.traffic_light")
+    signal_list = world.get_actors().filter("traffic.traffic_light*")
     label_lifetime = get_label_lifetime(args)
 
     if not signal_list:
@@ -449,20 +417,22 @@ def resolve_display_option(
     argument_value: Optional[bool],
     environment_variable: str,
 ) -> bool:
-    """
-    Resolve a display setting.
-
-    Command-line values override environment variables, including explicit
-    negations such as --no-show-vehicles.
-    """
     if argument_value is not None:
         return argument_value
 
     return env_bool(environment_variable)
 
-
+def clear_all_labels(world: carla.World) -> None:
+    world.debug.draw_string(
+        location=carla.Location(x=0, y=0, z=0),
+        text="",
+        draw_shadow=False,
+        color=carla.Color(r=0, g=0, b=0, a=0),
+        life_time=0.001,
+        persistent_lines=False,
+    )
+    
 def main() -> None:
-    """Connect to CARLA and draw selected overlays."""
     args = parse_arguments()
 
     if args.duration < 0:
@@ -517,6 +487,8 @@ def main() -> None:
         while True:
             world = client.get_world()
             world_map = world.get_map()
+
+            clear_all_labels(world)
 
             if world_map.name != last_map_name:
                 print(f"Active CARLA map: {world_map.name}")
