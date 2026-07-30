@@ -24,16 +24,16 @@ BRANCH_APP_1="develop"
 BRANCH_APP_2="develop"
 
 # [3] scenario-publisher
-BRANCH_APP_3="feature/SecuredV2X_PedIdType"
+BRANCH_APP_3="develop"
 
 # [4] vug-carla-adapter
-BRANCH_APP_4="feature/SecuredV2X_PedIdType"
+BRANCH_APP_4="dt-113-update-carla-adapter-for-0.10.0"
 
 # [5] tena-v2x-adapter
-BRANCH_APP_5="feature/SecuredV2X_PedIdType"
+BRANCH_APP_5="develop"
 
 # [6] tena-entity-generator
-BRANCH_APP_6="feature/SecuredV2X_PedIdType"
+BRANCH_APP_6="develop"
 
 # [7] v2xhub-tena-v2x-plugin
 BRANCH_APP_7="develop"

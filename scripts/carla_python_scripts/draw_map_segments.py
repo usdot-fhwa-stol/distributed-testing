@@ -7,9 +7,6 @@ import json
 import itertools
 
 # Import CARLA API and locate the active runtime
-from find_carla_egg import find_carla_egg
-carla_egg_file = find_carla_egg()
-sys.path.append(carla_egg_file)
 import carla
 
 ################################################################################

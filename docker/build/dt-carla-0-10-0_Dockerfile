@@ -1,4 +1,6 @@
+#
 # BUILD COMMAND: VERSION=0.0.1 && sudo DOCKER_BUILDKIT=1 docker build --build-arg version=$VERSION -t harbor.distributedtesting.org/distributed-testing/dt-carla:0-10-0-$VERSION . --progress=plain -f dt-carla-0-10-0_Dockerfile
+#
 
 FROM carlasim/carla:0.10.0
 
@@ -6,7 +8,7 @@ ARG VERSION
 ARG DEBIAN_FRONTEND="noninteractive"
 
 LABEL version=${VERSION} \
-      description="Distributed Testing Docker image for CARLA including event maps"
+    description="Distributed Testing Docker image for CARLA including event maps"
 
 SHELL ["/bin/bash", "-ec"]
 
@@ -14,23 +16,16 @@ USER root
 
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
-        apt-utils \
-        gnupg \
-        software-properties-common && \
-    add-apt-repository -y ppa:sumo/stable && \
-    add-apt-repository -y ppa:deadsnakes/ppa && \
-    apt-get update && \
-    apt-get install -y --no-install-recommends \
-        vulkan-tools \
-        iproute2 iputils-ping nano tshark git tcpdump nethogs rsync curl \
-        libxcb-xinerama0 libfreetype6 libfontconfig1 libsm6 libxi6 libx11-xcb1 \
-        libxcb-cursor0 libxcb-icccm4 libxcb-image0 libxcb-keysyms1 libxcb-randr0 \
-        libxcb-render-util0 libxcb-shape0 libxcb-sync1 libxcb-xfixes0 libxcb-xkb1 \
-        libxkbcommon-x11-0 libjpeg8 libtiff5 \
-        sumo sumo-tools sumo-doc \
-        gcc g++ libevdev-dev \
-        dumb-init locales \
-        python3.10 python3.10-dev python3.10-venv python3-pip && \
+    iproute2 iputils-ping curl \
+    libxcb-xinerama0 libfreetype6 libfontconfig1 libsm6 libxi6 libx11-xcb1 \
+    libxcb-cursor0 libxcb-icccm4 libxcb-image0 libxcb-keysyms1 libxcb-randr0 \
+    libxcb-render-util0 libxcb-shape0 libxcb-sync1 libxcb-xfixes0 libxcb-xkb1 \
+    libxkbcommon-x11-0 libjpeg8 libtiff5 \
+    dumb-init locales \
+    fontconfig \
+    build-essential \
+    libevdev-dev \
+    python3.10 python3-dev python3-pip && \
     locale-gen en_US.UTF-8 && \
     update-locale LANG=en_US.UTF-8 && \
     update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.10 100 && \
@@ -44,20 +39,22 @@ RUN chmod +x /home/carla/start_scripts/*
 
 USER carla
 
+RUN pip3 install --no-cache-dir --user --upgrade pip setuptools wheel
+
 RUN pip3 install --no-cache-dir --user \
-        numpy \
-        pygame-ce \
-        pycrate \
-        traci \
-        pynput \
-        requests \
-        scapy \
-        shapely \
-        lxml \
-        networkx \
-        matplotlib \
-        pandas \
-        /home/carla/PythonAPI/carla/dist/carla-0.10.0-cp310-cp310-linux_x86_64.whl
+    requests \
+    networkx \
+    scapy \
+    numpy \
+    pandas \
+    matplotlib \
+    shapely \
+    pygame-ce \
+    pycrate \
+    pynput \
+    lxml \
+    traci \
+    /home/carla/PythonAPI/carla/dist/carla-0.10.0-cp310-cp310-linux_x86_64.whl
 
 RUN echo 'source /home/carla/start_scripts/setup-carla-docker.sh' >> /home/carla/.bashrc
 

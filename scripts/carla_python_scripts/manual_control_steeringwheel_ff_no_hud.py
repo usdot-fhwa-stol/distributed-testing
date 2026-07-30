@@ -33,11 +33,7 @@ import sys
 import evdev
 from evdev import ecodes, InputDevice, ff
 
-from find_carla_egg import find_carla_egg
 
-carla_egg_file = find_carla_egg()
-
-sys.path.append(carla_egg_file)
 
 # ==============================================================================
 # -- imports -------------------------------------------------------------------

@@ -90,7 +90,6 @@ else
     echo "ERROR: Error occurred while validating configuration. See $CONFIG_VALIDATION_LOG for more details"
 fi
 
-
 # Check if openvpn3 is installed
 if ! command -v openvpn3 &> /dev/null
 then
