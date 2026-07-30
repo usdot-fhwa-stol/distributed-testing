@@ -55,7 +55,6 @@ def get_junction_id(tl: "carla.TrafficLight"):
          case the stop line sits further back from the junction polygon
          than expected.
     """
-    # 1. Affected lane waypoints (usually already inside the junction)
     try:
         affected_wps = tl.get_affected_lane_waypoints()
     except AttributeError:
@@ -64,13 +63,11 @@ def get_junction_id(tl: "carla.TrafficLight"):
     for wp in affected_wps:
         if wp.is_junction:
             return wp.get_junction().id
-        # sometimes these sit just outside; try a short forward walk too
         for step in (1.0, 2.0, 4.0, 8.0):
             nxt = wp.next(step)
             if nxt and nxt[0].is_junction:
                 return nxt[0].get_junction().id
 
-    # 2. Fall back to stop waypoints, walking forward further than before
     try:
         stop_wps = tl.get_stop_waypoints()
     except AttributeError:
@@ -107,7 +104,6 @@ def build_actor_to_signal_id_map(world: "carla.World", carla_map: "carla.Map") -
     """
     mapping: dict[int, str] = {}
 
-    # '1000001' is the OpenDRIVE landmark type code for traffic signals.
     try:
         landmarks = carla_map.get_all_landmarks_of_type("1000001")
     except AttributeError:
@@ -161,15 +157,11 @@ def extract_map_data(
     print(f"Extracting configuration for map: {carla_map.name}")
     print("=" * 60)
 
-    # 1. Geodetic Origin (kept for reference / route section only)
-    origin_geo = carla_map.transform_to_geolocation(
-        carla.Location(x=0, y=0, z=0)
-    )
+    origin_geo = carla_map.transform_to_geolocation(carla.Location(x=0, y=0, z=0))
     print("\n1. GEODETIC ORIGIN (x=0, y=0, z=0):")
     print(f"   Latitude:  {origin_geo.latitude:.6f}\u00b0")
     print(f"   Longitude: {origin_geo.longitude:.6f}\u00b0")
 
-    # 2. Group traffic lights by junction
     traffic_lights = world.get_actors().filter("traffic.traffic_light")
     print(
         f"\n2. Found {len(traffic_lights)} traffic light actors. Grouping by junction..."
@@ -204,9 +196,7 @@ def extract_map_data(
             signal_id = str(tl.id)
 
         heading = get_stop_waypoint_heading(tl)
-        geo_loc = carla_map.transform_to_geolocation(
-            tl.get_transform().location
-        )
+        geo_loc = carla_map.transform_to_geolocation(tl.get_transform().location)
 
         record = {
             "actor_id": tl.id,
@@ -251,7 +241,6 @@ def extract_map_data(
             f"(actors {[r['actor_id'] for r in recs]})"
         )
 
-    # 3. Build per-junction configuration blocks + controllers + intersections.json
     config_blocks = []
     controllers_xml_list = []
     intersections_json = {"intersections": []}
@@ -259,7 +248,6 @@ def extract_map_data(
     for idx, (jid, recs) in enumerate(sorted(junctions.items()), start=1):
         name = f"J{jid:03d}"
 
-        # 3a. Build intersectionSignalControllers entry
         controller_entry = (
             f'    <intersectionSignalController name="{name}" adapterType="spat-adapter" adapterName="SPAT-1" lvcIndicator="Live">\n'
             f"      <userData>\n"
@@ -273,7 +261,6 @@ def extract_map_data(
         )
         controllers_xml_list.append(controller_entry)
 
-        # 3b. Build phaseSignalMappings configuration entry
         avg_lat = sum(r["geo"].latitude for r in recs) / len(recs)
         avg_lon = sum(r["geo"].longitude for r in recs) / len(recs)
 
@@ -285,13 +272,10 @@ def extract_map_data(
         side_phases = set()
 
         for r in recs:
-            direction, phase = get_cardinal_direction(
-                r["heading"], main_heading
-            )
+            direction, phase = get_cardinal_direction(r["heading"], main_heading)
 
-            # Updated controller/control/userData payload format
             mappings_xml += (
-                f'      <!-- {direction}, Actor {r["actor_id"]} -->\n'
+                f"      <!-- {direction}, Actor {r['actor_id']} -->\n"
                 f'      <controller name="" id="">\n'
                 f'        <control signalId="{r["signal_id"]}" type="">\n'
                 f"          <userData><phase>{phase}</phase></userData>\n"
@@ -322,40 +306,7 @@ def extract_map_data(
             }
         )
 
-    # 4. Route waypoints
-    waypoints_xml = []
-    all_records = [
-        r for recs in junctions.values() for r in recs
-    ] or unassigned
-    if all_records:
-        start_wp = carla_map.get_waypoint(all_records[0]["loc"])
-        curr_wp = start_wp
-        time_step = 0
-
-        print(
-            f"\n3. SAMPLE ROUTE WAYPOINTS (near Actor {all_records[0]['actor_id']}):"
-        )
-        for _ in range(num_waypoints):
-            loc = curr_wp.transform.location
-            geo = carla_map.transform_to_geolocation(loc)
-            heading = curr_wp.transform.rotation.yaw
-
-            snippet = (
-                f'      <waypoint latitudeInDegrees="{geo.latitude:.9f}" '
-                f'longitudeInDegrees="{geo.longitude:.9f}" '
-                f'heightAboveEllipsoidInMeters="{geo.altitude:.0f}" '
-                f'heading="{heading:.1f}" time="{time_step}"/>'
-            )
-            waypoints_xml.append(snippet)
-            print(snippet)
-
-            next_wps = curr_wp.next(5.0)
-            if next_wps:
-                curr_wp = next_wps[0]
-            time_step += 1
-
     controllers_xml = "\n\n".join(controllers_xml_list)
-    waypoints_block = "\n".join(waypoints_xml)
     configs_block = "\n\n".join(config_blocks)
 
     xml_template = f"""<intersectionSignalControllers>
@@ -371,13 +322,7 @@ def extract_map_data(
     <WeatherState>ClearNoon</WeatherState>
   </simulation>
 </simulations>
-
-<routes>
-  <route name="DEFAULT-Route-1" entityIdentifier="DEFAULT-R-1" csvRoute="route_files/town10_test_route.csv"/>
-  <route name="DEFAULT-Route-2" entityIdentifier="DEFAULT-P-1">
-{waypoints_block}
-  </route>
-</routes>"""
+"""
 
     return xml_template, intersections_json
 
@@ -398,19 +343,45 @@ def parse_main_headings(raw: str | None) -> dict[int, float]:
 
 def main() -> None:
     argparser = argparse.ArgumentParser(description=__doc__)
-    argparser.add_argument("--host", metavar="H", default="localhost",
-                            help="IP of the host CARLA Simulator (default: localhost)")
-    argparser.add_argument("-p", "--port", metavar="P", default=2000, type=int,
-                            help="TCP port of CARLA Simulator (default: 2000)")
-    argparser.add_argument("-m", "--map", help="load a new map (e.g., Town10HD_Opt or Town10)")
-    argparser.add_argument("-x", "--xodr-path", metavar="XODR_FILE_PATH",
-                            help="load map from an OpenDRIVE file")
-    argparser.add_argument("--osm-path", metavar="OSM_FILE_PATH",
-                            help="load map from an OpenStreetMap file")
-    argparser.add_argument("-o", "--output", metavar="XML_PATH",
-                            help="save extracted configuration XML directly to a file")
-    argparser.add_argument("--json-output", metavar="JSON_PATH",
-                            help="save extracted intersections JSON directly to a file")
+    argparser.add_argument(
+        "--host",
+        metavar="H",
+        default="localhost",
+        help="IP of the host CARLA Simulator (default: localhost)",
+    )
+    argparser.add_argument(
+        "-p",
+        "--port",
+        metavar="P",
+        default=2000,
+        type=int,
+        help="TCP port of CARLA Simulator (default: 2000)",
+    )
+    argparser.add_argument(
+        "-m", "--map", help="load a new map (e.g., Town10HD_Opt or Town10)"
+    )
+    argparser.add_argument(
+        "-x",
+        "--xodr-path",
+        metavar="XODR_FILE_PATH",
+        help="load map from an OpenDRIVE file",
+    )
+    argparser.add_argument(
+        "--osm-path",
+        metavar="OSM_FILE_PATH",
+        help="load map from an OpenStreetMap file",
+    )
+    argparser.add_argument(
+        "-o",
+        "--output",
+        metavar="XML_PATH",
+        help="save extracted configuration XML directly to a file",
+    )
+    argparser.add_argument(
+        "--json-output",
+        metavar="JSON_PATH",
+        help="save extracted intersections JSON directly to a file",
+    )
     argparser.add_argument(
         "--main-headings",
         metavar="JID=HEADING[,JID=HEADING...]",
@@ -467,7 +438,9 @@ def main() -> None:
         world = client.get_world()
 
     main_headings = parse_main_headings(args.main_headings)
-    xml_output, intersections_json = extract_map_data(world, main_headings=main_headings)
+    xml_output, intersections_json = extract_map_data(
+        world, main_headings=main_headings
+    )
 
     print("\n" + "=" * 60)
     print("4. GENERATED CONFIGURATION XML:")
@@ -489,9 +462,10 @@ def main() -> None:
         json_path.write_text(json.dumps(intersections_json, indent=2), encoding="utf-8")
         print(f"Successfully wrote intersections JSON to {json_path.resolve()}")
     elif args.output:
-        # default: write alongside the XML output with a matching name
         default_json_path = Path(args.output).with_suffix(".json")
-        default_json_path.write_text(json.dumps(intersections_json, indent=2), encoding="utf-8")
+        default_json_path.write_text(
+            json.dumps(intersections_json, indent=2), encoding="utf-8"
+        )
         print(f"Successfully wrote intersections JSON to {default_json_path.resolve()}")
 
 

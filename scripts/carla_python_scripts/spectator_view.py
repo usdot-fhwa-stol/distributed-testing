@@ -3,20 +3,29 @@
 import argparse
 import sys
 import time
+
 import carla
 
 MAP_PRESETS = {
-    "delave": {
+    "DelaveV21": {
         "location": carla.Location(x=-105.437805, y=726.073425, z=926.507080),
         "rotation": carla.Rotation(pitch=-89.0, yaw=-90.0, roll=0.0),
     },
-    "mcity": {
+    "MCity": {
         "location": carla.Location(x=99.919708, y=-34.552490, z=453.469788),
         "rotation": carla.Rotation(pitch=-88.999451, yaw=4.830535, roll=0.0),
     },
-    "default": {
+    "Town04": {
         "location": carla.Location(x=298.728577, y=-216.214294, z=46.651649),
         "rotation": carla.Rotation(pitch=-43.542046, yaw=144.351303, roll=0.0),
+    },
+    "Town10HD_Opt": {
+        "location": carla.Location(x=-298.728577, y=216.214294, z=46.651649),
+        "rotation": carla.Rotation(pitch=43.542046, yaw=-144.351303, roll=0.0),
+    },
+    "default": {
+        "location": carla.Location(x=-298.728577, y=216.214294, z=46.651649),
+        "rotation": carla.Rotation(pitch=43.542046, yaw=-144.351303, roll=0.0),
     },
 }
 
@@ -89,12 +98,16 @@ def main() -> None:
         target_y = args.y if args.y is not None else preset["location"].y
         target_z = args.z if args.z is not None else preset["location"].z
 
-        target_pitch = args.pitch if args.pitch is not None else preset["rotation"].pitch
+        target_pitch = (
+            args.pitch if args.pitch is not None else preset["rotation"].pitch
+        )
         target_yaw = args.yaw if args.yaw is not None else preset["rotation"].yaw
         target_roll = args.roll if args.roll is not None else preset["rotation"].roll
 
         target_location = carla.Location(x=target_x, y=target_y, z=target_z)
-        target_rotation = carla.Rotation(pitch=target_pitch, yaw=target_yaw, roll=target_roll)
+        target_rotation = carla.Rotation(
+            pitch=target_pitch, yaw=target_yaw, roll=target_roll
+        )
         target_transform = carla.Transform(target_location, target_rotation)
 
         spectator.set_transform(target_transform)

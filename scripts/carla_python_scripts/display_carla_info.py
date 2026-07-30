@@ -1,26 +1,5 @@
 """
 Overlay actor labels and traffic signal states in the CARLA simulation world.
-
-The script is map-independent.
-
-Examples:
-
-    # Show traffic signals and vehicles continously.
-    python carla_overlay.py --show-signals --show-vehicles --duration 0
-
-    # Include walkers and print actor details.
-    python carla_overlay.py \
-      --show-vehicles \
-      --show-walkers \
-      --show-signals \
-      --duration 0 \
-      --verbose
-
-Environment variables:
-
-    VUG_DISPLAY_TRAFFIC_SIGNAL_STATES=true
-    VUG_DISPLAY_VEHICLE_ROLENAMES=true
-    VUG_DISPLAY_WALKER_ROLENAMES=true
 """
 
 import argparse
@@ -98,35 +77,6 @@ def parse_arguments() -> argparse.Namespace:
         default=0.5,
         help="Seconds between continuous overlay updates (default: 0.5).",
     )
-
-    parser.add_argument(
-        "--show-vehicles",
-        action=argparse.BooleanOptionalAction,
-        default=None,
-        help=(
-            "Display vehicle role-name labels. If unspecified, uses "
-            "VUG_DISPLAY_VEHICLE_ROLENAMES."
-        ),
-    )
-    parser.add_argument(
-        "--show-walkers",
-        action=argparse.BooleanOptionalAction,
-        default=None,
-        help=(
-            "Display walker role-name labels. If unspecified, uses "
-            "VUG_DISPLAY_WALKER_ROLENAMES."
-        ),
-    )
-    parser.add_argument(
-        "--show-signals",
-        action=argparse.BooleanOptionalAction,
-        default=None,
-        help=(
-            "Display traffic-light state labels. If unspecified, uses "
-            "VUG_DISPLAY_TRAFFIC_SIGNAL_STATES."
-        ),
-    )
-
     parser.add_argument(
         "--vehicle-label-height",
         type=float,
@@ -413,15 +363,6 @@ def display_traffic_signal_state(
         )
 
 
-def resolve_display_option(
-    argument_value: Optional[bool],
-    environment_variable: str,
-) -> bool:
-    if argument_value is not None:
-        return argument_value
-
-    return env_bool(environment_variable)
-
 def clear_all_labels(world: carla.World) -> None:
     world.debug.draw_string(
         location=carla.Location(x=0, y=0, z=0),
@@ -431,7 +372,8 @@ def clear_all_labels(world: carla.World) -> None:
         life_time=0.001,
         persistent_lines=False,
     )
-    
+
+
 def main() -> None:
     args = parse_arguments()
 
@@ -440,31 +382,29 @@ def main() -> None:
         sys.exit(2)
 
     if args.refresh_interval <= 0:
-        print("Error: --refresh-interval must be greater than zero.", file=sys.stderr)
+        print(
+            "Error: --refresh-interval must be greater than zero.",
+            file=sys.stderr,
+        )
         sys.exit(2)
 
     if args.surface_tolerance < 0:
-        print("Error: --surface-tolerance must be zero or greater.", file=sys.stderr)
+        print(
+            "Error: --surface-tolerance must be zero or greater.",
+            file=sys.stderr,
+        )
         sys.exit(2)
 
-    show_signals = resolve_display_option(
-        args.show_signals,
-        "VUG_DISPLAY_TRAFFIC_SIGNAL_STATES",
-    )
-    show_vehicles = resolve_display_option(
-        args.show_vehicles,
-        "VUG_DISPLAY_VEHICLE_ROLENAMES",
-    )
-    show_walkers = resolve_display_option(
-        args.show_walkers,
-        "VUG_DISPLAY_WALKER_ROLENAMES",
-    )
+    show_signals = env_bool("VUG_DISPLAY_TRAFFIC_SIGNAL_STATES")
+    show_vehicles = env_bool("VUG_DISPLAY_VEHICLE_ROLENAMES")
+    show_walkers = env_bool("VUG_DISPLAY_WALKER_ROLENAMES")
 
     if not show_signals and not show_vehicles and not show_walkers:
         print("No overlay types are enabled.")
         print(
-            "Use --show-vehicles, --show-walkers, or --show-signals, "
-            "or set the matching VUG_DISPLAY_* environment variable."
+            "Set VUG_DISPLAY_VEHICLE_ROLENAMES, "
+            "VUG_DISPLAY_WALKER_ROLENAMES, or "
+            "VUG_DISPLAY_TRAFFIC_SIGNAL_STATES to true."
         )
         return
 

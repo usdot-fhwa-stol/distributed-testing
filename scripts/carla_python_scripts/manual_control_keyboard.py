@@ -49,8 +49,6 @@ H or ?             Toggle help
 Esc or Ctrl+Q      Quit
 """
 
-from __future__ import annotations
-
 import argparse
 import collections
 import datetime
