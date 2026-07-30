@@ -23,6 +23,8 @@ dt_scenario_config=$HOME/.dt_scenario_config
 
 dt_site_config_docker=$HOME/.dt_site_config_docker
 dt_scenario_config_docker=$HOME/.dt_scenario_config_docker
+GNSS_CONFIG_FILE="/home/dt_user/trajecory_config/trajectory_config.cfg"
+GNSS_TYPE="ubx"    # Options: ubx | nmea
 
 if [ -L ${dt_site_config} ] && [ -L ${dt_scenario_config} ]; then
     if [ -e ${dt_site_config} ] && [ -e ${dt_scenario_config} ]; then
@@ -92,4 +94,16 @@ BASH_XTRACEFD=4
 
 set -x
 
-$localadapterPath/bin/tena-gnss-emulator $useBestEffort -emEndpoints $VUG_EM_ADDRESS:$VUG_EM_PORT -listenEndpoints $VUG_LOCAL_ADDRESS -simId $VUG_SIM_ID -siteID $siteID -applicationID $applicationID -verbosity $adapterVerbosity -GNSSPublishRate 10 -adapterSendEndpoint $HWIL_GNSS_EMULATOR_SEND_ADDRESS:$HWIL_GNSS_EMULATOR_SEND_PORT | awk -v adapter="[$VUG_GNSS_EMULATOR_VERSION]" '{ print adapter, $0; fflush(); }'| tee -a $adapterLogFile
+"$localadapterPath/bin/tena-gnss-emulator" $useBestEffort \
+    -emEndpoints "$VUG_EM_ADDRESS:$VUG_EM_PORT" \
+    -listenEndpoints "$VUG_LOCAL_ADDRESS" \
+    -simId "$VUG_SIM_ID" \
+    -siteID "$siteID" \
+    -applicationID "$applicationID" \
+    -verbosity "$adapterVerbosity" \
+    -GNSSPublishRate 10 \
+    -adapterSendEndpoint "$HWIL_GNSS_EMULATOR_SEND_ADDRESS:$HWIL_GNSS_EMULATOR_SEND_PORT" \
+    -gnssconfigFile "$GNSS_CONFIG_FILE" \
+    -gnssType "$GNSS_TYPE" \
+    | awk -v adapter="[$VUG_GNSS_EMULATOR_VERSION]" '{ print adapter, $0; fflush(); }' \
+    | tee -a "$adapterLogFile"
