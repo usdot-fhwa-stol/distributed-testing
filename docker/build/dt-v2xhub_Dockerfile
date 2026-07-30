@@ -1,5 +1,5 @@
 #
-# BUILD COMMAND: source build-assets_hass.env && sudo DOCKER_BUILDKIT=1 docker build --secret id=usdotfhwastol_token,src=usdotfhwastol_token --build-arg VERSION=$VERSION --build-context assets="$BUILD_DIR" -t harbor.distributedtesting.org/distributed-testing-dev/dt-v2xhub:0.0.3 . --progress=plain -f dt-v2xhub_Dockerfile
+# BUILD COMMAND: VERSION=1.0.0-hass && source build-assets_hass.env && sudo DOCKER_BUILDKIT=1 docker build --secret id=usdotfhwastol_token,src=usdotfhwastol_token --build-arg VERSION=$VERSION --build-context assets="$BUILD_DIR" -t harbor.distributedtesting.org/distributed-testing-dev/dt-v2xhub:$VERSION . --progress=plain -f dt-v2xhub_Dockerfile
 #
 
 # dt-build-v2xhub image is a commit of the .devcontainer V2XHub image with all build artifacts. It was built locally using develop and then committed and tagged using 'docker commit ....'
