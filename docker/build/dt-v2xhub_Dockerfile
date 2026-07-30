@@ -49,10 +49,11 @@ WORKDIR /home/plugin
 USER root
 
 # Mounts files in a temporary space with rw perms, copies them to container, runs postinst scripts, changes ownership
-COPY --from=build --chown=plugin:plugin /home/plugin/opt/TENA /home/plugin/TENA
+COPY --from=build --chown=plugin:nogroup /home/plugin/opt/TENA /home/plugin/TENA
 RUN DSTROOT=/home/plugin ./TENA/postinst-MW
 RUN DSTROOT=/home/plugin ./TENA/postinst-DIST
 RUN mkdir /home/plugin/TENA/log
+RUN chown -R plugin:nogroup /home/plugin
 
 RUN apt-get update && apt-get install -y \
     cmake cmake-data git build-essential libboost-all-dev clang g++ lld ninja-build \
