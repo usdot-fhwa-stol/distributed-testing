@@ -1,4 +1,4 @@
-#/bin/bash
+#!/bin/bash
 
 #  *
 #  * Copyright (C) 2022 LEIDOS.
@@ -23,7 +23,7 @@ dt_scenario_config=$HOME/.dt_scenario_config
 
 dt_site_config_docker=$HOME/.dt_site_config_docker
 dt_scenario_config_docker=$HOME/.dt_scenario_config_docker
-GNSS_CONFIG_FILE="/home/dt_user/trajecory_config/trajectory_config.cfg"
+GNSS_CONFIG_FILE="/home/dt_user/trajectory_config/trajectory_config.cfg"
 GNSS_TYPE="ubx"    # Options: ubx | nmea
 
 if [ -L ${dt_site_config} ] && [ -L ${dt_scenario_config} ]; then
@@ -55,7 +55,8 @@ if [ -L ${dt_site_config} ] && [ -L ${dt_scenario_config} ]; then
         echo "Scenario Config: "$(readlink -f $scenario_link_base_name)
         exit 1
    fi
-elif [ -e ${dt_site_config} ] || [ -e ${dt_site_config} ]; then
+elif [ -e "${dt_site_config}" ] ||
+    [ -e "${dt_scenario_config}" ]; then
     echo "[!!!] .dt_site_config or .dt_scenario_config file is not a symbolic link"
     echo "Site Config: "$(readlink -f $site_link_base_name)
     echo "Scenario Config: "$(readlink -f $scenario_link_base_name)

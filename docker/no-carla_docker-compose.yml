@@ -19,4 +19,4 @@ services:
       - ${VUG_LOCAL_DT_PATH}:/home/dt_user/distributed-testing
       - ~/tenadev/INSTALL/HWILgnssEmulator-1.0.0:/home/dt_user/VUG_Adapters/HWILgnssEmulator-1.0.0
       - ~/distributed-testing/docker/build/lib/COPY/start_scripts:/home/dt_user/start_scripts
-      - ~/tenadev/trajectory_config.cfg:/home/dt_user/trajecory_config/trajectory_config.cfg
+      - ~/tenadev/trajectory_config.cfg:/home/dt_user/trajectory_config/trajectory_config.cfg:ro

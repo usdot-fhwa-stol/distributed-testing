@@ -10,9 +10,19 @@
   </OpenDrive>
 
   <radios>
-    <radio name="DEFAULT-R-1" lvcIndicator="Live" simulationIdentifier="GNSSEmulator-R-1" organization="DEFAULT" scmsEnrolled="true">
+    <radio
+        name="DEFAULT-R-1"
+        lvcIndicator="Live"
+        simulationIdentifier="GNSSEmulator-R-1"
+        adapterIdentifier="CARLA-FHWA-3"
+        organization="DEFAULT"
+        scmsEnrolled="true">
       <initialTSPI>
-        <GeodeticPosition latitudeInDegrees="0.002066" longitudeInDegrees="0.002291" heightAboveEllipsoidInMeters="1"> </GeodeticPosition>
+        <GeodeticPosition
+            latitudeInDegrees="0.002066"
+            longitudeInDegrees="0.002291"
+            heightAboveEllipsoidInMeters="1">
+        </GeodeticPosition>
         <Heading>90</Heading>
       </initialTSPI>
     </radio>
@@ -25,8 +35,8 @@
   </simulations>
 
   <routes>
-    <route name="DEFAULT-Route-1" entityIdentifier="DEFAULT-R-1" csvRoute="route_files/test_route.csv"/>
-    <route name="DEFAULT-Route-2" entityIdentifier="DEFAULT-P-1">
+    <route name="DEFAULT-Route-1" entityIdentifier="DEFAULT-P-1" csvRoute="route_files/test_route.csv"/>
+    <route name="DEFAULT-Route-2" entityIdentifier="DEFAULT-R-1">
       <waypoint latitudeInDegrees="0.000000000" longitudeInDegrees="0.000000000" heightAboveEllipsoidInMeters="1" heading="90.0" time="0"/>
       <waypoint latitudeInDegrees="0.000000000" longitudeInDegrees="0.000080317" heightAboveEllipsoidInMeters="1" heading="90.0" time="1"/>
       <waypoint latitudeInDegrees="0.000000000" longitudeInDegrees="0.000160633" heightAboveEllipsoidInMeters="1" heading="90.0" time="2"/>
