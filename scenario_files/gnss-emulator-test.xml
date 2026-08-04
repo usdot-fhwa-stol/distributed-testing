@@ -14,7 +14,7 @@
         name="DEFAULT-R-1"
         lvcIndicator="Live"
         simulationIdentifier="GNSSEmulator-R-1"
-        adapterIdentifier="CARLA-FHWA-3"
+        adapterIdentifier="CARLA-DEFAULT-3"
         organization="DEFAULT"
         scmsEnrolled="true">
       <initialTSPI>
