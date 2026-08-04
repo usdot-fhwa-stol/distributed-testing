@@ -603,9 +603,8 @@ try:
                 os.makedirs(folder_path)
                 os.chmod(folder_path,0o777)
             except Exception as errMsg:
-                print(f"ERROR: Unable to make directory waypoint files: {errMsg}")
-                print("\tCreate directory waypoint_files within carla_python_scripts with read and write permissions for all users:")
-                print("\t\t'mkdir waypoint_files' -> 'chmod 777 waypoint_files'")
+                print("ERROR: Unable to make directory waypoint files. ")
+                print("\t\tCreate directory waypoint_files within carla_python_scripts with read and write permissions for all users")
                 sys.exit(1)
 
     if args.follow_vehicle:

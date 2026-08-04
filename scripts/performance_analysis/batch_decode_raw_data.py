@@ -303,7 +303,8 @@ def export_pcap_data(site_dir_abs,this_site_metadata):
     return this_site_metadata
 
 def export_tdcs_data(site_dir_abs,this_site_metadata):
-    dataview_dir = "/opt/TENA/DataView-v1.5.4/start.sh"
+    VUG_LOCAL_TENA_PATH = os.environ["VUG_LOCAL_TENA_PATH"]
+    dataview_dir = VUG_LOCAL_TENA_PATH + "/DataView-v1.5.4/start.sh"
 
     skip_export = create_folder(site_dir_abs,["exported_tdcs"])
 

@@ -10,16 +10,17 @@
   </OpenDrive>
 
   <vehicles>
-    <vehicle name="DEFAULT-M-1" bsmid="f03ad658" type="vehicle.toyota.prius" simulationIdentifier="CARLA-DEFAULT-1" material="Aluminum" lvcIndicator="Constructive" generate_bsms="true" organization="DEFAULT">
-      <initialTSPI>
-        <GeodeticPosition latitudeInDegrees="0.001800" longitudeInDegrees="0.001122" heightAboveEllipsoidInMeters="1"> </GeodeticPosition>
-        <Heading>21.85235</Heading>
-      </initialTSPI>
+
+   <vehicle name="DEFAULT-M-1" bsmid="f03ad610" type="vehicle.ford.mustang" simulationIdentifier="CARLA-DEFAULT-1" material="Aluminum" lvcIndicator="Constructive" generate_bsms="true" organization="DEFAULT">
+        <initialTSPI>
+            <GeodeticPosition latitudeInDegrees="0.001936" longitudeInDegrees="0.000771" heightAboveEllipsoidInMeters="1"> </GeodeticPosition>
+            <Heading>21.85235</Heading>
+        </initialTSPI>
     </vehicle>
   </vehicles>
 
   <pedestrians>
-    <pedestrian name="DEFAULT-P-1" safetyid="12345678" identifierType="psm" type="walker.pedestrian.0001" organization="DEFAULT" lvcIndicator="Live">
+    <pedestrian name="DEFAULT-P-1" type="walker.pedestrian.0001" safetyid="12345678" identifierType="psm" organization="DEFAULT" lvcIndicator="Live">
       <initialTSPI>
         <GeodeticPosition latitudeInDegrees="0.001532" longitudeInDegrees="0.001931" heightAboveEllipsoidInMeters="1"> </GeodeticPosition>
         <Heading>38</Heading>
@@ -28,7 +29,7 @@
   </pedestrians>
 
   <radios>
-    <radio name="DEFAULT-R-1" lvcIndicator="Live" simulationIdentifier="GNSSEmulator-R-1" organization="DEFAULT" scmsEnrolled="true">
+    <radio name="DEFAULT-R-1" adapterIdentifier="GNSSEMU-1" lvcIndicator="Live" organization="DEFAULT" scmsEnrolled="true">
       <initialTSPI>
         <GeodeticPosition latitudeInDegrees="0.002066" longitudeInDegrees="0.002291" heightAboveEllipsoidInMeters="1"> </GeodeticPosition>
         <Heading>90</Heading>

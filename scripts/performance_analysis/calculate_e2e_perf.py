@@ -1159,9 +1159,9 @@ def performance_post_processing(results_file):
         
         print("\t" + str(column) + ": ")
         
-        column_min = results_only_dataset[column].min(numeric_only=True)
-        column_max = results_only_dataset[column].max(numeric_only=True)
-        column_mean = results_only_dataset[column].mean(numeric_only=True)
+        column_min = results_only_dataset[column].min()
+        column_max = results_only_dataset[column].max()
+        column_mean = results_only_dataset[column].mean()
         print("\t\tMin: " + str(column_min))
         print("\t\tMax: " + str(column_max))
         print("\t\tMean: " + str(column_mean))
@@ -1375,7 +1375,7 @@ def plot_latency(file_path, results_base_dir):
 
 
     plt.title('Latency of each Segment')
-    plt.xlabel('Index')
+    plt.xlabel('Time (UTC)')
     # Ensure end_of_shortest_data is within the range of available timestamps
     if end_of_shortest_data is not None:
         max_timestamp = timestamps.max()
@@ -1388,7 +1388,7 @@ def plot_latency(file_path, results_base_dir):
             # If end_of_shortest_data is out of bounds, set the limit to the maximum timestamp
             plt.gca().set_xlim(right=max_timestamp)
     plt.ylabel('Latency (ms)')
-    plt.gca().set_ylim(bottom=0)
+    plt.axhline(0, color='black', linestyle='--', linewidth=3)
     plt.legend()
     plt.grid(True)
     combined_plot_path = os.path.join(results_base_dir, f'{base_name}_combined_plot.png')
@@ -1411,7 +1411,7 @@ def plot_latency(file_path, results_base_dir):
     
     plt.ylabel("Latency (ms)")
     plt.gca().set_ylim(bottom=0)
-    plt.xlabel('Index')
+    plt.xlabel('Time (UTC)')
 
     if end_of_shortest_data != None:
         plt.gca().set_xlim(right=end_of_shortest_data)
@@ -1420,10 +1420,10 @@ def plot_latency(file_path, results_base_dir):
     for col_name in incremental_col_to_plot:
         cleaned_col_names.append(clean_column_name(col_name))
 
-    plt.legend(cleaned_col_names)
+    plt.legend(cleaned_col_names, loc="upper center")
+    plt.tight_layout()
     plt.title("Latency in Segments")
-    
-    bar_plot_path = f'{file_path}_stacked_bar_chart.png'
+    bar_plot_path = os.path.join(results_base_dir, f'{base_name}_stacked_bar_chart.png')
     plt.savefig(bar_plot_path)
     plt.close()
 
@@ -1466,11 +1466,11 @@ def plot_latency(file_path, results_base_dir):
     first_occurrence = consecutive.idxmax() if consecutive.any() else None
 
     plt.title('End to End Latency')
-    plt.xlabel('Index')
+    plt.xlabel('Time (UTC)')
     if first_occurrence != None:
         plt.gca().set_xlim(right=first_occurrence)
     plt.ylabel('Latency (ms)')
-    plt.gca().set_ylim(bottom=0)
+    plt.axhline(0, color='black', linestyle='--', linewidth=3)
     plt.legend()
     plt.grid(True)
     last_total_plot_path = os.path.join(results_base_dir, f'{base_name}_last_total_latency_plot.png')
@@ -1481,8 +1481,10 @@ def plot_latency(file_path, results_base_dir):
     # Plot total histograms
     ################# 
     last_total_latency_data.hist(bins=50, figsize=(20, 8))
-    plt.title('End to End Latency Histogram')
-    hist_plot_path = f'{file_path}_histograms.png'
+    plt.title('Latency Distribution')
+    plt.xlabel('Latency (ms)')
+    plt.ylabel('Frequency')
+    hist_plot_path = os.path.join(results_base_dir, f'{base_name}_histograms.png')
     plt.savefig(hist_plot_path)
     plt.close()
 
@@ -1651,7 +1653,7 @@ def select_message_type_user_input():
 # specifies the number of match_keys defined in the params for each data source
 num_match_keys = 5
 
-J2735_message_types = ["J2735","J3224","J2735-BSM","J2735-SPAT","J2735-MAP","Vehicle","MAP","TrafficLight","BSM","Mobility_Request","Mobility_Response","Mobility_Path","Mobility_Operations-STATUS","Mobility_Operations-INFO","Traffic_Control_Request","Traffic_Control_Message"]
+J2735_message_types = ["J2735","J3224","J2735-BSM","J2735-SPAT","J2735-MAP","LandVehicle","MAP","TrafficLight","BSM","Mobility_Request","Mobility_Response","Mobility_Path","Mobility_Operations-STATUS","Mobility_Operations-INFO","Traffic_Control_Request","Traffic_Control_Message", "V2XMessage", "TrafficSignalController"]
 
 J2735_message_type_ids = {
     "BSM"   : "0014",
@@ -1660,7 +1662,7 @@ J2735_message_type_ids = {
 }
 
 # list of J2735 messages that become TENA Messages (as opposed to SDOs)
-J2735_message_types_as_tena_message = ["Traffic_Control_Request","Traffic_Control_Message", "J2735","J3224"]
+J2735_message_types_as_tena_message = ["Traffic_Control_Request","Traffic_Control_Message", "J2735","J3224","V2XMessage"]
 
 desired_intersection_name = ""
 desired_signal_id = "1628"
@@ -1686,7 +1688,7 @@ argparser.add_argument(
     dest='data_type',
     type=str,
     default=None,
-    help='Data type to be analyzed OPTIONS: [J2725,MAP,SPAT,BSM,Vehicle,Mobility_Request,Mobility_Response,Mobility_Path,Mobility_Operations-STATUS,Mobility_Operations-INFO,Traffic_Control_Request,Traffic_Control_Message]')
+    help='Data type to be analyzed OPTIONS: [J2725,MAP,SPAT,BSM,LandVehicle,Mobility_Request,Mobility_Response,Mobility_Path,Mobility_Operations-STATUS,Mobility_Operations-INFO,Traffic_Control_Request,Traffic_Control_Message]')
 argparser.add_argument(
     '-s', '--source_site',
     metavar='<source_site>',
@@ -1795,28 +1797,6 @@ print("Message Type: " + J2735_message_type_name + " selected")
 if J2735_message_subtype_name:
     print("Message Sub-Type: " + J2735_message_subtype_name + " selected")
 
-# we do not need to select a vehicle for spat
-# we dont need this anymore, get data from metadata
-# if False:
-# 
-# # if J2735_message_type_name != "TrafficLight" and J2735_message_type_name != "J2735":
-#     if args.source_vehicle_index == None:
-#         vehicle_info = select_vehicle_user_input()
-#     else:
-        
-#         if args.source_vehicle_index > len(dt_vehicles):
-#             print("ERROR: Source Vehicle index out of bounds, try again")
-#             print("\nValid Vehicles:")
-#             for vehicle_i,vehicle in enumerate(dt_vehicles):
-#                 print("\n[" + str(vehicle_i + 1) + "] \tHOST ID: " + vehicle["host_static_id"] + " \n\tTENA ID: " + vehicle["tena_host_id"] + " \n\tBSM ID: " + vehicle["bsm_id"])
-
-#             sys.exit()
-        
-#         vehicle_info = dt_vehicles[args.source_vehicle_index - 1]
-# else:
-# but, we need values for the params, so we put one in as a placeholder...
-# probably can do this better
-
 
 source_vehicle_metadata_index = get_obj_by_key_value(metadata_site_list,"site_name",args.source_site)
 
@@ -1840,7 +1820,7 @@ source_vehicle_metadata = metadata_site_list[source_vehicle_metadata_index]
 # desired_bsm_id = source_vehicle_metadata["bsm_id"]
 desired_bsm_id = ""
 # desired_tena_identifier = source_vehicle_metadata["tena_host_id"]
-desired_tena_identifier = ""
+desired_tena_identifier = source_vehicle_metadata["site_name"]
 # desired_host_static_id = source_vehicle_metadata["host_static_id"]
 desired_host_static_id = ""
 # desired_traffic_control_ip_address = source_vehicle_metadata["traffic_control_ip_address"]
@@ -1941,7 +1921,7 @@ data_params = {
                 }
             ]
         },
-        "Vehicle" : {
+        "LandVehicle" : {
             "skip_if_neqs"      : [
                 {
                 }
@@ -2336,7 +2316,35 @@ data_params = {
                 }
             ]
         },
-        "Vehicle" : {
+        "V2XMessage" : {
+            "skip_if_neqs" : [
+                {
+                    "key" : "Metadata,Endpoint",
+                    "value" : source_ip_address,
+                }
+            ],
+            "skip_if_eqs" : [
+                
+            ],
+            "match_keys" : [
+                {
+                    "key" : "Metadata,MessageCount",
+                },
+                {
+                    "key" : "senderIdentifier,String",
+                },
+                {
+                    "key" : "uuid,String"
+                },
+                {
+                    "key"       : None,
+                },
+                {
+                    "key"       : None,
+                },
+            ]
+        },
+        "LandVehicle" : {
             "skip_if_neqs"      : [
                 {
                     "key"   : "const^Metadata,SDOid.hostIPaddress",
@@ -2374,6 +2382,41 @@ data_params = {
                 },
                 {
                     "key"       : "Metadata,StateVersion",
+                },
+                {
+                    "key"       : None,
+                },
+                {
+                    "key"       : None,
+                },
+                {
+                    "key"       : None,
+                },
+            ]
+        },
+        "TrafficSignalController" : {
+            "skip_if_neqs" : [
+                {
+                    "key" : "const^Metadata,SDOid.hostIPaddress",
+                    "value": source_ip_address,
+                }
+            ],
+            "skip_if_eqs" : [
+                {
+                    "key"   : "Metadata,Enum,Middleware::EventType",
+                    "value" : "Discovery",
+                },
+                {
+                    "key"   : "Metadata,Enum,Middleware::EventType",
+                    "value" : "Destruction",
+                },
+            ],
+            "match_keys" : [
+                {
+                    "key" : "Metadata,StateVersion",
+                },
+                {
+                    "key" : "const^identifier,String",
                 },
                 {
                     "key"       : None,
@@ -2936,4 +2979,3 @@ plot_latency(results_filename,results_base_dir)
 
 print("\n----- ANALYSIS COMPLETE -----")
 sys.exit()
-

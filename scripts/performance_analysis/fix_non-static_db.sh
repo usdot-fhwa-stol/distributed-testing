@@ -1,5 +1,7 @@
 #!/bin/bash 
 
+set -euo pipefail
+
 print_help() {
 	printf "\nusage: fix_non-static_db.sh [-d <directory>] [-f <database file>] \n"
 
@@ -13,6 +15,12 @@ print_help() {
 
 # database_file="NONE"
 
+next_flag_is_database_file=false
+next_flag_is_directory=false
+database_file=""
+directory=""
+
+
 for arg in "$@"
 do
 	if [ "$next_flag_is_database_file" = true ]; then
@@ -25,7 +33,7 @@ do
 		directory=$arg
 		next_flag_is_directory=false
 
-	elif [[ $arg == "-d" ]] || [[ $arg == "--database" ]]; then
+	elif [[ $arg == "-d" ]] || [[ $arg == "--directory" ]]; then
 		
 		next_flag_is_directory=true
 	
@@ -98,20 +106,20 @@ fi
 # 	exit
 # fi
 
-if [ -z ${directory+x} ] && [ -z ${database_file+x} ]; then
-	printf "\nFile (-f) and directory (-d), both set. Please set only one of these arguments.\n"
+if [ -z "$directory" ] && [ -z "$database_file" ]; then
+	printf "\nNeither file (-f) nor directory (-d) set. Please set one of these arguments.\n"
 	print_help
 	exit
 fi
 
-if [ ! -z ${directory+x} ] && [ ! -z ${database_file+x} ]; then
-	printf "\nPlease set file (-f) and directory (-d) argument.\n"
+if [ -n "$directory" ] && [ -n "$database_file" ]; then
+	printf "\nFile (-f) and directory (-d) both set. Please set only one of these arguments.\n"
 	print_help
 	exit
 fi
 
-printf database_file: $database_file
-printf directory: $directory
+printf "database_file: %s\n" "$database_file"
+printf "directory: %s\n" "$directory"
 
 # Ensure mysql-client is installed
 REQUIRED_PKG="sqlite3"
@@ -123,7 +131,7 @@ if [ "" = "$PKG_OK" ]; then
   sudo apt-get --yes install $REQUIRED_PKG
 fi
 
-if [ ! -z ${directory+x} ]; then
+if [ -n "$directory" ]; then
 
 	printf "Directory found: $directory\n"
 
@@ -137,7 +145,7 @@ if [ ! -z ${directory+x} ]; then
 
 fi
 
-if [ ! -z ${database_file+x} ]; then
+if [ -n "$database_file" ]; then
 	
 	printf "Database file found: $database_file\n"
 
