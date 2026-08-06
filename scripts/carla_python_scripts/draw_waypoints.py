@@ -5,6 +5,8 @@ import argparse
 import json
 import math
 import time
+from pathlib import Path
+
 import pandas as pd
 import numpy as np
 
@@ -12,13 +14,12 @@ from pynput import keyboard
 from pynput.keyboard import Key
 
 
-
-
-
 import carla
 
 from agents.navigation.global_route_planner import GlobalRoutePlanner
 # from agents.navigation.global_route_planner_dao import GlobalRoutePlannerDAO
+# NOTE: GlobalRoutePlannerDAO was removed years ago (pre-0.9.11) - GlobalRoutePlanner
+# now takes (map, sampling_resolution) directly. Kept as a historical comment.
 
 argparser = argparse.ArgumentParser(
     description=__doc__)
@@ -41,15 +42,30 @@ argparser.add_argument(
 argparser.add_argument(
     '-e', '--export',
     action='store_true',
-    help='export waypoints to file (creates waypoint_files dir)')
+    help='export waypoints to file (creates ~/waypoint_files dir)')
 argparser.add_argument(
     '-o', '--overlay',
     action='store_true',
     help='overlay all routes on top of each other')
 argparser.add_argument(
+    '--output-dir',
+    default='~/waypoint_files',
+    help='Directory to write exported waypoint/CARMA files to (default: ~/waypoint_files)')
+argparser.add_argument(
     '--follow_vehicle',
     help='Vehicle to be used for the follow cam (default: "TFHRC-MANUAL-1"')
+argparser.add_argument(
+    '--output_name',
+    default=None,
+    help='Name to use when exporting a --follow_vehicle recording '
+         '(default: the --follow_vehicle rolename)')
 args = argparser.parse_args()
+
+# Resolve the output directory once, up front, so '~' is always expanded correctly
+# regardless of where/how the script is invoked (this was the source of the
+# "No such file or directory" / permission errors when using a raw '~' string
+# with open(), since the shell - not Python - normally expands '~').
+OUTPUT_DIR = Path(args.output_dir).expanduser().resolve()
 
 
 # Colors
@@ -234,6 +250,17 @@ def draw_waypoints(world,map,waypoints,draw_arrows,veh_name):
 
     print(f'num route waypoints: {len(route_waypoints)}')
 
+    if len(route_waypoints) == 0:
+        # Nothing was traced (e.g. unreachable waypoints) - bail out cleanly
+        # instead of crashing on route_waypoints[0] below.
+        print("ERROR: No route waypoints were found - check that your waypoints "
+              "are reachable and on/near the road network.")
+        return {
+            "index": [], "x": [], "y": [], "z": [], "carla_yaw": [],
+            "carla_bearing_yaw": [], "roll": [], "latitude": [], "longitude": [],
+            "altitude": [], "road_grade": [],
+        }
+
     segment_list = []
     first_waypoint,first_road_options = route_waypoints[0]
     first_segment_end_wp = first_waypoint.next_until_lane_end(0.001)[-1]
@@ -309,12 +336,20 @@ def draw_waypoints(world,map,waypoints,draw_arrows,veh_name):
                 # print(f'progressing down road: {next_wp.road_id}')
             else: 
                 print(f'found fork...')
-                for fork_wp in next_wp:
-                    print(f'fork_wp.road_id: {fork_wp.road_id} final_segment_list road: {final_segment_list[i_seg + 1]["ending_waypoint"].road_id}')
-                    if fork_wp.road_id == final_segment_list[i_seg + 1]["ending_waypoint"].road_id:
-                        print(f'found next road in fork: {fork_wp.road_id}')
-                        next_wp = fork_wp
-                        break
+                # Guard against being on the last segment (no "next" segment to match against)
+                if i_seg + 1 < len(final_segment_list):
+                    target_road_id = final_segment_list[i_seg + 1]["ending_waypoint"].road_id
+                    for fork_wp in next_wp:
+                        print(f'fork_wp.road_id: {fork_wp.road_id} final_segment_list road: {target_road_id}')
+                        if fork_wp.road_id == target_road_id:
+                            print(f'found next road in fork: {fork_wp.road_id}')
+                            next_wp = fork_wp
+                            break
+                    else:
+                        # No fork matched the expected next road - just take the first option
+                        next_wp = next_wp[0]
+                else:
+                    next_wp = next_wp[0]
 
             # print(f'next_wp: {next_wp.id}')
             if next_wp.road_id != cur_wp.road_id:
@@ -333,26 +368,29 @@ def draw_waypoints(world,map,waypoints,draw_arrows,veh_name):
 
 
     if args.export and veh_name:
-        f_c = open(f'waypoint_files/{veh_name}_carma_route', "w")
-    
-        print("\nCARMA ROUTE:")
-        for route_line in carma_route:
-            print(route_line)
-            f_c.write(f'{route_line}\n')
-        
-        f_c.close()
+        try:
+            OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
-        os.chmod(f'waypoint_files/{veh_name}_carma_route', 0o666)
+            carma_path = OUTPUT_DIR / f'{veh_name}_carma_route'
+            with open(carma_path, "w") as f_c:
+                print("\nCARMA ROUTE:")
+                for route_line in carma_route:
+                    print(route_line)
+                    f_c.write(f'{route_line}\n')
+            os.chmod(carma_path, 0o666)
 
-        f_g = open(f'waypoint_files/{veh_name}_waypoints.csv', "w")
-    
-        print("\nGENERAL ROUTE:")
-        for route_line in general_route:
-            print(route_line)
-            f_g.write(f'{route_line}\n')
-        
-        f_g.close()
-        os.chmod(f'waypoint_files/{veh_name}_waypoints.csv', 0o666)
+            general_path = OUTPUT_DIR / f'{veh_name}_waypoints.csv'
+            with open(general_path, "w") as f_g:
+                print("\nGENERAL ROUTE:")
+                for route_line in general_route:
+                    print(route_line)
+                    f_g.write(f'{route_line}\n')
+            os.chmod(general_path, 0o666)
+        except PermissionError as errMsg:
+            print(f"ERROR: Permission denied writing to {OUTPUT_DIR}: {errMsg}")
+            print(f"\tTry: chmod 755 {OUTPUT_DIR}  (or chown it to your user)")
+        except OSError as errMsg:
+            print(f"ERROR: Unable to write route files to {OUTPUT_DIR}: {errMsg}")
 
 
     waypoint_data = {
@@ -468,13 +506,13 @@ def draw_waypoints(world,map,waypoints,draw_arrows,veh_name):
             dy = next_waypoint.transform.location.y - waypoint.transform.location.y
             if dx == 0 and dy == 0:
                  # if we didnt move, use the previous yaw
-                 carla_bearing_yaw = waypoint_data["carla_bearing_yaw"][-1]  # degenerate
+                 carla_bearing_yaw = waypoint_data["carla_bearing_yaw"][-1] if waypoint_data["carla_bearing_yaw"] else carla_yaw  # degenerate
             else:
                 # theta from +X (East), CCW
                 carla_bearing_yaw = math.degrees(math.atan2(dy, dx))
         else:
             # if this is the last point, just use the prev value
-            carla_bearing_yaw = waypoint_data["carla_bearing_yaw"][-1]
+            carla_bearing_yaw = waypoint_data["carla_bearing_yaw"][-1] if waypoint_data["carla_bearing_yaw"] else carla_yaw
 
         
 
@@ -592,17 +630,14 @@ try:
     end_vehicle_wp_spacing = 7
 
     if args.export:
-        current_directory = os.getcwd()
-        folder_path = os.path.join(current_directory, "waypoint_files")
-        if not os.path.exists(folder_path):
-            try: 
-                os.makedirs(folder_path)
-                os.chmod(folder_path,0o777)
-            except Exception as errMsg:
-                print(f"ERROR: Unable to make directory waypoint files: {errMsg}")
-                print("\tCreate directory waypoint_files within carla_python_scripts with read and write permissions for all users:")
-                print("\t\t'mkdir waypoint_files' -> 'chmod 777 waypoint_files'")
-                sys.exit(1)
+        try:
+            OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+            os.chmod(OUTPUT_DIR, 0o777)
+        except Exception as errMsg:
+            print(f"ERROR: Unable to make directory {OUTPUT_DIR}: {errMsg}")
+            print(f"\tCreate the directory manually with read/write permissions for your user:")
+            print(f"\t\t'mkdir -p {OUTPUT_DIR}' -> 'chmod 755 {OUTPUT_DIR}'")
+            sys.exit(1)
 
     if args.follow_vehicle:
         listener = keyboard.Listener(on_press=on_press)
@@ -627,6 +662,9 @@ try:
                 # add vehicle as final dest
                 spawn_data["waypoints"].append(follow_vehicle.get_location())
                 try:
+                    # Preview only - draw the route so far, but don't export yet
+                    # (veh_name intentionally left blank here so draw_waypoints
+                    # doesn't try to write partial/in-progress files every loop).
                     draw_waypoints(world,map,spawn_data["waypoints"],True,"")
                 except Exception as errMsg:
                     print("UNABLE TO FIND ROUTE")
@@ -638,6 +676,42 @@ try:
             
 
             time.sleep(draw_loop_sleep)
+
+        # Recording finished (Enter was pressed) - draw + export the final route once,
+        # using a real vehicle name so the export condition inside draw_waypoints
+        # (`if args.export and veh_name`) actually triggers.
+        export_name = args.output_name or args.follow_vehicle
+
+        if len(spawn_data["waypoints"]) < 2:
+            print(f"Not enough waypoints recorded ({len(spawn_data['waypoints'])}) to export a route.")
+        else:
+            print(f"\nFinalizing and exporting route as '{export_name}'...")
+            try:
+                waypoint_data = draw_waypoints(world, map, spawn_data["waypoints"], True, export_name)
+
+                if args.export and len(waypoint_data["x"]) > 0:
+                    df = pd.DataFrame(waypoint_data)
+                    df = add_linear_distance(df)
+
+                    df["y"] = -1 * df["y"]
+
+                    df["roll"] = (180 + df["roll"]) % 360.0
+                    df["road_grade"] = (-1 * df["road_grade"]) % 360.0
+                    df["ltpENU_yaw"] = (-1 * df["carla_yaw"]) % 360.0
+                    df["ltpENU_bearing_yaw"] = (-1 * df["carla_bearing_yaw"]) % 360.0
+
+                    breadcrumbs_path = OUTPUT_DIR / f'{export_name}_breadcrumbs.csv'
+                    try:
+                        df.to_csv(breadcrumbs_path, index=False)
+                        os.chmod(breadcrumbs_path, 0o666)
+                        print(f"Wrote {len(df)} rows to {breadcrumbs_path}")
+                    except PermissionError as errMsg:
+                        print(f"ERROR: Permission denied writing to {breadcrumbs_path}: {errMsg}")
+                    except OSError as errMsg:
+                        print(f"ERROR: Unable to write {breadcrumbs_path}: {errMsg}")
+            except Exception as errMsg:
+                print("UNABLE TO FIND ROUTE FOR FINAL EXPORT")
+                print(errMsg)
     else:
         
         waypoint_data = draw_waypoints(world,map,spawn_data["waypoints"],False,"")
@@ -701,8 +775,14 @@ try:
                 df["ltpENU_yaw"] = (-1 * df["carla_yaw"]) % 360.0
                 df["ltpENU_bearing_yaw"] = (-1 * df["carla_bearing_yaw"]) % 360.0
 
-                df.to_csv("waypoint_files/" + spawn["name"] + '_breadcrumbs.csv', index=False)
-                os.chmod("waypoint_files/" + spawn["name"] + '_breadcrumbs.csv', 0o666)
+                breadcrumbs_path = OUTPUT_DIR / f'{spawn["name"]}_breadcrumbs.csv'
+                try:
+                    df.to_csv(breadcrumbs_path, index=False)
+                    os.chmod(breadcrumbs_path, 0o666)
+                except PermissionError as errMsg:
+                    print(f"ERROR: Permission denied writing to {breadcrumbs_path}: {errMsg}")
+                except OSError as errMsg:
+                    print(f"ERROR: Unable to write {breadcrumbs_path}: {errMsg}")
 
             time.sleep(draw_loop_sleep)
 
