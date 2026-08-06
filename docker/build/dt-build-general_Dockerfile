@@ -20,7 +20,7 @@ USER root
 
 # libboost-all-dev
 RUN apt update && apt-get install -y \
-    cmake cmake-data git build-essential clang gcc-11 g++-11 lld ninja-build stol-j2735-201603-carma-1 \
+    cmake cmake-data git build-essential clang gcc-11 g++-11 lld ninja-build \
     libvulkan1 libpng-dev libtiff5-dev libjpeg-dev tzdata sed curl openssl unzip autoconf libtool rsync libxml2-dev
 
 RUN --mount=type=secret,id=usdotfhwastol_token \
