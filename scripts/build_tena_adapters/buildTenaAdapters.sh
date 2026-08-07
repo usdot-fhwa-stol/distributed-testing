@@ -33,7 +33,7 @@ function print_help {
 	echo "    [5]  vug-v2x-adapter"
 	echo "    [6]  vug-entity-generator"
 	echo "    [7]  vug-v2xhub-v2x-plugin"
-	echo "    [8]  HWILgnssEmulator"
+	echo "    [8]  hwil-gnss-emulator"
 	echo
 	echo "Examples:"
 	echo "    # Build vug-carla-adapter in release mode:"
@@ -161,7 +161,7 @@ else
 	echo "    [5]  vug-v2x-adapter"
 	echo "    [6]  vug-entity-generator"
 	echo "    [7]  vug-v2xhub-v2x-plugin"
-	echo "    [8]  HWILgnssEmulator"
+	echo "    [8]  hwil-gnss-emulator"
 	echo
 	read -p "--> " tenaAppIndex
 fi

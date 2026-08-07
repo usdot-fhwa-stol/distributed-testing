@@ -23,8 +23,6 @@ dt_scenario_config=$HOME/.dt_scenario_config
 
 dt_site_config_docker=$HOME/.dt_site_config_docker
 dt_scenario_config_docker=$HOME/.dt_scenario_config_docker
-GNSS_CONFIG_FILE="/home/dt_user/distributed-testing/scenario_files/trajectory_files/test_trajectory.cfg"
-GNSS_TYPE="ubx"    # Options: ubx | nmea
 
 if [ -L ${dt_site_config} ] && [ -L ${dt_scenario_config} ]; then
     if [ -e ${dt_site_config} ] && [ -e ${dt_scenario_config} ]; then
