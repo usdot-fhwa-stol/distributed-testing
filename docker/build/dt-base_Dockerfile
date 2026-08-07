@@ -1,5 +1,5 @@
 #
-# BUILD COMMAND: VERSION=0.0.1 && source build-assets.env && sudo DOCKER_BUILDKIT=1 docker build --build-arg VERSION=$VERSION --build-context assets="$BUILD_DIR" -t harbor.distributedtesting.org/distributed-testing/dt-base:$VERSION . --progress=plain -f dt-base_Dockerfile
+# BUILD COMMAND: VERSION=0.1.1 && source build-assets.env && sudo DOCKER_BUILDKIT=1 docker build --build-arg VERSION=$VERSION --build-context assets="$BUILD_DIR" -t harbor.distributedtesting.org/distributed-testing/dt-base:$VERSION . --progress=plain -f dt-base_Dockerfile
 #
 
 # ----------------------- BUILD STAGE ----------------------- #
@@ -87,9 +87,23 @@ USER dt_user
 
 WORKDIR /home/dt_user
 
-COPY --from=build --chown=dt_user:dt_user /home/dt_user/opt/TENA /home/dt_user/TENA
-RUN DSTROOT=/home/dt_user ./TENA/postinst-MW
-RUN DSTROOT=/home/dt_user ./TENA/postinst-DIST
+USER root
+
+# All done as one RUN command to save space in the final container
+# Mounts files in a temporary space with rw perms, copies them to container, runs postinst scripts, changes ownership
+RUN --mount=from=build,source=/home/dt_user/opt/TENA,target=/mnt/TENA,rw \
+    cp -a /mnt/TENA /home/dt_user/TENA && \
+    DSTROOT=/home/dt_user ./TENA/postinst-MW && \
+    DSTROOT=/home/dt_user ./TENA/postinst-DIST && \
+    chown -R dt_user:dt_user /home/dt_user/TENA
+
+# add the STOL APT repository
+RUN echo "deb [trusted=yes] http://s3.amazonaws.com/stol-apt-repository develop jammy" > /etc/apt/sources.list.d/stol-apt-repository.list
+RUN apt update --fix-missing && apt install stol-j2735-201603-carma-1
+
+USER dt_user
+
+
 
 ARG VERSION=dev
 LABEL version=${VERSION}
