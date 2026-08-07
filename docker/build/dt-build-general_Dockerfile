@@ -5,7 +5,7 @@ FROM harbor.distributedtesting.org/distributed-testing/dt-base:0.1.1
 # The settings are for the VM that runs the containers and can be accessed through the Docker UI settings.
 # Click on the gear icon (Setting) | Resoures then increase the memory.
 
-# VERSION=0.1.0 && sudo docker build --secret id=usdotfhwastol_token,src=usdotfhwastol_token --build-arg VERSION=$VERSION -t harbor.distributedtesting.org/distributed-testing/dt-build-general:$VERSION . --progress=plain -f dt-build-general_Dockerfile
+# VERSION=0.1.1 && sudo docker build --secret id=usdotfhwastol_token,src=usdotfhwastol_token --build-arg VERSION=$VERSION -t harbor.distributedtesting.org/distributed-testing/dt-build-general:$VERSION . --progress=plain -f dt-build-general_Dockerfile
 # VERSION=0.0.2 && docker tag harbor.distributedtesting.org/distributed-testing/dt-build-general:$VERSION harbor.distributedtesting.org/distributed-testing/dt-build-general:latest
 
 ARG DEBIAN_FRONTEND="noninteractive"
