@@ -99,7 +99,7 @@ RUN --mount=from=build,source=/home/dt_user/opt/TENA,target=/mnt/TENA,rw \
 
 # add the STOL APT repository
 RUN echo "deb [trusted=yes] http://s3.amazonaws.com/stol-apt-repository develop jammy" > /etc/apt/sources.list.d/stol-apt-repository.list
-RUN apt update --fix-missing && apt install stol-j2735-201603-carma-1
+RUN apt update --fix-missing && apt install stol-j2735-2024-carma-1
 
 USER dt_user
 
