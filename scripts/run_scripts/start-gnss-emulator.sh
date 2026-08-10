@@ -68,7 +68,7 @@ fi
 
 localadapterPath=$VUG_LOCAL_INSTALL_PATH/$VUG_GNSS_EMULATOR_VERSION
 
-adapterVerbosity='1'
+adapterVerbosity='4'
 
 useBestEffort=''
 if [[ $VUG_USE_BEST_EFFORT == true ]]; then
@@ -100,9 +100,10 @@ set -x
     -siteID "$siteID" \
     -applicationID "$applicationID" \
     -verbosity "$adapterVerbosity" \
-    -GNSSPublishRate 10 \
-    -adapterSendEndpoint "$HWIL_GNSS_EMULATOR_SEND_ADDRESS:$HWIL_GNSS_EMULATOR_SEND_PORT" \
     -gnssconfigFile "$GNSS_CONFIG_FILE" \
+    -GNSSPublishRate 10 \
+    -sendAddress "$HWIL_GNSS_EMULATOR_SEND_ADDRESS" \
+    -sendPort "$HWIL_GNSS_EMULATOR_SEND_PORT" \
     -gnssType "$GNSS_TYPE" \
     | awk -v adapter="[$VUG_GNSS_EMULATOR_VERSION]" '{ print adapter, $0; fflush(); }' \
     | tee -a "$adapterLogFile"
