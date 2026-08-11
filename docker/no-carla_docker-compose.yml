@@ -17,5 +17,3 @@ services:
     volumes:
       - /tmp/.X11-unix:/tmp/.X11-unix:rw
       - ${VUG_LOCAL_DT_PATH}:/home/dt_user/distributed-testing
-      - ~/distributed-testing/docker/build/lib/COPY/start_scripts:/home/dt_user/start_scripts
-      - ~/tenadev/INSTALL/HWILgnssEmulator-1.0.0:/home/dt_user/VUG_Adapters/HWILgnssEmulator-1.0.0

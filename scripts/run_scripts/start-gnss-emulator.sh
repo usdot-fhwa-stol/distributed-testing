@@ -68,7 +68,7 @@ fi
 
 localadapterPath=$VUG_LOCAL_INSTALL_PATH/$VUG_GNSS_EMULATOR_VERSION
 
-adapterVerbosity='4'
+adapterVerbosity='1'
 
 useBestEffort=''
 if [[ $VUG_USE_BEST_EFFORT == true ]]; then
@@ -96,10 +96,10 @@ set -x
 "$localadapterPath/bin/tena-gnss-emulator" $useBestEffort \
     -emEndpoints "$VUG_EM_ADDRESS:$VUG_EM_PORT" \
     -listenEndpoints "$VUG_LOCAL_ADDRESS" \
-    -simId "$VUG_SIM_ID" \
     -siteID "$siteID" \
     -applicationID "$applicationID" \
     -verbosity "$adapterVerbosity" \
+    -adapterId "$VUG_GNSS_ADAPTER_ID" \
     -gnssconfigFile "$GNSS_CONFIG_FILE" \
     -GNSSPublishRate 10 \
     -sendAddress "$HWIL_GNSS_EMULATOR_SEND_ADDRESS" \
