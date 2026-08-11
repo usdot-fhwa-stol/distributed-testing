@@ -86,36 +86,41 @@ draw_arrow_size = 0.2
 draw_arrow_thickness = 0.2
 draw_arrow_z_offset = carla.Location(0,0,0)
 
+# Key used to start/stop continuous waypoint capture. Deliberately an
+# out-of-the-way function key (NOT space) since space is bound to the
+# brake in the driving sim and would get hit constantly while driving
+# the segment you're trying to record.
+CAPTURE_TOGGLE_KEY = Key.f8
+
+# True while we're actively sampling the follow vehicle's location into
+# spawn_data["waypoints"]. Toggled on/off by CAPTURE_TOGGLE_KEY. The main
+# loop (see the `while recording:` block below) checks this flag and
+# appends a sample whenever it's True; on_press itself never touches
+# spawn_data anymore, which avoids two threads mutating the list at once.
+capturing = False
+
 def on_press(key):
-    global recording
-
-    world = client.get_world()
-        
-    # Retrieve the spectator object
-    spectator = world.get_spectator()
-
-    # Get the location and rotation of the spectator through its transform
-    spec_transform = spectator.get_transform()
+    global recording, capturing
 
     try:
         key_char = key.char
     except Exception:
         key_char = None
 
-    if key == Key.space:
-        follow_vehicle = get_veh_with_name(args.follow_vehicle)
-        
-        print(f"Adding waypoint: {follow_vehicle.get_location()}")
-        spawn_data["waypoints"].append(follow_vehicle.get_location())
+    if key == CAPTURE_TOGGLE_KEY:
+        capturing = not capturing
+        print(f"Waypoint capture {'STARTED' if capturing else 'STOPPED'} "
+              f"(press {CAPTURE_TOGGLE_KEY} again to "
+              f"{'stop' if capturing else 'start'})")
     elif key == Key.delete:
         print("Removing waypoint")
-        follow_vehicle = get_veh_with_name(args.follow_vehicle)
 
         if len(spawn_data["waypoints"]) > 0:
             spawn_data["waypoints"].pop()
         else:
             print("No waypoints to remove")
     elif key == Key.enter:
+        capturing = False
         recording = False
         print("Done adding waypoints")
         print(f"Waypoints:")
@@ -189,14 +194,21 @@ def draw_waypoint_union(debug, w0, w1, color=green, lt=drawing_lifetime):
     #     thickness=0.1, color=color, life_time=lt, persistent_lines=False)
     debug.draw_point(w1.transform.location + carla.Location(z=1), 0.1, color, lt, False)
 
-def draw_waypoints(world,map,waypoints,draw_arrows,veh_name):   
+def draw_waypoints(world,map,waypoints,draw_arrows,veh_name,verbose=True,draw_debug=True):
+    # verbose: gates the (very chatty) per-segment debug prints below.
+    # draw_debug: gates drawing the route overlay (arrows/points/labels) into
+    # the CARLA world. Both default True to preserve old behavior for the
+    # "real" export calls; the in-progress preview call in the follow_vehicle
+    # loop passes both as False so it doesn't spam the console or light up
+    # roads in the sim on every poll.
+    log = print if verbose else (lambda *a, **k: None)
 
-    print("SETTING UP MAP")
+    log("SETTING UP MAP")
     sampling_resolution = 2
     # dao = GlobalRoutePlannerDAO(map, sampling_resolution)
     grp = GlobalRoutePlanner(map, sampling_resolution)
     # grp.setup()
-    print("FINISHED SETTING UP MAP")
+    log("FINISHED SETTING UP MAP")
 
     route_waypoints = []
     segment_endpoints = []
@@ -209,14 +221,14 @@ def draw_waypoints(world,map,waypoints,draw_arrows,veh_name):
         start_point = waypoints[i_sp-1]
         end_point = waypoints[i_sp]
 
-        print(f"\nSegment {i_sp}")
+        log(f"\nSegment {i_sp}")
 
-        print("Start Point XYZ: " + str(start_point))
+        log("Start Point XYZ: " + str(start_point))
         start_point_geo = map.transform_to_geolocation(start_point)
-        print("Start Point Lat/Long: " + str(start_point_geo))
-        print("End Point XYZ: " + str(end_point))
+        log("Start Point Lat/Long: " + str(start_point_geo))
+        log("End Point XYZ: " + str(end_point))
         end_point_geo = map.transform_to_geolocation(end_point)
-        print("End Point Lat/Long: " + str(end_point_geo))
+        log("End Point Lat/Long: " + str(end_point_geo))
         
         if i_sp == 1:
             general_route.append(f'index,x,y,z,latitide,longitude,altitude')
@@ -234,26 +246,26 @@ def draw_waypoints(world,map,waypoints,draw_arrows,veh_name):
         try:
             segment_waypoints = grp.trace_route(start_point, end_point) # there are other funcations can be used to generate a route in GlobalRoutePlanner.
         except Exception as errMsg:
-            print(f"Error generating route: {errMsg}")
+            log(f"Error generating route: {errMsg}")
             segment_waypoints = []
 
         num_segment_waypoints = len(segment_waypoints)
-        print(f"Added {num_segment_waypoints} points")
+        log(f"Added {num_segment_waypoints} points")
 
         route_waypoints = route_waypoints + segment_waypoints
 
         if i_sp != (len(waypoints) - 1):
             segment_endpoints.append(len(route_waypoints))
-            # print(f'segment_endpoints: {segment_endpoints}')
+            # log(f'segment_endpoints: {segment_endpoints}')
     
-    print(f'\n ~~~~~~~~~FINDING SEGMENTS~~~~~~~~~')
+    log(f'\n ~~~~~~~~~FINDING SEGMENTS~~~~~~~~~')
 
-    print(f'num route waypoints: {len(route_waypoints)}')
+    log(f'num route waypoints: {len(route_waypoints)}')
 
     if len(route_waypoints) == 0:
         # Nothing was traced (e.g. unreachable waypoints) - bail out cleanly
         # instead of crashing on route_waypoints[0] below.
-        print("ERROR: No route waypoints were found - check that your waypoints "
+        log("ERROR: No route waypoints were found - check that your waypoints "
               "are reachable and on/near the road network.")
         return {
             "index": [], "x": [], "y": [], "z": [], "carla_yaw": [],
@@ -275,7 +287,7 @@ def draw_waypoints(world,map,waypoints,draw_arrows,veh_name):
     )
 
     for waypoint,road_option in route_waypoints:
-        # print(f'waypoint id: {waypoint.id} option: {road_option} road: {waypoint.road_id} section: {waypoint.section_id} lane_id: {waypoint.lane_id}' )
+        # log(f'waypoint id: {waypoint.id} option: {road_option} road: {waypoint.road_id} section: {waypoint.section_id} lane_id: {waypoint.lane_id}' )
             
         if (    segment_list[-1]["road_id"] == waypoint.road_id and 
                 segment_list[-1]["section_id"] == waypoint.section_id and 
@@ -283,9 +295,9 @@ def draw_waypoints(world,map,waypoints,draw_arrows,veh_name):
         ):
             continue
         else:
-            print(f'finished current segment, found first wp of next')
+            log(f'finished current segment, found first wp of next')
             current_segment_end_wp = waypoint.next_until_lane_end(0.1)[-1]
-            print("adding segment: ")
+            log("adding segment: ")
             segment_list.append(
                 {
                     "starting_waypoint": waypoint,
@@ -304,17 +316,18 @@ def draw_waypoints(world,map,waypoints,draw_arrows,veh_name):
     for segment in segment_list:
         
         if segment["ending_waypoint"].road_id in roads_to_exclude:
-            print("Skipping segment as road is excluded (usually bike or similar)")
+            log("Skipping segment as road is excluded (usually bike or similar)")
             continue
         
-        draw_waypoint_union(debug,segment["starting_waypoint"],segment["ending_waypoint"],green)
-        draw_waypoint_info(debug,segment["starting_waypoint"],draw_data=True)
-        draw_waypoint_info(debug,segment["ending_waypoint"],x_offset=1,draw_data=True)
+        if draw_debug:
+            draw_waypoint_union(debug,segment["starting_waypoint"],segment["ending_waypoint"],green)
+            draw_waypoint_info(debug,segment["starting_waypoint"],draw_data=True)
+            draw_waypoint_info(debug,segment["ending_waypoint"],x_offset=1,draw_data=True)
         final_segment_list.append(segment)
 
 
     for segment in final_segment_list:
-        print(f'start road: {segment["starting_waypoint"].road_id}')
+        log(f'start road: {segment["starting_waypoint"].road_id}')
 
     
     final_waypoints = []
@@ -322,27 +335,27 @@ def draw_waypoints(world,map,waypoints,draw_arrows,veh_name):
     for i_seg, segment in enumerate(final_segment_list):
         final_waypoints.append(segment["starting_waypoint"])
         cur_wp = final_waypoints[-1]
-        print(f'i_seg: {i_seg} road: {segment["starting_waypoint"].road_id}')
+        log(f'i_seg: {i_seg} road: {segment["starting_waypoint"].road_id}')
 
         reached_end = False
         while True:
             next_wp = list(cur_wp.next(waypoint_separation))
             if len(next_wp) == 0:
-                print(f'no next wp found')
+                log(f'no next wp found')
                 reached_end = True
                 break
             elif len(next_wp) == 1:
                 next_wp = next_wp[0]
-                # print(f'progressing down road: {next_wp.road_id}')
+                # log(f'progressing down road: {next_wp.road_id}')
             else: 
-                print(f'found fork...')
+                log(f'found fork...')
                 # Guard against being on the last segment (no "next" segment to match against)
                 if i_seg + 1 < len(final_segment_list):
                     target_road_id = final_segment_list[i_seg + 1]["ending_waypoint"].road_id
                     for fork_wp in next_wp:
-                        print(f'fork_wp.road_id: {fork_wp.road_id} final_segment_list road: {target_road_id}')
+                        log(f'fork_wp.road_id: {fork_wp.road_id} final_segment_list road: {target_road_id}')
                         if fork_wp.road_id == target_road_id:
-                            print(f'found next road in fork: {fork_wp.road_id}')
+                            log(f'found next road in fork: {fork_wp.road_id}')
                             next_wp = fork_wp
                             break
                     else:
@@ -351,17 +364,18 @@ def draw_waypoints(world,map,waypoints,draw_arrows,veh_name):
                 else:
                     next_wp = next_wp[0]
 
-            # print(f'next_wp: {next_wp.id}')
+            # log(f'next_wp: {next_wp.id}')
             if next_wp.road_id != cur_wp.road_id:
-                print(f'reached end of road')
+                log(f'reached end of road')
                 break
 
-            draw_waypoint_info(debug,cur_wp)
+            if draw_debug:
+                draw_waypoint_info(debug,cur_wp)
             final_waypoints.append(next_wp)
             cur_wp = next_wp
 
             if reached_end:
-                print(f'reached end of route')
+                log(f'reached end of route')
                 break
             time.sleep(0.001)
 
@@ -373,24 +387,24 @@ def draw_waypoints(world,map,waypoints,draw_arrows,veh_name):
 
             carma_path = OUTPUT_DIR / f'{veh_name}_carma_route'
             with open(carma_path, "w") as f_c:
-                print("\nCARMA ROUTE:")
+                log("\nCARMA ROUTE:")
                 for route_line in carma_route:
-                    print(route_line)
+                    log(route_line)
                     f_c.write(f'{route_line}\n')
             os.chmod(carma_path, 0o666)
 
             general_path = OUTPUT_DIR / f'{veh_name}_waypoints.csv'
             with open(general_path, "w") as f_g:
-                print("\nGENERAL ROUTE:")
+                log("\nGENERAL ROUTE:")
                 for route_line in general_route:
-                    print(route_line)
+                    log(route_line)
                     f_g.write(f'{route_line}\n')
             os.chmod(general_path, 0o666)
         except PermissionError as errMsg:
-            print(f"ERROR: Permission denied writing to {OUTPUT_DIR}: {errMsg}")
-            print(f"\tTry: chmod 755 {OUTPUT_DIR}  (or chown it to your user)")
+            log(f"ERROR: Permission denied writing to {OUTPUT_DIR}: {errMsg}")
+            log(f"\tTry: chmod 755 {OUTPUT_DIR}  (or chown it to your user)")
         except OSError as errMsg:
-            print(f"ERROR: Unable to write route files to {OUTPUT_DIR}: {errMsg}")
+            log(f"ERROR: Unable to write route files to {OUTPUT_DIR}: {errMsg}")
 
 
     waypoint_data = {
@@ -415,7 +429,7 @@ def draw_waypoints(world,map,waypoints,draw_arrows,veh_name):
     midpoint_count = 0
 
     for i,waypoint in enumerate(final_waypoints):
-        if draw_arrows:
+        if draw_arrows and draw_debug:
             if i == 0:
                 start_box_center = final_waypoints[i].transform.location + draw_arrow_z_offset
 
@@ -640,42 +654,72 @@ try:
             sys.exit(1)
 
     if args.follow_vehicle:
+        # NOTE: this branch (continuous follow-vehicle capture) and the
+        # "normal" road-segment waypoint creator (the `else:` branch further
+        # below) are mutually exclusive by construction - args.follow_vehicle
+        # picks exactly one of the two at process start, and there's no path
+        # for both to run in the same invocation.
         listener = keyboard.Listener(on_press=on_press)
 
         print("Starting keyboard listener")
         listener.start()
         print("Keyboard listener started")
-        
+        print(f"Press {CAPTURE_TOGGLE_KEY} to start capturing waypoints, "
+              f"press it again to stop. DELETE removes the last captured "
+              f"waypoint. ENTER finishes and exports.")
+
         spawn_data["waypoints"] = []
 
         recording = True
 
+        # How often (seconds) to poll the vehicle's location while capturing.
+        # This is independent of draw_loop_sleep (which controls how often
+        # the preview route is redrawn) so capture stays responsive even
+        # when --lifetime is large.
+        capture_poll_interval = 0.1
+
+        last_capture_location = None
+        last_draw_time = 0.0
+
         while recording:
             world = client.get_world()
-            map = world.get_map() 
+            map = world.get_map()
 
             follow_vehicle = get_veh_with_name(args.follow_vehicle)
-            
+            current_location = follow_vehicle.get_location()
 
-            
-            if len(spawn_data["waypoints"]) > 0:
+            if capturing:
+                # Only record a new waypoint once the vehicle has moved far
+                # enough from the last captured point - otherwise sitting
+                # still (or driving slowly) floods the list with duplicates.
+                if (last_capture_location is None or
+                        current_location.distance(last_capture_location) >= waypoint_separation):
+                    spawn_data["waypoints"].append(current_location)
+                    last_capture_location = current_location
+
+            now = time.time()
+            if len(spawn_data["waypoints"]) > 0 and (now - last_draw_time) >= draw_loop_sleep:
+                last_draw_time = now
                 # add vehicle as final dest
-                spawn_data["waypoints"].append(follow_vehicle.get_location())
+                spawn_data["waypoints"].append(current_location)
                 try:
                     # Preview only - draw the route so far, but don't export yet
                     # (veh_name intentionally left blank here so draw_waypoints
                     # doesn't try to write partial/in-progress files every loop).
-                    draw_waypoints(world,map,spawn_data["waypoints"],True,"")
+                    # verbose=False / draw_debug=False so this repeated preview
+                    # call doesn't spam the console or light up roads in the
+                    # sim every draw_loop_sleep seconds - only the final export
+                    # call (below, after ENTER) draws/logs the route for real.
+                    draw_waypoints(world,map,spawn_data["waypoints"],True,"",verbose=False,draw_debug=False)
                 except Exception as errMsg:
                     print("UNABLE TO FIND ROUTE")
                     print(errMsg)
                 spawn_data["waypoints"].pop()
-            else:
-                print("No waypoints added. Add a new waypoint by pressing SPACE")
+            elif len(spawn_data["waypoints"]) == 0 and not capturing and (now - last_draw_time) >= draw_loop_sleep:
+                last_draw_time = now
+                print(f"No waypoints yet. Press {CAPTURE_TOGGLE_KEY} to start capturing.")
 
-            
-
-            time.sleep(draw_loop_sleep)
+            time.sleep(capture_poll_interval)
 
         # Recording finished (Enter was pressed) - draw + export the final route once,
         # using a real vehicle name so the export condition inside draw_waypoints
