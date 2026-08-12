@@ -744,6 +744,11 @@ try:
                     df["ltpENU_yaw"] = (-1 * df["carla_yaw"]) % 360.0
                     df["ltpENU_bearing_yaw"] = (-1 * df["carla_bearing_yaw"]) % 360.0
 
+                    df = df.rename(columns={"road_grade": "pitch", "ltpENU_yaw": "yaw"})
+                    df = df[["index", "x", "y", "z", "roll", "pitch", "yaw",
+                             "latitude", "longitude", "altitude",
+                             "segment_distance_m", "distance_traveled_m"]]
+
                     breadcrumbs_path = OUTPUT_DIR / f'{export_name}_breadcrumbs.csv'
                     try:
                         df.to_csv(breadcrumbs_path, index=False)

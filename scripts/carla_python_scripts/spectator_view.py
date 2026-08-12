@@ -20,12 +20,12 @@ MAP_PRESETS = {
         "rotation": carla.Rotation(pitch=-43.542046, yaw=144.351303, roll=0.0),
     },
     "Town10HD_Opt": {
-        "location": carla.Location(x=-298.728577, y=216.214294, z=46.651649),
-        "rotation": carla.Rotation(pitch=43.542046, yaw=-144.351303, roll=0.0),
+        "location": carla.Location(x=100, y=0, z=75),
+        "rotation": carla.Rotation(pitch=-43.542046, yaw=144.351303, roll=0.0),
     },
     "default": {
-        "location": carla.Location(x=-298.728577, y=216.214294, z=46.651649),
-        "rotation": carla.Rotation(pitch=43.542046, yaw=-144.351303, roll=0.0),
+        "location": carla.Location(x=100, y=0, z=75),
+        "rotation": carla.Rotation(pitch=-43.542046, yaw=144.351303, roll=0.0),
     },
 }
 
