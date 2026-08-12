@@ -317,6 +317,16 @@ geodetic_tspi_template = {
     }
 }
 
+# TENA V2XMessage template
+tena_v2xmessage_template = {
+    "attributes": {
+        "messageType": "BSM",
+        "binaryContent": [{"0": 0}, {"1": 0}],
+        "senderIdentifier": "CARMA",
+        "uuid": "0000000000000000000"
+    }
+}
+
 # ================
 # Field Maps
 # ================
@@ -376,8 +386,6 @@ acceleration_srf_field_mappings = {
     "srf_a_xFalseOrigin":["attributes", "tspi", "attributes", "acceleration", "attributes", "ltpENU_asTransmitted", "attributes", "srf", "attributes", "xFalseOriginInMeters"],
     "srf_a_yFalseOrigin":["attributes", "tspi", "attributes", "acceleration", "attributes", "ltpENU_asTransmitted", "attributes", "srf", "attributes", "yFalseOriginInMeters"] 
 }
-
-
 
 # Maps object data keys to paths in the geocentric tspi template
 geocentric_field_mappings = {
@@ -640,6 +648,105 @@ def pack_object_data_into_json(object_data_list, entityMap, map_origin, coordina
         logging.debug(f"Added JSON to list: {object_data_json}")
 
     return object_data_json_list
+
+def process_amf(amf_bytes):
+    """
+        Processes the byte representation of the amf V2XMessage into a dictionary to easily pull required information
+        for the TENA V2XMessage
+
+        Parameters
+        ----------
+        amf_bytes : bytes
+            Byte representation of the amf formatted V2XMessage
+
+        Returns
+        -------
+        amf_map : dict
+            Dictionary representation of the passed in bytes
+    """
+    amf_text = amf_bytes.decode('utf-8')
+
+    amf_map = {}
+    for line in amf_text.strip().split('\n'):
+        if '=' in line:
+            key, value = line.split('=',1)
+            amf_map[key.strip()] = value.strip()
+
+    return amf_map
+
+def generate_uuid(payload: str) -> str:
+    """
+        Creates a Universally Unique Identifier (uuid) by hashing the string combination of the rounded current timestamp
+        and msg payload
+
+        Parameters
+        ----------
+        payload : str
+            A string with the byte representation of the V2X message payload
+
+        Returns
+        -------
+        uuid_hash : str
+            The string representation of the hash / uuid
+    """
+    # Current Unix timestamp in milliseconds
+    timestamp_ms = int(time.time() * 1000)
+
+    # Round the timestamp
+    time_float = round(timestamp_ms / 100.0) / 10.0
+
+    # One decimal place
+    time_str = f"{time_float:.1f}"
+
+    # Combine timestamp + raw payload bytes
+    uuid_unhashed = time_str + payload
+
+    # Hash it
+    uuid_hash = hash(uuid_unhashed)
+
+    return str(uuid_hash)
+
+
+def pack_v2xmessage_into_json(amf_bytes, identifier):
+    """
+        Creates a JSON representation of the passed in TENA V2XMessage using the templates defined above
+
+        Parameters
+        ----------
+        msg_bytes : bytes
+            An immutable sequence of integers ranging from 0 to 255 representing the 'utf-8' AMF formatted V2XMessage content
+        identifier : string
+            The identifier field of who is sending the V2X Message, defined by IDENTIFIER global in json_tools_interface.py
+
+        Returns
+        -------
+        v2xMessage_json : dict
+            A JSON dictionary, representing the TENA V2XMessage for the passed in V2X Message
+    """
+    
+    # Process the AMF 
+    amf_map = process_amf(amf_bytes)
+
+    # Determine V2X Message Type
+    msg_type = amf_map["Type"]
+
+    # Convert msg_bytes to list of dictionaries ( one dictionary for each value - ex.[{index0: value0}, {index1: value1}, ...] )
+    msg_content = bytes.fromhex(amf_map["Payload"])
+    binary_content = list(msg_content)
+    
+    # Generate UUID
+    uuid = generate_uuid(str(binary_content))
+
+    # Create a copy of the TENA V2XMessage template
+    v2xMessage_json = copy.deepcopy(tena_v2xmessage_template)
+
+    # Populate json fields
+    v2xMessage_json["attributes"]["messageType"] = msg_type
+    v2xMessage_json["attributes"]["binaryContent"] = binary_content
+    v2xMessage_json["attributes"]["senderIdentifier"] = identifier
+    v2xMessage_json["attributes"]["uuid"] = uuid
+
+    return v2xMessage_json
 
 def get_map_origin_from_scenario(scenario_json):
     """

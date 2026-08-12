@@ -441,6 +441,9 @@ def transmit_object_json(object_json_list, EntityMap, session: requests.Session)
         elif object_json.get("attributes",{}).get("trafficSignalPhases") is not None:
             object_type = 'VUG-TrafficSignalController-v1.3.5'
             entity_type = 'VUG::Entities::TrafficSignalController'
+
+        # TODO implement V2X URL and functionality
+        #       http://localhost:8004/v1/objects/VUG-V2XMessage-v1.1.4/VUG::TV2XMsg::V2X
         
         tena_publisher_url = f"http://{PUBLISHER_ENDPOINT}/v1/objects/{object_type}/{entity_type}"
         
