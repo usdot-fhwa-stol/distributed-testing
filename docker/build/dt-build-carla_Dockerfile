@@ -85,4 +85,4 @@ RUN chown -R dt_user:dt_user /home/dt_user/carla
 
 USER dt_user
 
-RUN echo 'source /home/dt_user/TENA/6.0.9/scripts/tenaenv-u2204-gcc11-64-v6.0.9.sh' >> /home/dt_user/.bashrc
+RUN echo 'source /home/dt_user/TENA/6.0.11/scripts/tenaenv-u2204-gcc11-64-v6.0.11.sh' >> /home/dt_user/.bashrc
