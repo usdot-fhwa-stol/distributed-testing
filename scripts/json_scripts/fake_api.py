@@ -113,8 +113,12 @@ def get_trafficSignalControllers():
     
     return trafficSignalController_list
 
-def get_v2x_amf():
-
-    amf = b'Version=0.7\nType=BSM\nPSID=0x20\nPriority=2\nTxMode=CONT\nTxChannel=183\nTxInterval=0\nDeliveryStart=\nDeliveryStop=\nSignature=False\nEncryption=False\nPayload=00142c40e1d950c8763d266e7c371ea6e485080f7ffffffff0000000fd7d0fa0807fff000019019008158029200a40\n'
-
-    return amf
+def get_bsm_data():
+    bsm_data = {
+        "bsmid": bytes.fromhex("87654321"),
+        "lat": 0,
+        "long": 0,
+        "speed": 20,
+        "role": "emergency"
+    }
+    return bsm_data

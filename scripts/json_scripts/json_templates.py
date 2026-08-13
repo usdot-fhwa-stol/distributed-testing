@@ -28,10 +28,13 @@
 import time
 import copy
 import logging
+import ast
+import j2735_202409
+from datetime import datetime
 
-# ================
-# Templates
-# ================
+# ============================================
+#                 TEMPLATES
+# ============================================
 
 # Base LandVehicle Template: contains shared fields except for tspi information
 base_landVehicle_template = {
@@ -327,9 +330,86 @@ tena_v2xmessage_template = {
     }
 }
 
-# ================
-# Field Maps
-# ================
+# BSM V2X message template
+bsm_template = {
+    "messageId": 20,                               # 20 is the value for BSM  
+    "value": (
+        "BasicSafetyMessage",
+        {
+            "coreData": {
+                "msgCnt": 0,
+                "id": "12345678",                  # vehicle's bsmID
+                "secMark": 0,                      # 0-59999, representing milliseconds into the current minute
+                "lat": 3895586,
+                "long": -7714773,
+                "elev": 70,
+                "accuracy": 
+                {
+                    "semiMajor": 255,
+                    "semiMinor": 255,
+                    "orientation": 65535
+                },
+                "transmission": "unavailable",
+                "speed": 0,
+                "heading": 0,
+                "angle": 127,
+                "accelSet": {
+                    "long": 0,
+                    "lat": 0,
+                    "vert": 0,
+                    "yaw": 0
+                },
+                "brakes": {
+                "wheelBrakes": (0, 5),
+                "traction": "unavailable",
+                "abs": "unavailable",
+                "scs": "unavailable",
+                "brakeBoost": "unavailable",
+                "auxBrakes": "unavailable"
+                },
+                "size": {
+                "width": 18,
+                "length": 450
+                }
+            },
+            "partII": [
+            {
+                "partII-Id": 2,                        # Stands for SupplementalVehicleExtensions
+                "partII-Value": (
+                    "SupplementalVehicleExtensions",
+                    {
+                        "classification": 10,          # Generic Passenger-Vehicle Class (82 would be pedestrian)
+                        "classDetails": {
+                            "keyType": 10,             # Generic Passenger-Vehicle Class (82 would be pedestrian)
+                            "role": "basicVehicle"                  # Vehicle Role - 0 for basicVehicle, 6 for emergency, with more specifics available
+                        }
+                    }
+                )
+            }
+            ]
+        }
+    )
+}
+
+# AMF header template
+amf_template = (
+    f"Version=0.7\n"
+    f"Type=BSM\n"
+    f"PSID=0x20\n"
+    f"Priority=2\n"
+    f"TxMode=CONT\n"
+    f"TxChannel=183\n"
+    f"TxInterval=0\n"
+    f"DeliveryStart=\n"
+    f"DeliveryStop=\n"
+    f"Signature=False\n"
+    f"Encryption=False\n"
+    f"Payload="
+)
+
+# ============================================
+#                 FIELD MAPS
+# ============================================
 
 # Maps object data keys to paths in the ltpENU tspi template
 ltpENU_field_mappings = {
@@ -410,39 +490,101 @@ geodetic_field_mappings = {
     "height":["attributes", "tspi", "attributes", "position", "attributes", "geodetic_asTransmitted", "attributes", "heightAboveEllipsoidInMeters"]
 }
 
-# ================
-# Helper Functions
-# ================
+# Maps relevant BSM data keys to paths in the bsm template
+bsm_field_mappings = {
+    "bsmid":["value", 1, "coreData", "id"],
+    "msgCnt":["value", 1, "coreData", "msgCnt"],
+    "secMark":["value", 1, "coreData", "secMark"],
+    "lat":["value", 1, "coreData", "lat"],
+    "long":["value", 1, "coreData", "long"],
+    "elev":["value", 1, "coreData", "elev"],
+    "speed":["value", 1, "coreData", "speed"],
+    "heading":["value", 1, "coreData", "heading"],
+    "angle":["value", 1, "coreData", "angle"],
+    "classification":["value", 1, "partII", 0, "partII-Value", 1, "classification"],
+    "keytype":["value", 1, "partII", 0, "partII-Value", 1, "classDetails", "keyType"],
+    "role":["value", 1, "partII", 0, "partII-Value", 1, "classDetails", "role"]
+}
 
+# ============================================
+#               HELPER FUNCTIONS
+# ============================================
+
+# --------------------
+# Template Processing
+# --------------------
 def set_nested(d, path, value):
     """
-        Set a value in a nested dictionary at a location specified by a list of keys.
+        Set a value inside nested dictionaries, lists, and tuples.
 
-        Walks through the nested dictionary 'd' following the sequence of keys in 'path'.
-        If intermediate dictionaries do not exist, they are created.
-        The final key in 'path' is assigned the given 'value'
+        Dictionaries are accessed by key.
+        Lists and tuples are accessed by integer index.
+
+        Tuples are rebuilt as necessary because they are immutable.
 
         Parameters
         ----------
-        d : dict
-            The dictionary to modify.
-        path : list of str
-            A list of keys specifying the path where the value should be set.
-            The last key in the list is the target key for 'value'.
+        d : some combination of dictionaries, lists, and tuples
+            The data to modify.
+        path : list of str, ints
+            A list of keys and indexes specifying the path where the value should be set.
+            The last entry in the list is the target key for 'value'.
         value : any
             The value to set at the specified location.
 
         Returns
         -------
         None
-            The dictionary 'd' is modified in place.
+            The data 'd' is modified in place.
     """
-    # Traverse the path, creating intermediate dictionaries if needed
-    for key in path[:-1]:
-        #If the key doesn't exist, set it to an empty dict; then move into it
-        d = d.setdefault(key,{})
-    # Set the final key to the given value
-    d[path[-1]] = value
+
+    if not path:
+        raise ValueError("Path cannot be empty")
+
+    key = path[0]
+
+    # Base case: we're setting the value in the current container
+    if len(path) == 1:
+        if isinstance(d, dict):
+            d[key] = value
+        elif isinstance(d, list):
+            d[key] = value
+        elif isinstance(d, tuple):
+            # Tuples cannot be modified in place
+            temp = list(d)
+            temp[key] = value
+            return tuple(temp)
+        
+        else:
+            raise TypeError(
+                f"Cannot set value inside object of type {type(d).__name__}"
+            )
+        
+        return d
+
+    # Dictionary
+    if isinstance(d, dict):
+        child = d[key]
+        new_child = set_nested(child, path[1:], value)
+        d[key] = new_child
+        return d
+
+    # List
+    elif isinstance(d, list):
+        d[key] = set_nested(d[key], path[1:], value)
+        return d
+    
+    # Tuple
+    elif isinstance(d, tuple):
+        temp = list(d)
+        temp[key] = set_nested(temp[key], path[1:], value)
+        return tuple(temp)
+
+    else:
+        raise TypeError(
+            f"Cannot traverse object of type {type(obj).__name__}"
+            f"using path element {key!r}"
+        )
 
 def get_value_at_nested(data, path):
     """
@@ -469,6 +611,35 @@ def get_value_at_nested(data, path):
             return None
     return data
 
+def remove_null_fields(object_json, field_map):
+    """
+        Removes velocity and acceleration from the object JSON when values are default.
+
+        Checks the x,y,z velocity and acceleration values in the object_json. If all of these values are still at their default value of 0,
+        this function removes those sections from the JSON
+
+        Paramters
+        ---------
+        object_json : JSON (dictionary)
+            JSON of the object being evaluated
+        field_map : dict
+            key mappings used to get the path to a desired field of the JSON object
+
+    """
+
+    velocities = (get_value_at_nested(object_json, field_map["vx"]), get_value_at_nested(object_json, field_map["vy"]), get_value_at_nested(object_json, field_map["vz"]))
+    accelerations = (get_value_at_nested(object_json, field_map["ax"]), get_value_at_nested(object_json, field_map["ay"]), get_value_at_nested(object_json, field_map["az"]))
+    
+    if velocities == (0.0, 0.0, 0.0):
+        object_json["attributes"]["tspi"]["attributes"].pop("velocity", None)
+    if accelerations == (0.0, 0.0, 0.0):
+        object_json["attributes"]["tspi"]["attributes"].pop("acceleration", None)
+
+    return
+
+# ------------------
+# Entity Processing
+# ------------------
 def validate_object(object_data):
     """
         Validates that each object passed in for JSON creation contains the minimum amount of information needed to create the object JSON.
@@ -505,32 +676,6 @@ def validate_object(object_data):
             return False
 
     return True
-
-def remove_null_fields(object_json, field_map):
-    """
-        Removes velocity and acceleration from the object JSON when values are default.
-
-        Checks the x,y,z velocity and acceleration values in the object_json. If all of these values are still at their default value of 0,
-        this function removes those sections from the JSON
-
-        Paramters
-        ---------
-        object_json : JSON (dictionary)
-            JSON of the object being evaluated
-        field_map : dict
-            key mappings used to get the path to a desired field of the JSON object
-
-    """
-
-    velocities = (get_value_at_nested(object_json, field_map["vx"]), get_value_at_nested(object_json, field_map["vy"]), get_value_at_nested(object_json, field_map["vz"]))
-    accelerations = (get_value_at_nested(object_json, field_map["ax"]), get_value_at_nested(object_json, field_map["ay"]), get_value_at_nested(object_json, field_map["az"]))
-    
-    if velocities == (0.0, 0.0, 0.0):
-        object_json["attributes"]["tspi"]["attributes"].pop("velocity", None)
-    if accelerations == (0.0, 0.0, 0.0):
-        object_json["attributes"]["tspi"]["attributes"].pop("acceleration", None)
-
-    return
 
 def pack_object_data_into_json(object_data_list, entityMap, map_origin, coordinate_format, entity_id):
     """
@@ -649,6 +794,9 @@ def pack_object_data_into_json(object_data_list, entityMap, map_origin, coordina
 
     return object_data_json_list
 
+# -----------------------
+# V2X Message Processing
+# -----------------------
 def process_amf(amf_bytes):
     """
         Processes the byte representation of the amf V2XMessage into a dictionary to easily pull required information
@@ -706,7 +854,6 @@ def generate_uuid(payload: str) -> str:
 
     return str(uuid_hash)
 
-
 def pack_v2xmessage_into_json(amf_bytes, identifier):
     """
         Creates a JSON representation of the passed in TENA V2XMessage using the templates defined above
@@ -748,6 +895,50 @@ def pack_v2xmessage_into_json(amf_bytes, identifier):
 
     return v2xMessage_json
 
+# -----------------------
+# V2X Message Generation
+# -----------------------
+def get_secmark():
+    """
+        Generates the current secMark (time within the current minute, in milliseconds) based on the system's time
+    """
+    now = datetime.now()
+    milliseconds = now.microsecond // 1000 + now.second * 1000
+
+    # Leap second handling
+    leap_second = time.gmtime().tm_sec == 60
+    if leap_second:
+        return 60000 + (milliseconds % 1000)
+    elif milliseconds > 60999:
+        return 65535
+    else:
+        return milliseconds
+
+def generate_bsm(bsm_data, identifier):
+    print("Generating BSM")
+
+    bsm = copy.deepcopy(bsm_template)
+
+    bsm_data["secMark"] = get_secmark()
+
+    for key, path in bsm_field_mappings.items():
+        if key in bsm_data:
+            set_nested(bsm, path, bsm_data[key])
+
+    bsm = str(bsm)
+    bsm_string = ast.literal_eval(bsm)
+    frame = j2735_202409.MessageFrame.MessageFrame
+    frame.set_val(bsm_string)    
+    frame_uper = frame.to_uper()
+    amf = amf_template + frame_uper.hex() + '\n'
+
+    bsm_json = pack_v2xmessage_into_json(bytes(amf,'utf-8'), identifier)
+
+    print(bsm_json)
+
+# --------------------
+# Scenario Processing
+# --------------------
 def get_map_origin_from_scenario(scenario_json):
     """
         Return a dictionary containing the map origin.
