@@ -37,36 +37,36 @@
   </radios>
 
   <intersectionSignalControllers>
-      <intersectionSignalController name="J023" adapterName="SPAT-1" lvcIndicator="Live">
+      <intersectionSignalController name="Town10_01" adapterName="SPAT-1" lvcIndicator="Live">
         <controller name="" id="1"/>
       </intersectionSignalController>
   
-      <intersectionSignalController name="J189" adapterName="SPAT-1" lvcIndicator="Live">
+      <intersectionSignalController name="Town10_02" adapterName="SPAT-1" lvcIndicator="Live">
         <controller name="" id="2"/>
       </intersectionSignalController>
   
-      <intersectionSignalController name="J468" adapterName="SPAT-1" lvcIndicator="Live">
+      <intersectionSignalController name="Town10_03" adapterName="SPAT-1" lvcIndicator="Live">
         <controller name="" id="3"/>
       </intersectionSignalController>
   
-      <intersectionSignalController name="J532" adapterName="SPAT-1" lvcIndicator="Live">
+      <intersectionSignalController name="Town10_04" adapterName="SPAT-1" lvcIndicator="Live">
         <controller name="" id="4"/>
       </intersectionSignalController>
   
-      <intersectionSignalController name="J719" adapterName="SPAT-1" lvcIndicator="Live">
+      <intersectionSignalController name="Town10_05" adapterName="SPAT-1" lvcIndicator="Live">
         <controller name="" id="5"/>
       </intersectionSignalController>
   </intersectionSignalControllers>
   
   <phaseSignalMappings>
-      <configuration name="J023 Configuration" controllerName="J023">
+      <configuration name="Town10_01 Configuration" controllerName="Town10_01">
         <GeodeticPosition latitudeInDegrees="0.000527" longitudeInDegrees="-0.000419" heightAboveEllipsoidInMeters="0"/>
         <mapping signalId="945" phase="6"/>
         <mapping signalId="944" phase="4"/>
         <mapping signalId="943" phase="2"/>
       </configuration>
   
-      <configuration name="J189 Configuration" controllerName="J189">
+      <configuration name="Town10_02 Configuration" controllerName="Town10_02">
         <GeodeticPosition latitudeInDegrees="-0.000183" longitudeInDegrees="-0.000427" heightAboveEllipsoidInMeters="0"/>
         <mapping signalId="949" phase="4"/>
         <mapping signalId="951" phase="5"/>
@@ -74,20 +74,20 @@
         <mapping signalId="950" phase="2"/>
       </configuration>
   
-      <configuration name="J468 Configuration" controllerName="J468">
+      <configuration name="Town10_03 Configuration" controllerName="Town10_03">
         <GeodeticPosition latitudeInDegrees="-0.001211" longitudeInDegrees="-0.000543" heightAboveEllipsoidInMeters="0"/>
         <mapping signalId="954" phase="6"/>
         <mapping signalId="953" phase="4"/>
       </configuration>
   
-      <configuration name="J532 Configuration" controllerName="J532">
+      <configuration name="Town10_04 Configuration" controllerName="Town10_04">
         <GeodeticPosition latitudeInDegrees="-0.000231" longitudeInDegrees="0.000957" heightAboveEllipsoidInMeters="0"/>
         <mapping signalId="959" phase="3"/>
         <mapping signalId="957" phase="6"/>
         <mapping signalId="958" phase="2"/>
       </configuration>
   
-      <configuration name="J719 Configuration" controllerName="J719">
+      <configuration name="Town10_05 Configuration" controllerName="Town10_05">
         <GeodeticPosition latitudeInDegrees="-0.000133" longitudeInDegrees="-0.000998" heightAboveEllipsoidInMeters="0"/>
         <mapping signalId="960" phase="4"/>
         <mapping signalId="962" phase="1"/>

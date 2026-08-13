@@ -169,8 +169,9 @@ def build_spat_for_intersection(
 
 def encode_spat_to_uper_hex(spat_dict):
     jer_str = json.dumps(spat_dict, separators=(",", ":"))
-    MessageFrame.from_jer(jer_str)
-    uper_bytes = MessageFrame.to_uper()
+    msg = MessageFrame
+    msg.from_jer(jer_str)
+    uper_bytes = msg.to_uper()
     return uper_bytes.hex()
 
 
@@ -331,7 +332,7 @@ def main():
         default=56700,
         help="Destination UDP port for Active Message Format (default: 56700)",
     )
-    
+
     # Main street timings
     parser.add_argument(
         "--green-main",
@@ -400,7 +401,7 @@ def main():
     # UDP socket
     sk = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     target = (args.ip, args.port)
-    print(f"Starting SPaT generator on {args.ip}:{args.port}...")
+
     print("Press Ctrl+C to stop\n")
     print(
         f"Intersections: {intersection_ids} | "

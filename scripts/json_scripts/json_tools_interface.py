@@ -62,7 +62,7 @@ import json_templates
 # =================================
 # Global Configurations
 # =================================
-LOCAL_ADDRESS = os.environ['VUG_LOCAL_ADDRESS']
+LOCAL_ADDRESS = os.getenv("VUG_LOCAL_ADDRESS")  
 VUG_STREAMER_BIND_IP = os.getenv("VUG_STREAMER_BIND_IP", "0.0.0.0")  # IP to bind the TCP listener to; defaults to all interfaces
 VUG_STREAMER_BIND_PORT = int(os.getenv("VUG_STREAMER_BIND_PORT","8005")) # Port to bind the TCP listener to; defaults to 8005
 VUG_PUBLISHER_REST_IP = os.getenv("VUG_PUBLISHER_REST_IP", "0.0.0.0") # IP of the JSON Publisher's REST API; defaults to 0.0.0.0
@@ -71,8 +71,8 @@ SELECTED_WAYPOINT_CSV = "/home/dt_user/distributed-testing/scripts/json_scripts/
 
 GET_OBJECT_TYPE = "waypoints" # options are "waypoints" or "api"
 COORDINATE_FORMAT = "ltpENU" # options are "geocentric" or "ltpENU"
-PUBLISHER_ENDPOINT = VUG_PUBLISHER_REST_IP + ":" + str(VUG_PUBLISHER_REST_PORT) #Endpoint for JSON Publisher REST API
-STREAMER_DATA_ENDPOINT = VUG_STREAMER_BIND_IP + ":" + str(VUG_STREAMER_BIND_PORT)
+PUBLISHER_ENDPOINT = f"{VUG_PUBLISHER_REST_IP}:{VUG_PUBLISHER_REST_PORT}" #Endpoint for JSON Publisher REST API 
+STREAMER_DATA_ENDPOINT = f"{VUG_STREAMER_BIND_IP}:{VUG_STREAMER_BIND_PORT}"
 DATA_UPDATE_PERIOD = 0.1 # Period for retrieval of data (in seconds)
 INDIVIDUAL_TRANSMIT_DELAY = 0.002 # Period between transmission of individual entities to the REST API
 LOGGING_LEVEL = logging.DEBUG # sets the minimum level to log [DEBUG, INFO, WARNING, ERROR, CRITICAL]

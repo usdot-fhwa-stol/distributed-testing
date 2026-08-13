@@ -56,7 +56,7 @@ def main():
     parser.add_argument(
         "--port",
         type=int,
-        default=56702,
+        default=56700,
         help="Destination UDP port for AMF (default: 56702)",
     )
 

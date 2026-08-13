@@ -10,7 +10,7 @@ It can be expanded to do something else with the packets as needed.
 USAGE:
 This script should be run with one of the following commands, from inside the dt-core container (use 'dt exec' to enter the container)
     python3 decode_v2x_live.py -h $VUG_V2X_ADAPTER_SEND_ADDRESS -p $VUG_V2X_ADAPTER_SEND_PORT
-    python3 decode_v2x_live.py --host $VUG_V2X_ADAPTER_SEND_ADDRESS --port $VUG_V2X_ADAPTER_SEND_ADDRESS
+    python3 decode_v2x_live.py --ip $VUG_V2X_ADAPTER_SEND_ADDRESS --port $VUG_V2X_ADAPTER_SEND_ADDRESS
 """
 
 import J2735_201603_2023_06_22 as J2735
@@ -18,16 +18,16 @@ import socket
 import binascii as ba
 import argparse
 
-def start_v2x_listener(host: str, port: int):
+def start_v2x_listener(ip: str, port: int):
     """
     Creates a UDP socket and listens for incoming packets.
     """
 
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-    sock.bind((host, port))
+    sock.bind((ip, port))
 
-    print(f"Listening for V2X messages on {host}:{port}...")
+    print(f"Listening for V2X messages on {ip}:{port}...")
 
     while True:
         try:
@@ -60,8 +60,8 @@ def main():
         add_help=False
     )
     parser.add_argument(
-        "-h", "--host",
-        dest="host",
+        "--ip",
+        dest="ip",
         type=str,
         default="127.0.0.1",
         help="IP address to bind to (default: 127.0.0.1)"
@@ -80,7 +80,7 @@ def main():
     )
     args = parser.parse_args()
 
-    start_v2x_listener(args.host, args.port)
+    start_v2x_listener(args.ip, args.port)
 
 if __name__ == "__main__":
     main()
