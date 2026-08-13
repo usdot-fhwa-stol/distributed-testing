@@ -165,6 +165,7 @@ USER $USER
 COPY --chown=dt_user:dt_user --from=build /home/$USER/TENA /home/$USER/TENA
 
 RUN DSTROOT=/home/dt_user ./TENA/postinst-DV
+RUN sed -i '/^chown -R root/d;/^chgrp -R root/d' ./TENA/postinst-TDCS
 RUN DSTROOT=/home/dt_user ./TENA/postinst-TDCS
 RUN sed -i '/^chown -R root/d;/^chgrp -R root/d' ./TENA/postinst-JSON
 RUN DSTROOT=/home/dt_user ./TENA/postinst-JSON
