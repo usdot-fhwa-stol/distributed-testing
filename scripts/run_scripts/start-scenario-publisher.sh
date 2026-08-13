@@ -67,7 +67,7 @@ fi
 
 localadapterPath=$VUG_LOCAL_INSTALL_PATH/$VUG_SCENARIO_PUBLISHER_VERSION
 
-adapterVerbosity='1'
+adapterVerbosity='4'
 
 useBestEffort=''
 if [[ $VUG_USE_BEST_EFFORT == true ]]; then

@@ -116,6 +116,55 @@ def display_vehicle_rolenames():
                     persistent_lines=True)
 
 
+def display_pedestrian_rolenames():
+
+    text_offset = carla.Location(x=5, y=0, z=2)
+
+    walker_list = world.get_actors().filter(args.filterw)
+
+    if args.duration == 0:
+        label_duration = 0.5
+    else:
+        label_duration = args.duration
+
+    if len(walker_list) == 0:
+
+        if args.verbose:
+            print("    NO PEDESTRIANS")
+
+    else:
+        if args.verbose:
+            print("\nCARLA PEDESTRIANS: ")
+
+        for index, walker in enumerate(walker_list, start=1):
+
+            walker_name = str(walker.attributes["role_name"])
+
+            if args.verbose:
+                print("    " + str(walker.attributes))
+            if map_string in map_height_dict:
+                if walker.get_location().z < map_height_dict[map_string]["bottom_line"]:
+                    continue
+                elif walker.get_location().z > map_height_dict[map_string]["spawn_line"]:
+                    color = carla.Color(r=0, g=0, b=255)
+                else:
+                    color = carla.Color(r=255, g=0, b=0)
+
+                world.debug.draw_string(
+                    walker.get_location() + text_offset,
+                    walker_name,
+                    draw_shadow=False,color=color,
+                    life_time=label_duration,
+                    persistent_lines=True)
+            else:
+                world.debug.draw_string(
+                    walker.get_location() + text_offset,
+                    walker_name,
+                    draw_shadow=False,color=carla.Color(r=255,g=0,b=0),
+                    life_time=label_duration,
+                    persistent_lines=True)
+
+
 def display_traffic_signal_state():
     signal_list = world.get_actors().filter('traffic.traffic_light')
     # Print all index corresponding to all traffic signals in scene (CarlaUE4)
@@ -231,7 +280,8 @@ try:
             display_traffic_signal_state()
 
         if display_vehicle_rolenames_env:
-            display_vehicle_rolenames()                        
+            display_vehicle_rolenames()
+            display_pedestrian_rolenames()                        
 
         if args.duration != 0:
             sys.exit()

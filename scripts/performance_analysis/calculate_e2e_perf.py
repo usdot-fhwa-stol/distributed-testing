@@ -1159,9 +1159,9 @@ def performance_post_processing(results_file):
         
         print("\t" + str(column) + ": ")
         
-        column_min = results_only_dataset[column].min(numeric_only=True)
-        column_max = results_only_dataset[column].max(numeric_only=True)
-        column_mean = results_only_dataset[column].mean(numeric_only=True)
+        column_min = results_only_dataset[column].min()
+        column_max = results_only_dataset[column].max()
+        column_mean = results_only_dataset[column].mean()
         print("\t\tMin: " + str(column_min))
         print("\t\tMax: " + str(column_max))
         print("\t\tMean: " + str(column_mean))
@@ -1190,26 +1190,26 @@ def performance_post_processing(results_file):
             src_name_and_type = column_split[0]
             src_name_and_type_split = src_name_and_type.split("_")
             src_name = src_name_and_type_split[0]
-            src_type = src_name_and_type_split[1]
+            src_type = src_name_and_type_split[1] if len(src_name_and_type_split) > 1 else ""
 
             # print("src_name: " + src_name)
 
-            dst_name_type_step_split = column_split[1].split("_")
+            dst_name_type_step_split = column_split[1].split("_") if len(column_split) > 1 else [""]
             dst_name = dst_name_type_step_split[0]
-            dst_type = dst_name_type_step_split[1]
+            dst_type = dst_name_type_step_split[1] if len(dst_name_type_step_split) > 1 else ""
             # print("dst_name: " + dst_name)
 
 
             if column.endswith("total_latency_e2e"):
                 src_name = args.source_site.lower()
                 step_type = "total_latency"
-            elif "_transmit" in column_split[1]:
+            elif len(column_split) > 1 and "_transmit" in column_split[1]:
                 step_type = "sdo_transmit"
-            elif "_commit" in column_split[1]:
+            elif len(column_split) > 1 and "_commit" in column_split[1]:
                 step_type = "sdo_commit"
-            elif "_pcap_in" in column_split[1]:
+            elif len(column_split) > 1 and "_pcap_in" in column_split[1]:
                 step_type = "pcap_in"
-            elif "_pcap_out" in column_split[1]:
+            elif len(column_split) > 1 and "_pcap_out" in column_split[1]:
                 step_type = "pcap_out"
 
             results_summary_outfile_writer.writerow([J2735_message_subtype_name,src_name,src_type,dst_name,dst_type,step_type,column_min,column_max,column_mean,column_mean_diff,column_std_dev])

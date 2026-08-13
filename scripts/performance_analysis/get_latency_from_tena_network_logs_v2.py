@@ -3,6 +3,15 @@ import re
 import argparse
 import os
 
+id_ip_found_map_e3 = {}
+ip_map_event3 = {
+
+    "10.221.18.106": "Pitt - Driving Simulator",
+    "10.221.17.141": "Pitt - Linux Computer",
+    "10.221.18.111": "Pitt - SILS Computer"
+
+}
+
 id_ip_found_map_e2 = {}
 ip_map_event2 = {
     "10.91.0.35" : "UCLA",
