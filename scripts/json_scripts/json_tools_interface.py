@@ -62,17 +62,17 @@ import json_templates
 # =================================
 # Global Configurations
 # =================================
-LOCAL_ADDRESS = os.environ['VUG_LOCAL_ADDRESS']
+LOCAL_ADDRESS = os.getenv("VUG_LOCAL_ADDRESS")  
 VUG_STREAMER_BIND_IP = os.getenv("VUG_STREAMER_BIND_IP", "0.0.0.0")  # IP to bind the TCP listener to; defaults to all interfaces
 VUG_STREAMER_BIND_PORT = int(os.getenv("VUG_STREAMER_BIND_PORT","8005")) # Port to bind the TCP listener to; defaults to 8005
 VUG_PUBLISHER_REST_IP = os.getenv("VUG_PUBLISHER_REST_IP", "0.0.0.0") # IP of the JSON Publisher's REST API; defaults to 0.0.0.0
 VUG_PUBLISHER_REST_PORT = int(os.getenv("VUG_PUBLISHER_REST_PORT", "8004")) # Port of the JSON Publisher's REST API; defaults to 8004
-SELECTED_WAYPOINT_CSV = "/home/dt_user/distributed-testing/scripts/json_scripts/delave_waypoints_v4.csv" # CSV file containing waypoint data
+SELECTED_WAYPOINT_CSV = "/home/dt_user/distributed-testing/scripts/json_scripts/Town10_waypoints.csv" # CSV file containing waypoint data
 
 GET_OBJECT_TYPE = "waypoints" # options are "waypoints" or "api"
 COORDINATE_FORMAT = "ltpENU" # options are "geocentric" or "ltpENU"
-PUBLISHER_ENDPOINT = VUG_PUBLISHER_REST_IP + ":" + str(VUG_PUBLISHER_REST_PORT) #Endpoint for JSON Publisher REST API
-STREAMER_DATA_ENDPOINT = VUG_STREAMER_BIND_IP + ":" + str(VUG_STREAMER_BIND_PORT)
+PUBLISHER_ENDPOINT = f"{VUG_PUBLISHER_REST_IP}:{VUG_PUBLISHER_REST_PORT}" #Endpoint for JSON Publisher REST API 
+STREAMER_DATA_ENDPOINT = f"{VUG_STREAMER_BIND_IP}:{VUG_STREAMER_BIND_PORT}"
 DATA_UPDATE_PERIOD = 0.1 # Period for retrieval of data (in seconds)
 INDIVIDUAL_TRANSMIT_DELAY = 0.002 # Period between transmission of individual entities to the REST API
 LOGGING_LEVEL = logging.DEBUG # sets the minimum level to log [DEBUG, INFO, WARNING, ERROR, CRITICAL]
@@ -121,7 +121,7 @@ def setup_logging(level=logging.INFO):
         raise ValueError("LOG PATH not valid")
     log_folder = os.path.join(dt_path, "logs/json_script_logs/")
     os.makedirs(log_folder, exist_ok=True)
-    os.chmod(log_folder, 0o777) # Modifies permission on the LOG_PATH/logs/json_script_logs folder to rwxrwxrwx
+    #os.chmod(log_folder, 0o777) # Modifies permission on the LOG_PATH/logs/json_script_logs folder to rwxrwxrwx
 
     timestamp = time.strftime("%Y%m%d_%H%M%S")
     logging.basicConfig(
