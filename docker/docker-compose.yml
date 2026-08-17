@@ -49,7 +49,7 @@ services:
 
   dt-simdis:
     container_name: dt-simdis
-    image: harbor.distributedtesting.org/distributed-testing/dt-simdis:0.0.1
+    image: harbor.distributedtesting.org/distributed-testing/dt-simdis:0.1.1
     profiles: ["simdis"]
     privileged: true
     network_mode: "host"

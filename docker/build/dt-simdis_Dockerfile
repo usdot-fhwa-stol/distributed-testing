@@ -79,6 +79,41 @@ RUN --mount=from=build,source=/home/dt_user,target=/mnt/dt_user,rw \
     env USER=dt_user DSTROOT=/home/dt_user SIMDIS_DIR=/home/dt_user/SIMDIS /home/dt_user/TENA/postinst-SDTP && \
     rm -rf /home/dt_user/TENA
 
+# postinst-SDTP (from the SIMDIS TENA Plugin deb) installs its default TENA config,
+# including model.dis, to a path it builds as "$DSTROOT/~/.config/...". Bash only expands
+# "~" when it is the leading character of a word, not when embedded after a "/", so with
+# DSTROOT=/home/dt_user set above, the script actually creates a directory literally named
+# "~" instead of writing into /home/dt_user/.config/... (the path the SIMDIS TENA Plugin
+# reads by default at runtime). Net effect: the plugin's default model.dis is never found.
+# Separately, model.dis itself has a vendor bug: 8 rows in the "Lifeform Kind, Land Domain"
+# section (SISO kind=3, domain=1) are missing the trailing "extra" field, so their entity
+# type keys have 6 dot-separated fields instead of the required 7 and never match a real
+# 7-field entity type. One of the 8 is the civilian/pedestrian row (3.1.0.130.0.0 instead of
+# 3.1.0.130.0.0.0), which is exactly the DIS EntityType vug-entity-generator publishes for
+# SDSM-sourced pedestrians. Unmatched entities fall back to SIMDIS's generic per-domain
+# default (Ground Model = m1a2_abrams, an actual tank), which is why pedestrians rendered as
+# tanks. Both are fixed here: move the config out of the bogus "~" directory, then patch the
+# 8 malformed rows in place.
+RUN set -eu; \
+    src="/home/dt_user/~/.config/Naval Research Laboratory/home/TENA"; \
+    dst="/home/dt_user/.config/Naval Research Laboratory/home/TENA"; \
+    if [ -d "$src" ]; then \
+      mkdir -p "$dst" && \
+      cp -a "$src/." "$dst/" && \
+      rm -rf "/home/dt_user/~"; \
+    fi && \
+    sed -i \
+      -e 's/^3\.1\.0\.50\.0\.0 /3.1.0.50.0.0.0 /' \
+      -e 's/^3\.1\.0\.70\.0\.0 /3.1.0.70.0.0.0 /' \
+      -e 's/^3\.1\.0\.90\.0\.0 /3.1.0.90.0.0.0 /' \
+      -e 's/^3\.1\.0\.100\.0\.0 /3.1.0.100.0.0.0 /' \
+      -e 's/^3\.1\.0\.102\.0\.0 /3.1.0.102.0.0.0 /' \
+      -e 's/^3\.1\.0\.110\.0\.0 /3.1.0.110.0.0.0 /' \
+      -e 's/^3\.1\.0\.130\.0\.0 /3.1.0.130.0.0.0 /' \
+      -e 's/^3\.1\.0\.200\.0\.0 /3.1.0.200.0.0.0 /' \
+      "$dst/model.dis" && \
+    chown -R dt_user:dt_user /home/dt_user/.config
+
 USER dt_user
 
 ARG VERSION=dev
