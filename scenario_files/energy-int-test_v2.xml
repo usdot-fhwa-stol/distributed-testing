@@ -91,12 +91,20 @@
   </vehicles>
 
   <pedestrians>
-    <pedestrian name="PITTS-VRU-4" type="walker.pedestrian.0001" identifierType="psm" safetyid="12345678" simulationIdentifier="CARLA-PITTS-4" organization="PITT" lvcIndicator="Constructive">
+    <pedestrian name="PITTS-VRU-1" type="walker.pedestrian.0001" identifierType="psm" safetyid="12345678" cosimulationIdentifier="CARLA-PITTS-1" organization="PITT" lvcIndicator="Constructive">
         <initialTSPI>
             <GeodeticPosition latitudeInDegrees="0.001830" longitudeInDegrees="0.001160" heightAboveEllipsoidInMeters="1"> </GeodeticPosition>
             <Heading>0</Heading>
         </initialTSPI>
     </pedestrian>
+
+    <pedestrian name="STOL-VRU-4" type="walker.pedestrian.0001" identifierType="psm" safetyid="12345678" cosimulationIdentifier="CARLA-STOL-4" organization="PITT" lvcIndicator="Constructive">
+        <initialTSPI>
+            <GeodeticPosition latitudeInDegrees="0.001830" longitudeInDegrees="0.001160" heightAboveEllipsoidInMeters="1"> </GeodeticPosition>
+            <Heading>0</Heading>
+        </initialTSPI>
+    </pedestrian>
+
   </pedestrians>
   
 
