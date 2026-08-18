@@ -1,7 +1,7 @@
 services:
   dt-core:
     container_name: dt-core
-    image: harbor.distributedtesting.org/distributed-testing/dt-core:0.1.1
+    image: harbor.distributedtesting.org/dot-ostr-dt/dt-core:0.1.1
     profiles: ["core"]
     tty: true
     ipc: "host"
@@ -22,7 +22,7 @@ services:
 
   dt-carla:
     container_name: dt-carla
-    image: harbor.distributedtesting.org/distributed-testing/dt-carla:0-9-15-0.0.6
+    image: harbor.distributedtesting.org/dot-ostr-dt/dt-carla:0-9-15-0.0.6
     profiles: ["carla"]
     privileged: true
     network_mode: "host"
@@ -49,7 +49,7 @@ services:
 
   dt-simdis:
     container_name: dt-simdis
-    image: harbor.distributedtesting.org/distributed-testing/dt-simdis:0.1.1
+    image: harbor.distributedtesting.org/dot-ostr-dt/dt-simdis:0.1.1
     profiles: ["simdis"]
     privileged: true
     network_mode: "host"

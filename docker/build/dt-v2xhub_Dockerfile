@@ -1,5 +1,5 @@
 #
-# BUILD COMMAND: VERSION=hass-latest && source build-assets.env && sudo DOCKER_BUILDKIT=1 docker build --secret id=usdotfhwastol_token,src=usdotfhwastol_token --build-arg VERSION=$VERSION --build-context assets="$BUILD_DIR" -t harbor.distributedtesting.org/distributed-testing-dev/dt-v2xhub:$VERSION . --progress=plain -f dt-v2xhub_Dockerfile
+# BUILD COMMAND: VERSION=hass-latest && source build-assets.env && sudo DOCKER_BUILDKIT=1 docker build --secret id=usdotfhwastol_token,src=usdotfhwastol_token --build-arg VERSION=$VERSION --build-context assets="$BUILD_DIR" -t harbor.distributedtesting.org/dot-ostr-dt/dt-v2xhub:$VERSION . --progress=plain -f dt-v2xhub_Dockerfile
 # dt-build-v2xhub image is a commit of the .devcontainer V2XHub image with all build artifacts. It was built locally using develop and then committed and tagged using 'docker commit ....'
 # To update dt-build-v2xhub, you'll need to clone V2XHub and build/launch the devcontainer and all plugins - then commit that image again.
 
@@ -8,7 +8,7 @@
 # Make a file named `usdotfhwastol_token` under distributed-testing/docker/
 # Copy your token into that file
 
-FROM harbor.distributedtesting.org/distributed-testing/dt-build-v2xhub:latest AS build
+FROM harbor.distributedtesting.org/dot-ostr-dt/dt-build-v2xhub:latest AS build
 
 SHELL ["/bin/bash", "-ec"]
 
@@ -41,7 +41,7 @@ RUN --mount=type=bind,from=assets,source=.,target=/mnt/build,readonly \
     # move the postinst script into TENA dir to make it easier to copy and run later on final container
     mv ./postinst ./opt/TENA/postinst-DIST
 
-FROM harbor.distributedtesting.org/distributed-testing/dt-build-v2xhub:latest
+FROM harbor.distributedtesting.org/dot-ostr-dt/dt-build-v2xhub:latest
 
 WORKDIR /home/plugin
 
