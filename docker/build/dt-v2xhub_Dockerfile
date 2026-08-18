@@ -1,68 +1,38 @@
 #
-# BUILD COMMAND: VERSION=hass-latest && source build-assets.env && sudo DOCKER_BUILDKIT=1 docker build --secret id=usdotfhwastol_token,src=usdotfhwastol_token --build-arg VERSION=$VERSION --build-context assets="$BUILD_DIR" -t harbor.distributedtesting.org/dot-ostr-dt/dt-v2xhub:$VERSION . --progress=plain -f dt-v2xhub_Dockerfile
-# dt-build-v2xhub image is a commit of the .devcontainer V2XHub image with all build artifacts. It was built locally using develop and then committed and tagged using 'docker commit ....'
-# To update dt-build-v2xhub, you'll need to clone V2XHub and build/launch the devcontainer and all plugins - then commit that image again.
+# BUILD COMMAND: VERSION=hass-latest && sudo DOCKER_BUILDKIT=1 docker build --build-arg VERSION=$VERSION -t harbor.distributedtesting.org/dot-ostr-dt/dt-v2xhub:$VERSION . --progress=plain -f dt-v2xhub_Dockerfile
+#
+# dt-v2xhub is the official usdotfhwaops/v2xhub runtime image (built from V2X-Hub's own Dockerfile) with
+# TENA middleware/OMs, boost, and build tooling layered on top so a TENA V2X plugin can be compiled and
+# linked against V2X-Hub's shipped tmxutils/tmxapi static libs (see /usr/local/share/tmx/tmx-plugin-config.cmake
+# in the base image). TENA/boost are pulled in already-installed from dt-build-general instead of being
+# reinstalled here, so no build secret is needed for this image.
+#
+# To update the base V2X-Hub image, pull a newer usdotfhwaops/v2xhub:develop-amd64.
 
-# Secret instructions:
-# Github -> Settings -> developer settings -> create token(classic) -> give it all repo permissions, 90+ days expiration
-# Make a file named `usdotfhwastol_token` under distributed-testing/docker/
-# Copy your token into that file
-
-FROM harbor.distributedtesting.org/dot-ostr-dt/dt-build-v2xhub:latest AS build
-
-SHELL ["/bin/bash", "-ec"]
-
-WORKDIR /home/plugin
-
-USER root
-
-RUN apt-get update && \
-    apt-get install -y python3-pip \
-    # add some build packages
-    zstd
-
-ARG TENA_VERSION="TENA-MiddlewareSDK-v6.0.9.A"
-# INSTALL TENA deb
-RUN --mount=type=bind,from=assets,source=.,target=/mnt/build,readonly \
-    set -euo pipefail; \
-    dpkg -x --force-overwrite /mnt/build/${TENA_VERSION}@Product@u2204-gcc11-64-*.deb . && \
-    ar -x /mnt/build/${TENA_VERSION}@Product@u2204-gcc11-64-*.deb && \
-    tar xf control.tar.* && \
-    # move the postinst script into TENA dir to make it easier to copy and run later on final container
-    mv ./postinst ./opt/TENA/postinst-MW
-
-ARG DIST_VERSION="DOT_OSTR-Combined-Distribution-v1.2.3"
-# Install DT OMs
-RUN --mount=type=bind,from=assets,source=.,target=/mnt/build,readonly \
-    set -euo pipefail; \
-    dpkg -x --force-overwrite /mnt/build/${DIST_VERSION}@Product@u2204-gcc11-64-*.deb . && \
-    ar -x /mnt/build/${DIST_VERSION}@Product@u2204-gcc11-64-*.deb && \
-    tar xf control.tar.* && \
-    # move the postinst script into TENA dir to make it easier to copy and run later on final container
-    mv ./postinst ./opt/TENA/postinst-DIST
-
-FROM harbor.distributedtesting.org/dot-ostr-dt/dt-build-v2xhub:latest
+FROM usdotfhwaops/v2xhub:develop-amd64
 
 WORKDIR /home/plugin
 
 USER root
 
-# Mounts files in a temporary space with rw perms, copies them to container, runs postinst scripts, changes ownership
-COPY --from=build --chown=plugin:nogroup /home/plugin/opt/TENA /home/plugin/TENA
-RUN DSTROOT=/home/plugin ./TENA/postinst-MW
-RUN DSTROOT=/home/plugin ./TENA/postinst-DIST
-RUN mkdir /home/plugin/TENA/log
-RUN chown -R plugin:nogroup /home/plugin/TENA
+# TENA middleware + DT OMs (already installed via postinst) and the boost build TENA links against
+COPY --from=harbor.distributedtesting.org/dot-ostr-dt/dt-build-general:0.1.1 --chown=plugin:nogroup /home/dt_user/TENA /home/plugin/TENA
+COPY --from=harbor.distributedtesting.org/dot-ostr-dt/dt-build-general:0.1.1 /opt/boost /opt/boost
 
+# postinst baked dt-build-general's /home/dt_user path into TENA's env/config scripts; repoint them at
+# this image's home so TENA_HOME/PATH/LD_LIBRARY_PATH resolve correctly when scripts are sourced here
+RUN grep -rlZ '/home/dt_user' /home/plugin/TENA | xargs -0r sed -i 's#/home/dt_user#/home/plugin#g'
+
+ENV BOOST_ROOT=/opt/boost \
+    CMAKE_PREFIX_PATH=/opt/boost:${CMAKE_PREFIX_PATH:-} \
+    LD_LIBRARY_PATH=/opt/boost/lib:${LD_LIBRARY_PATH:-}
+
+RUN echo "/opt/boost/lib" > /etc/ld.so.conf.d/boost.conf && ldconfig
+
+# Build tooling needed to compile a TENA plugin against V2X-Hub; not present in the runtime v2xhub image
 RUN apt-get update && apt-get install -y \
-    cmake cmake-data git build-essential libboost-all-dev clang g++ lld ninja-build \
+    cmake cmake-data git build-essential clang g++ lld ninja-build python3-pip \
     libvulkan1 libpng-dev libtiff5-dev libjpeg-dev tzdata sed curl openssl unzip autoconf libtool rsync libxml2-dev
-
-RUN --mount=type=secret,id=usdotfhwastol_token \
-    USDOTFHWASTOL_TOKEN=$(cat /run/secrets/usdotfhwastol_token) && \
-    git clone https://${USDOTFHWASTOL_TOKEN}@github.com/usdot-fhwa-stol/vug-cmake-package.git cmake_temp && \
-    mv cmake_temp/cmake/ /home/plugin/TENA/lib/ && \
-	  rm -rf cmake_temp  
 
 USER plugin
 
@@ -73,7 +43,8 @@ LABEL description="V2XHub Distributed Testing Docker Image"
 # Once you have the built TENA V2X Plugin, uncomment the line below to copy it directly into the Docker image
 # COPY lib/TenaV2Xplugin.zip /usr/local/plugins/TenaV2Xplugin.zip
 
-RUN echo 'source /home/plugin/TENA/6.0.9/scripts/tenaenv-u2204-gcc11-64-v6.0.9.sh' >> /home/plugin/.bashrc
+RUN TENAENV=$(find /home/plugin/TENA -maxdepth 3 -iname 'tenaenv-u2204-gcc11-64-v*.sh' ! -name '*.template') && \
+    echo "source $TENAENV" >> /home/plugin/.bashrc
 
 WORKDIR /var/log/tmx
 
