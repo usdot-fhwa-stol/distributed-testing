@@ -3,17 +3,61 @@
 #
 # dt-v2xhub is the official usdotfhwaops/v2xhub runtime image (built from V2X-Hub's own Dockerfile) with
 # TENA middleware/OMs, boost, and build tooling layered on top so a TENA V2X plugin can be compiled and
-# linked against V2X-Hub's shipped tmxutils/tmxapi static libs (see /usr/local/share/tmx/tmx-plugin-config.cmake
-# in the base image). TENA/boost are pulled in already-installed from dt-build-general instead of being
-# reinstalled here, so no build secret is needed for this image.
+# linked against V2X-Hub's tmxutils/tmxapi (see /usr/local/share/tmx/tmx-plugin-config.cmake). TENA/boost
+# are pulled in already-installed from dt-build-general instead of being reinstalled here, so no build
+# secret is needed for this image.
 #
-# To update the base V2X-Hub image, pull a newer usdotfhwaops/v2xhub:develop-amd64.
+# usdotfhwaops/v2xhub:develop-amd64 is a stripped runtime image: it ships tmxutils/tmxapi as prebuilt
+# .a/.so files but never installs the SDK headers (PluginClient.h, tmx/j2735_messages/*.hpp, ...) --
+# those only exist in V2X-Hub's own discarded intermediate build stage. Mixing headers from one V2X-Hub
+# build with libs from another risks real ABI-breaking API drift, so the v2xhub-sdk-build stage below
+# clones V2X-Hub and builds just its tmx/ SDK (skipping the v2i-hub plugins entirely -- those already
+# come prebuilt from the runtime image below), and the final image takes /usr/local/include plus the tmx
+# libs/cmake config from THAT build so headers and libs are always self-consistent.
+#
+# To update the base V2X-Hub image, pull a newer usdotfhwaops/v2xhub:develop-amd64 and bump
+# V2XHUB_GIT_REF to the matching branch/commit.
 
+# ----------------------- V2X-Hub SDK build stage ----------------------- #
+FROM ubuntu:jammy AS v2xhub-sdk-build
+
+ARG J2735_VERSION=2024
+ARG V2XHUB_GIT_REF=develop
+ENV DEBIAN_FRONTEND=noninteractive
+
+RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates git && rm -rf /var/lib/apt/lists/*
+RUN git clone --depth 1 --branch "$V2XHUB_GIT_REF" https://github.com/usdot-fhwa-OPS/V2X-Hub.git /home/V2X-Hub
+
+RUN /home/V2X-Hub/scripts/install_dependencies.sh
+
+WORKDIR /home/V2X-Hub/ext/
+RUN ./build.sh
+
+WORKDIR /home/V2X-Hub/src/
+
+# Only the tmx/ SDK (headers + tmxcore/tmxutils/tmxapi/tmxctl) is needed to build a plugin against --
+# drop v2i-hub so its plugins never get built here; they're pulled prebuilt from the runtime image.
+RUN sed -i '/add_subdirectory(v2i-hub)/d' CMakeLists.txt
+
+RUN /home/V2X-Hub/container/database.sh
+RUN /home/V2X-Hub/container/library.sh
+RUN ldconfig
+RUN ./build.sh release --j2735-version "$J2735_VERSION"
+RUN ldconfig
+
+# ----------------------- dt-v2xhub ----------------------- #
 FROM usdotfhwaops/v2xhub:develop-amd64
 
 WORKDIR /home/plugin
 
 USER root
+
+# SDK headers + the exact libs/cmake config they were built against, from the self-consistent build above
+COPY --from=v2xhub-sdk-build --chown=plugin:adm /usr/local/include /usr/local/include
+COPY --from=v2xhub-sdk-build --chown=plugin:adm --chmod=544 /usr/local/lib/libtmxapi.* /usr/local/lib/
+COPY --from=v2xhub-sdk-build --chown=plugin:adm --chmod=544 /usr/local/lib/libtmxctlStatic.a /usr/local/lib/
+COPY --from=v2xhub-sdk-build --chown=plugin:adm --chmod=544 /usr/local/lib/libtmxutils.a /usr/local/lib/
+COPY --from=v2xhub-sdk-build --chown=plugin:adm --chmod=544 /usr/local/share/tmx/*.cmake /usr/local/share/tmx/
 
 # TENA middleware + DT OMs (already installed via postinst) and the boost build TENA links against
 COPY --from=harbor.distributedtesting.org/dot-ostr-dt/dt-build-general:0.1.1 --chown=plugin:nogroup /home/dt_user/TENA /home/plugin/TENA
