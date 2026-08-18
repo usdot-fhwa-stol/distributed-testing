@@ -9,11 +9,14 @@ container with distributed-testing bind-mounted, and it survives independently
 of any container's lifecycle.
 
 Example (TFHRC, ~2km radius, zoom 10-18, via Virginia's VBMP imagery):
-    ./download_offline_map.py \\
-        --lat 38.9519791 --lon -77.1483513 --radius-km 2 \\
-        --min-zoom 10 --max-zoom 18 \\
-        --url https://vginmaps.vdem.virginia.gov/arcgis/rest/services/VBMP_Imagery/MostRecentImagery_WGS/MapServer \\
-        --output tfhrc.mbtiles
+python3 download_offline_map.py \
+    --lat 38.9519791 \
+    --lon -77.1483513 \
+    --radius-km 2 \
+    --min-zoom 10 \
+    --max-zoom 18 \
+    --url "https://vginmaps.vdem.virginia.gov/arcgis/rest/services/VBMP_Imagery/MostRecentImagery_WGS/MapServer" \
+    --output tfhrc.mbtiles
 
 Then in SIMDIS: Map Editor -> Load New Layer -> Driver=MBTiles -> File=tfhrc.mbtiles.
 """
