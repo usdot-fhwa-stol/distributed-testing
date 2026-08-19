@@ -47,6 +47,12 @@ jobs:
       #     username: ${{ secrets.DOCKERHUB_USERNAME }}
       #     password: ${{ secrets.DOCKERHUB_TOKEN }}
 
+      - name: Fetch required assets
+        working-directory: ./docker/build
+        run: |
+          chmod +x fetch-assets.sh
+          ./fetch-assets.sh
+
       - name: Build dt-base image
         working-directory: ./docker/build
         env:
