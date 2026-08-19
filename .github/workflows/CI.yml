@@ -5,7 +5,10 @@ on:
   pull_request:
     types: [opened, synchronize, reopened]
   push:
-    branches: [develop, master]
+    branches:
+    - develop
+    - master
+    - hass-701-add-workflows
 jobs:
   determine_docker_org_and_tag:
     runs-on: ubuntu-22.04
