@@ -31,7 +31,7 @@ variable "PLUGIN_REF" {
 }
 
 variable "VERSION" {
-  default = "dev"
+  default = "develop"
 }
 
 variable "J2735_VERSION" {

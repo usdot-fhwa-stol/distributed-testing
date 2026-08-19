@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1
 #
-# BUILD COMMAND: ./build-image.sh dt-v2xhub
+# BUILD COMMAND: VERSION=0.1.1 ./build-image.sh dt-v2xhub
 #
 # Builds the TENA V2X plugin against V2X-Hub's own SDK and ships it inside V2X-Hub's own,
 # fully-built runtime. Not the published usdotfhwaops/v2xhub image -- that never installs SDK
