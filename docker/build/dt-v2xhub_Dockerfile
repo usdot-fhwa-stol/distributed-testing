@@ -83,6 +83,13 @@ FROM v2xhub-default-runtime AS dt-v2xhub
 
 USER root
 COPY --from=tena-v2xhub-plugin-build --chown=plugin:adm --chmod=544 /src/plugin/build/TenaV2XPlugin/TenaV2Xplugin.zip /usr/local/plugins/TenaV2Xplugin.zip
+
+# TenaV2Xplugin is dynamically linked against TENA's middleware/OM .so files
+# Therefore, add these runtime libraries
+COPY --from=tena-source --chown=plugin:adm --chmod=544 /home/dt_user/TENA/lib/*.so* /usr/local/lib/
+COPY --from=tena-source --chown=plugin:adm --chmod=544 /opt/boost/lib/*.so* /usr/local/lib/
+RUN ldconfig
+
 USER plugin
 
 ARG VERSION=dev
