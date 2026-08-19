@@ -17,8 +17,6 @@
 # $ENV{TENA_VERSION}/$ENV{TENA_PLATFORM} -- CMAKE_PREFIX_PATH (env form) is enough to make V2X-Hub's
 # own unmodified ./build.sh find it. No edits to V2X-Hub's own Dockerfile/scripts.
 
-ARG J2735_VERSION=2024
-
 # ---------------- devcontainer: build-environment + TENA, no plugin ---------------- #
 FROM v2xhub-build-dependencies AS tena-v2xhub-build-dependencies
 ARG J2735_VERSION
