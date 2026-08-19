@@ -52,7 +52,8 @@ jobs:
         run: |
           chmod +x fetch-assets.sh
           ./fetch-assets.sh build-assets.env
-          chmod -R +rX ./lib/BUILD
+          source build-assets.env
+          chmod -R a+rX "$BUILD_DIR"
 
       - name: Build dt-base image
         working-directory: ./docker/build
