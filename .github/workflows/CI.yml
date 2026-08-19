@@ -2,13 +2,24 @@
 name: "CI: Run tests"
 on:
   workflow_dispatch:
-  pull_request:
-    types: [opened, synchronize, reopened]
   push:
     branches:
-    - develop
-    - master
+    - event/hass-dt-develop
     - hass-701-add-workflows
+
+  pull_request:
+    branches:
+      - event/hass-dt-develop
+      - hass-701-add-workflows
+    types: [opened, synchronize, reopened]
+  
+permissions:
+  contents: read
+  pull-requests: write
+
+env:
+  DOCKERHUB_NAMESPACE: harbor.distributed-testing.org
+
 jobs:
   determine_docker_org_and_tag:
     runs-on: ubuntu-22.04
@@ -20,4 +31,28 @@ jobs:
       docker_org: ${{ steps.docker-org-and-tag.outputs.docker_organization }}
       docker_tag: ${{ steps.docker-org-and-tag.outputs.docker_image_tag }}
 
+  build-dt-base:
+    runs-on: ubuntu-22.04
+    needs: determine_docker_org_and_tag
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+
+      # - name: Log in to DT Docker registry  ## TODO
+      #   uses: docker/login-action@v2
+      #   with:
+      #     username: ${{ secrets.DOCKERHUB_USERNAME }}
+      #     password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Build dt-base image
+        working-directory: docker/build
+        env:
+          DOCKER_ORG: ${{ needs.determine_docker_org_and_tag.outputs.docker_org }}
+          DOCKER_TAG: ${{ needs.determine_docker_org_and_tag.outputs.docker_tag }}
+        run: |
+          chmod +x build-image.sh
+          ./build-image.sh base -v "$DOCKER_TAG"
     
