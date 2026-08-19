@@ -1,7 +1,7 @@
 services:
   dt-carla:
     container_name: dt-carla
-    image: harbor.distributedtesting.org/distributed-testing-dev/dt-carla:0-10-0-0.0.1
+    image: harbor.distributedtesting.org/distributed-testing-dev/dt-carla:0-10-0-0.0.3
     privileged: true
     network_mode: "host"
     environment:
@@ -27,7 +27,7 @@ services:
 
   dt-core:
     container_name: dt-core
-    image: harbor.distributedtesting.org/distributed-testing-dev/dt-core:0-10-0-0.0.1
+    image: harbor.distributedtesting.org/distributed-testing-dev/dt-core:0.3.1
     tty: true 
     depends_on:
       - dt-carla

@@ -19,22 +19,22 @@
   </vehicles>
 
   <pedestrians>
-    <pedestrian name="DEFAULT-P-1" type="walker.pedestrian.0001" organization="DEFAULT" lvcIndicator="Live">
-      <initialTSPI>
-        <GeodeticPosition latitudeInDegrees="0.001532" longitudeInDegrees="0.001931" heightAboveEllipsoidInMeters="1"> </GeodeticPosition>
-        <Heading>38</Heading>
-      </initialTSPI>
-    </pedestrian>
-  </pedestrians>
-
-  <radios>
-    <radio name="DEFAULT-R-1" lvcIndicator="Live" organization="DEFAULT" scmsEnrolled="true">
-      <initialTSPI>
-        <GeodeticPosition latitudeInDegrees="0.002066" longitudeInDegrees="0.002291" heightAboveEllipsoidInMeters="1"> </GeodeticPosition>
-        <Heading>90</Heading>
-      </initialTSPI>
-    </radio>
-  </radios>
+      <pedestrian name="DEFAULT-P-1" type="walker.pedestrian.0001" safetyid="12345678" identifierType="psm" organization="DEFAULT" lvcIndicator="Live">
+        <initialTSPI>
+          <GeodeticPosition latitudeInDegrees="0.001532" longitudeInDegrees="0.001931" heightAboveEllipsoidInMeters="1"> </GeodeticPosition>
+          <Heading>38</Heading>
+        </initialTSPI>
+      </pedestrian>
+    </pedestrians>
+  
+    <radios>
+      <radio name="DEFAULT-R-1" adapterIdentifier="GNSSEMU-1" lvcIndicator="Live" organization="DEFAULT" scmsEnrolled="true">
+        <initialTSPI>
+          <GeodeticPosition latitudeInDegrees="0.002066" longitudeInDegrees="0.002291" heightAboveEllipsoidInMeters="1"> </GeodeticPosition>
+          <Heading>90</Heading>
+        </initialTSPI>
+      </radio>
+    </radios>
 
   <intersectionSignalControllers>
       <intersectionSignalController name="Town10_01" adapterName="SPAT-1" lvcIndicator="Live">
