@@ -443,7 +443,7 @@ def transmit_object_json(object_json_list, EntityMap, session: requests.Session)
             entity_type = 'VUG::Entities::TrafficSignalController'
 
         # TODO implement V2X URL and functionality
-        #       http://localhost:8004/v1/objects/VUG-V2XMessage-v1.1.4/VUG::TV2XMsg::V2X
+        #       http://{PUBLISHER_ENDPOINT}/v1/objects/VUG-V2XMessage-v1.1.4/VUG::TV2XMsg::V2X
 
         tena_publisher_url = f"http://{PUBLISHER_ENDPOINT}/v1/objects/{object_type}/{entity_type}"
         
@@ -462,7 +462,6 @@ def transmit_object_json(object_json_list, EntityMap, session: requests.Session)
             # update_response.raise_for_status()
         time.sleep(INDIVIDUAL_TRANSMIT_DELAY)
 
-        # this will send to a speficied REST endpoint
     return
 
 def transmit_main(mapOrigin_queue, stdout_lock):

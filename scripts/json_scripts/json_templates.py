@@ -381,7 +381,7 @@ bsm_template = {
                         "classification": 10,          # Generic Passenger-Vehicle Class (82 would be pedestrian)
                         "classDetails": {
                             "keyType": 10,             # Generic Passenger-Vehicle Class (82 would be pedestrian)
-                            "role": "basicVehicle"                  # Vehicle Role - 0 for basicVehicle, 6 for emergency, with more specifics available
+                            "role": "basicVehicle"     # Vehicle Role - basicVehicle, emergency, more specifics available
                         }
                     }
                 )
@@ -915,16 +915,34 @@ def get_secmark():
         return milliseconds
 
 def generate_bsm(bsm_data, identifier):
-    print("Generating BSM")
+    """
+        Generates a BSM using the passed in bsm_data as a dictionary and a string identifier for the object
+
+        Parameters
+        ----------
+        bsm_data : dict
+            dictionary containing information needed to generate a BSM (i.e. lat, lon, height, speed, bsmid)
+            key's in the dictionary must match those in bsm_field_mappings for values to be replaced
+        identifier : string
+            Name of the entity that this BSM is for - used for the TENA V2XMessage
+
+        Returns
+        -------
+        bsm_json
+            JSON object containing the BSM in TENA V2XMessage format for publishing
+    """
+
 
     bsm = copy.deepcopy(bsm_template)
 
     bsm_data["secMark"] = get_secmark()
 
+    # Replace template values with actual values passed in
     for key, path in bsm_field_mappings.items():
         if key in bsm_data:
             set_nested(bsm, path, bsm_data[key])
 
+    # Convert dictionary to string - create J2735 message frame and convert to uper - combine with AMF header
     bsm = str(bsm)
     bsm_string = ast.literal_eval(bsm)
     frame = j2735_202409.MessageFrame.MessageFrame
@@ -932,9 +950,10 @@ def generate_bsm(bsm_data, identifier):
     frame_uper = frame.to_uper()
     amf = amf_template + frame_uper.hex() + '\n'
 
+    # Package into TENA V2XMessage JSON
     bsm_json = pack_v2xmessage_into_json(bytes(amf,'utf-8'), identifier)
 
-    print(bsm_json)
+    return bsm_json
 
 # --------------------
 # Scenario Processing
