@@ -48,10 +48,11 @@ jobs:
       #     password: ${{ secrets.DOCKERHUB_TOKEN }}
 
       - name: Build dt-base image
+        working-directory: ./docker/build
         env:
           DOCKER_ORG: ${{ needs.determine_docker_org_and_tag.outputs.docker_org }}
           DOCKER_TAG: ${{ needs.determine_docker_org_and_tag.outputs.docker_tag }}
         run: |
-          chmod +x ../docker/build/build-image.sh
-          ./docker/build/build-image.sh base -v "$DOCKER_TAG"
+          chmod +x build-image.sh
+          ./build-image.sh base -v "$DOCKER_TAG"
     
