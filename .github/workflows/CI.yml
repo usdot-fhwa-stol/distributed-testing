@@ -1,0 +1,20 @@
+# GitHub Actions triggers based on the PR's and each commits on develop and master
+name: "CI: Run tests"
+on:
+  workflow_dispatch:
+  pull_request:
+    types: [opened, synchronize, reopened]
+  push:
+    branches: [develop, master]
+jobs:
+  determine_docker_org_and_tag:
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Determine Docker organization and tag
+        id: docker-org-and-tag
+        uses: usdot-fhwa-stol/actions/docker-org-and-tag@main
+    outputs:
+      docker_org: ${{ steps.docker-org-and-tag.outputs.docker_organization }}
+      docker_tag: ${{ steps.docker-org-and-tag.outputs.docker_image_tag }}
+
+    
