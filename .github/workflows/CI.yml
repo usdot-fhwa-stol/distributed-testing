@@ -52,6 +52,6 @@ jobs:
           DOCKER_ORG: ${{ needs.determine_docker_org_and_tag.outputs.docker_org }}
           DOCKER_TAG: ${{ needs.determine_docker_org_and_tag.outputs.docker_tag }}
         run: |
-          chmod +x docker/build/build-image.sh
+          chmod +x ../docker/build/build-image.sh
           ./docker/build/build-image.sh base -v "$DOCKER_TAG"
     
