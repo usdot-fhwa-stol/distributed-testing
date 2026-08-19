@@ -82,30 +82,20 @@ RUN --mount=from=build,source=/home/dt_user,target=/mnt/dt_user,rw \
     env USER=dt_user DSTROOT=/home/dt_user SIMDIS_DIR=/home/dt_user/SIMDIS /home/dt_user/TENA/postinst-SDTP && \
     rm -rf /home/dt_user/TENA
 
-# postinst-SDTP (from the SIMDIS TENA Plugin deb) installs its default TENA config,
-# including model.dis, to a path it builds as "$DSTROOT/~/.config/...". Bash only expands
-# "~" when it is the leading character of a word, not when embedded after a "/", so with
-# DSTROOT=/home/dt_user set above, the script actually creates a directory literally named
-# "~" instead of writing into /home/dt_user/.config/... (the path the SIMDIS TENA Plugin
-# reads by default at runtime). Net effect: the plugin's default model.dis is never found.
-# Separately, model.dis itself has a vendor bug: 8 rows in the "Lifeform Kind, Land Domain"
-# section (SISO kind=3, domain=1) are missing the trailing "extra" field, so their entity
-# type keys have 6 dot-separated fields instead of the required 7 and never match a real
-# 7-field entity type. One of the 8 is the civilian/pedestrian row (3.1.0.130.0.0 instead of
-# 3.1.0.130.0.0.0), which is exactly the DIS EntityType vug-entity-generator publishes for
-# SDSM-sourced pedestrians. Unmatched entities fall back to SIMDIS's generic per-domain
-# default (Ground Model = m1a2_abrams, an actual tank), which is why pedestrians rendered as
-# tanks. Third bug: even once matched by a corrected 7-field key, these 8 model names resolve
-# to files under data/models/public/other/, which (unlike public/vehicles, public/aircraft,
-# etc.) isn't in this deployment's model search path, so SIMDIS still logs "Failed to find
-# icon model" for a bare name. Fourth bug: the whole file has Windows (CRLF) line endings on
-# every single line -- including rows that otherwise "work" via a separate default-model
-# setting -- so a naive line-oriented reader appending a trailing \r to whatever token is
-# last on the line (i.e. the model name/path) would silently corrupt every model reference in
-# this file, not just the 8 patched below. All four are fixed here: move the config out of the
-# bogus "~" directory, strip CRLF -> LF from the whole file, patch the 8 malformed rows, then
-# rewrite those same 8 rows to reference their model file by absolute path instead of by bare
-# name, which SIMDIS's "Data File Location" resolution checks before any search path.
+# postinst-SDTP writes its default TENA config (incl. model.dis) to a path built as
+# "$DSTROOT/~/.config/...". Bash doesn't expand "~" after a "/", so with DSTROOT set
+# above this literally creates a directory named "~" instead of the real config dir
+# SIMDIS reads at runtime -- the default model.dis is never found.
+#
+# model.dis itself also has vendor bugs: 8 "Lifeform, Land Domain" rows (including the
+# civilian/pedestrian entry) are missing a field, so they never match a real entity type
+# and fall back to SIMDIS's generic default -- an actual tank, which is why pedestrians
+# rendered as tanks. Even with that fixed, those 8 rows point to models under
+# public/other/, which isn't in this deployment's model search path. The file is also
+# CRLF throughout, which can corrupt trailing tokens (model names) if read naively.
+#
+# Fix: move the config out of the bogus "~" dir, convert CRLF->LF, and patch the 8 rows
+# to valid entity-type keys with absolute model paths (bypassing the search path).
 RUN set -eu; \
     src="/home/dt_user/~/.config/Naval Research Laboratory/home/TENA"; \
     dst="/home/dt_user/.config/Naval Research Laboratory/home/TENA"; \
@@ -117,14 +107,7 @@ RUN set -eu; \
     modelDir="/home/dt_user/SIMDIS/data/models/public/other" && \
     sed -i \
       -e "s/\r\$//" \
-      -e "s#^3\.1\.0\.50\.0\.0 arabic_male_crouching_police#3.1.0.50.0.0.0 ${modelDir}/arabic_male_crouching_police.3db#" \
-      -e "s#^3\.1\.0\.70\.0\.0 jimmy#3.1.0.70.0.0.0 ${modelDir}/jimmy.3db#" \
-      -e "s#^3\.1\.0\.90\.0\.0 soldier1#3.1.0.90.0.0.0 ${modelDir}/soldier1.3db#" \
-      -e "s#^3\.1\.0\.100\.0\.0 arabic_male_crouching_ak47#3.1.0.100.0.0.0 ${modelDir}/arabic_male_crouching_ak47.3db#" \
-      -e "s#^3\.1\.0\.102\.0\.0 arabic_male_standing_30cal#3.1.0.102.0.0.0 ${modelDir}/arabic_male_standing_30cal.3db#" \
-      -e "s#^3\.1\.0\.110\.0\.0 soldier_pk762mgun#3.1.0.110.0.0.0 ${modelDir}/soldier_pk762mgun.3db#" \
       -e "s#^3\.1\.0\.130\.0\.0 male_civilian_western_standing#3.1.0.130.0.0.0 ${modelDir}/male_civilian_western_standing.3db#" \
-      -e "s#^3\.1\.0\.200\.0\.0 dog#3.1.0.200.0.0.0 ${modelDir}/dog.3db#" \
       "$dst/model.dis" && \
     chown -R dt_user:dt_user /home/dt_user/.config
 
@@ -133,20 +116,6 @@ RUN set -eu; \
 # above is hard to Browse to manually. This symlink exposes the same directory under a
 # non-hidden name so it shows up in the picker without needing to touch hidden-file settings.
 RUN ln -sfn ".config" "/home/dt_user/config" && chown -h dt_user:dt_user "/home/dt_user/config"
-
-# Kept for future use, but NOT currently wired into CMD: tried pre-filling the Models tab's
-# "DIS Model Map" field via "-TENA:configFile" pointing at this file's "ModelFile" key.
-# Verified empirically (screenshot of a live run) that the field stays empty -- per
-# "simdis10 --help", it's actually "-TENA:autoStart" that "process[es] the configuration
-# file", not "-TENA:configFile" by itself. Adding autoStart would also immediately attempt
-# to connect using whatever EM address happens to be in this file, which is wrong for any
-# deployment that isn't this exact placeholder -- worse than an empty field. Left unused
-# until there's a reliable way to pre-fill fields without forcing a connect attempt.
-RUN printf '%s\n' \
-    '# NOT currently auto-loaded (see dt-simdis_Dockerfile comment above this file'"'"'s creation).' \
-    'ModelFile /home/dt_user/.config/Naval Research Laboratory/home/TENA/model.dis' \
-    > /home/dt_user/dt-simdis-defaults.cfg && \
-    chown dt_user:dt_user /home/dt_user/dt-simdis-defaults.cfg
 
 USER dt_user
 
@@ -167,11 +136,4 @@ ARG TZ="America/New_York"
 # registration failures at joinExecution() time.
 ENV LD_LIBRARY_PATH=/home/dt_user/SIMDIS/plugins
 
-# "-plugin" makes SIMDIS load and dock the TENA panel automatically on startup, instead of
-# requiring it to be opened manually from the Plug-ins menu every session (verified via
-# screenshot). The very first time a given container's $HOME is fresh, this makes SIMDIS
-# show a one-time "New Plug-ins Found" dialog (Load All -> Save); that decision is then
-# persisted in the container's writable layer and does not reappear on subsequent restarts
-# of the same container (verified: restarted the same container and it skipped straight to
-# the TENA panel). It reappears only if the container is fully removed and recreated fresh.
-CMD ["/bin/bash","-l","-c","cd /home/dt_user/SIMDIS && ./startSIMDIS.sh -plugin /home/dt_user/SIMDIS/plugins/piTENAplugin_2.5.20_mw6.0.11_u2204-gcc11-64.so"]
+CMD ["/bin/bash","-l","-c","cd /home/dt_user/SIMDIS && ./startSIMDIS.sh"]
