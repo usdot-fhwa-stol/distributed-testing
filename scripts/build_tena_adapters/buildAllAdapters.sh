@@ -18,25 +18,25 @@ BUILD_MODE="release"
 # You can modify these variables to change the target branch for each adapter
 
 # [1] vug-threads-library
-BRANCH_APP_1="develop"
+BRANCH_APP_1="event/hass-dt-develop"
 
 # [2] vug-udp-protocolio
-BRANCH_APP_2="develop"
+BRANCH_APP_2="event/hass-dt-develop"
 
 # [3] scenario-publisher
-BRANCH_APP_3="develop"
+BRANCH_APP_3="event/hass-dt-develop"
 
 # [4] vug-carla-adapter
-BRANCH_APP_4="develop"
+BRANCH_APP_4="event/hass-dt-develop"
 
 # [5] tena-v2x-adapter
-BRANCH_APP_5="develop"
+BRANCH_APP_5="event/hass-dt-develop"
 
 # [6] tena-entity-generator
-BRANCH_APP_6="develop"
+BRANCH_APP_6="event/hass-dt-develop"
 
 # [7] v2xhub-tena-v2x-plugin
-BRANCH_APP_7="develop"
+BRANCH_APP_7="event/hass-dt-develop"
 
 # -----------------------------------------------
 

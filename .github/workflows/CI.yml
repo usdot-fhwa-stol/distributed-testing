@@ -74,7 +74,7 @@ jobs:
           DOCKER_TAG: ${{ needs.determine_docker_org_and_tag.outputs.docker_tag }}
           localAppDir: ${{ github.workspace }}
         run: |
-          chmod +x scripts/build_tena_adapters/buildAllAdapters.sh -y
+          chmod +x scripts/build_tena_adapters/buildAllAdapters.sh
           cp ~/tenadev/INSTALL docker/build/lib/COPY
           chmod +x docker/build/build-image.sh
           ./docker/build/build-image.sh core -v "$DOCKER_TAG"
