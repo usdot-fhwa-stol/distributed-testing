@@ -58,25 +58,25 @@ jobs:
           chmod +x build-image.sh
           ./build-image.sh base -v "$DOCKER_TAG"
 
-      # - name: Build dt-build-general image
-      #   working-directory: ./docker/build
-      #   env:
-      #     DOCKER_ORG: ${{ needs.determine_docker_org_and_tag.outputs.docker_org }}
-      #     DOCKER_TAG: ${{ needs.determine_docker_org_and_tag.outputs.docker_tag }}
-      #     USDOTFHWASTOL_TOKEN: ${{ secrets.GH_PAT }}
-      #   run: |
-      #     chmod +x build-image.sh
-      #     ./build-image.sh build-general -v "$DOCKER_TAG"
-
-      - name: Build dt-core image
+      - name: Build dt-build-general image
+        working-directory: ./docker/build
         env:
           DOCKER_ORG: ${{ needs.determine_docker_org_and_tag.outputs.docker_org }}
           DOCKER_TAG: ${{ needs.determine_docker_org_and_tag.outputs.docker_tag }}
+          USDOTFHWASTOL_TOKEN: ${{ secrets.GH_PAT }}
         run: |
-          chmod +x scripts/build_tena_adapters/buildAllAdapters.sh
-          cp ~/tenadev/INSTALL docker/build/lib/COPY
-          chmod +x docker/build/build-image.sh
-          ./docker/build/build-image.sh core -v "$DOCKER_TAG"
+          chmod +x build-image.sh
+          ./build-image.sh build-general -v "$DOCKER_TAG"
+
+      # - name: Build dt-core image
+      #   env:
+      #     DOCKER_ORG: ${{ needs.determine_docker_org_and_tag.outputs.docker_org }}
+      #     DOCKER_TAG: ${{ needs.determine_docker_org_and_tag.outputs.docker_tag }}
+      #   run: |
+      #     chmod +x scripts/build_tena_adapters/buildAllAdapters.sh
+      #     cp ~/tenadev/INSTALL docker/build/lib/COPY
+      #     chmod +x docker/build/build-image.sh
+      #     ./docker/build/build-image.sh core -v "$DOCKER_TAG"
   
   build-dt-simdis:
     runs-on: ubuntu-22.04
