@@ -66,7 +66,7 @@ jobs:
           ORG_TOKEN: ${{ secrets.GH_PAT }}
         run: |
           chmod +x build-image.sh
-          ./build-image.sh build-general -v "$DOCKER_TAG" "$ORG_TOKEN"
+          ./build-image.sh build-general -v "$DOCKER_TAG"
   
   build-dt-simdis:
     runs-on: ubuntu-22.04
@@ -92,4 +92,4 @@ jobs:
         run: |
           source build-assets_simdis.env && sudo DOCKER_BUILDKIT=1 \
           docker build --build-arg VERSION=$DOCKER_TAG --build-context assets="$BUILD_DIR" \
-          -t ${{ needs.determine_docker_org_and_tag.outputs.docker_org }}/dt-simdis:$DOCKER_TAG . --progress=plain -f dt-simdis_Dockerfile
+          -t $DOCKER_ORG/dt-simdis:$DOCKER_TAG . --progress=plain -f dt-simdis_Dockerfile
