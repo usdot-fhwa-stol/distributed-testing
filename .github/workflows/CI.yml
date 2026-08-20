@@ -85,6 +85,7 @@ jobs:
         env:
           DOCKER_ORG: ${{ needs.determine_docker_org_and_tag.outputs.docker_org }}
           DOCKER_TAG: ${{ needs.determine_docker_org_and_tag.outputs.docker_tag }}
+          usdotfhwastol_token: ${{ secrets.GH_PAT }}
         run: |
           chmod +x build-image.sh
-          ./build-image.sh build-general -v "$DOCKER_TAG"
+          ./build-image.sh build-general -v "$DOCKER_TAG"          
