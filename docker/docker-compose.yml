@@ -62,10 +62,14 @@ services:
       - VUG_SCENARIO_CONFIG_FILE=${VUG_SCENARIO_CONFIG_FILE}
       - VUG_VPN_LOCAL_ADDRESS=${VUG_VPN_LOCAL_ADDRESS}
       - VUG_VPN_EM_ADDRESS=${VUG_VPN_EM_ADDRESS}
+      - SIMDIS_DIR=/home/dt_user/SIMDIS
+      - SIMDIS_MAP_FILE=/home/dt_user/distributed-testing/simdis_offline_imagery/TFHRC.earth
+      - SIMDIS_LAYOUT=/home/dt_user/distributed-testing/simdis_config/layout.ini
     volumes:
       - /tmp/.X11-unix:/tmp/.X11-unix:rw
       - ${VUG_LOCAL_DT_PATH}:/home/dt_user/distributed-testing
     stop_grace_period: 30s
+    command: ["/bin/bash","-l","-c","echo $${SIMDIS_LAYOUT} && cd /home/dt_user/SIMDIS && ./startSIMDIS.sh --maximized -m $${SIMDIS_MAP_FILE} -l $${SIMDIS_LAYOUT}"]
     # Enable on systems with NVIDIA GPUs
     # deploy:
     #   resources:
