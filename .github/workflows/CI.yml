@@ -83,6 +83,13 @@ jobs:
       #   with:
       #     username: ${{ secrets.DOCKERHUB_USERNAME }}
       #     password: ${{ secrets.DOCKERHUB_TOKEN }}
+      - name: Fetch required assets #TODO: Workflow mentions configuration for this
+        working-directory: ./docker/build
+        run: |
+          chmod +x fetch-assets.sh
+          ./fetch-assets.sh build-assets.env
+          source build-assets.env
+          chmod -R a+rX  "$BUILD_DIR"
 
       - name: Build dt-simdis image
         working-directory: ./docker/build
