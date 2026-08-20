@@ -88,4 +88,30 @@ jobs:
           ORG_TOKEN: ${{ secrets.GH_PAT }}
         run: |
           chmod +x build-image.sh
-          ./build-image.sh build-general -v "$DOCKER_TAG" "$ORG_TOKEN"         
+          ./build-image.sh build-general -v "$DOCKER_TAG"
+  
+  # build-dt-simdis:
+  #   runs-on: ubuntu-22.04
+  #   needs: [determine_docker_org_and_tag]
+  #   steps:
+  #     - name: Checkout code
+  #       uses: actions/checkout@v3
+
+  #     - name: Set up Docker Buildx
+  #       uses: docker/setup-buildx-action@v2
+
+  #     # - name: Log in to DT Docker registry  ## TODO
+  #     #   uses: docker/login-action@v2
+  #     #   with:
+  #     #     username: ${{ secrets.DOCKERHUB_USERNAME }}
+  #     #     password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+  #     - name: Build dt-simdis image
+  #       working-directory: ./docker/build
+  #       env:
+  #         DOCKER_ORG: ${{ needs.determine_docker_org_and_tag.outputs.docker_org }}
+  #         DOCKER_TAG: ${{ needs.determine_docker_org_and_tag.outputs.docker_tag }}
+  #         ORG_TOKEN: ${{ secrets.GH_PAT }}
+  #       run: |
+  #         chmod +x build-image.sh
+  #         ./build-image.sh simdis -v "$DOCKER_TAG" "$ORG_TOKEN"
