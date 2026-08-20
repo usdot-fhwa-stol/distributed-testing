@@ -41,12 +41,6 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
 
-      # - name: Log in to DT Docker registry  ## TODO
-      #   uses: docker/login-action@v2
-      #   with:
-      #     username: ${{ secrets.DOCKERHUB_USERNAME }}
-      #     password: ${{ secrets.DOCKERHUB_TOKEN }}
-
       - name: Fetch required assets #TODO: Workflow mentions configuration for this
         working-directory: ./docker/build
         run: |
@@ -63,24 +57,8 @@ jobs:
         run: |
           chmod +x build-image.sh
           ./build-image.sh base -v "$DOCKER_TAG"
-  
-  build-dt-build-general:
-    runs-on: ubuntu-22.04
-    needs: [determine_docker_org_and_tag, build-dt-base]
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
 
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2
-
-      # - name: Log in to DT Docker registry  ## TODO
-      #   uses: docker/login-action@v2
-      #   with:
-      #     username: ${{ secrets.DOCKERHUB_USERNAME }}
-      #     password: ${{ secrets.DOCKERHUB_TOKEN }}
-
-      - name: Build dt-build-general image
+      - name: Build dt-build-general image from local dt-base
         working-directory: ./docker/build
         env:
           DOCKER_ORG: ${{ needs.determine_docker_org_and_tag.outputs.docker_org }}
