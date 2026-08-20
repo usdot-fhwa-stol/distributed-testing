@@ -88,4 +88,4 @@ jobs:
           ORG_TOKEN: ${{ secrets.GH_PAT }}
         run: |
           chmod +x build-image.sh
-          ./build-image.sh build-general -v "$DOCKER_TAG"          
+          ./build-image.sh build-general -v "$DOCKER_TAG" "$ORG_TOKEN"         
