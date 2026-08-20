@@ -47,7 +47,7 @@ jobs:
           chmod +x fetch-assets.sh
           ./fetch-assets.sh build-assets.env
           source build-assets.env
-          chmod -R a+rX  "$BUILD_DIR"
+          chmod -R a+rX "$BUILD_DIR"
 
       - name: Build dt-base image
         working-directory: ./docker/build
@@ -63,7 +63,7 @@ jobs:
         env:
           DOCKER_ORG: ${{ needs.determine_docker_org_and_tag.outputs.docker_org }}
           DOCKER_TAG: ${{ needs.determine_docker_org_and_tag.outputs.docker_tag }}
-          ORG_TOKEN: ${{ secrets.GH_PAT }}
+          USDOTFHWASTOL_TOKEN: ${{ secrets.GH_PAT }}
         run: |
           chmod +x build-image.sh
           ./build-image.sh build-general -v "$DOCKER_TAG"
@@ -87,9 +87,9 @@ jobs:
         working-directory: ./docker/build
         run: |
           chmod +x fetch-assets.sh
-          ./fetch-assets.sh build-assets.env
-          source build-assets.env
-          chmod -R a+rX  "$BUILD_DIR"
+          ./fetch-assets.sh build-assets_simdis.env
+          source build-assets_simdis.env
+          chmod -R a+rX "$BUILD_DIR"
 
       - name: Build dt-simdis image
         working-directory: ./docker/build
