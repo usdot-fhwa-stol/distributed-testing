@@ -26,14 +26,11 @@ ENV CMAKE_PREFIX_PATH=/home/plugin/TENA/lib/cmake:${CMAKE_PREFIX_PATH:-} \
     TENA_HOME=/home/plugin/TENA \
     TENA_PLATFORM=u2204-gcc11-64
 
-# V2X-Hub's own plugins come prebuilt from dt-v2xhub below, so drop v2i-hub to avoid building them twice.
-RUN sed -i '/add_subdirectory(v2i-hub)/d' CMakeLists.txt
-
-# Creates the plugin user -- TENA_HOME needs to live under its home dir to match the plugin repo's
-# own hardcoded expectations (build.sh, .vscode/c_cpp_properties.json, container/service.sh).
-RUN /home/V2X-Hub/container/database.sh
-RUN /home/V2X-Hub/container/library.sh
-RUN ldconfig
+# Drops v2i-hub and creates the plugin user -- TENA_HOME needs to live under its home dir to match
+# the plugin repo's own hardcoded expectations (build.sh, .vscode/c_cpp_properties.json,
+# container/service.sh). One RUN to keep this devcontainer-facing stage's layers down.
+COPY --chmod=555 dt-v2xhub/scripts/setup-tena-devcontainer.sh /usr/local/bin/setup-tena-devcontainer.sh
+RUN /usr/local/bin/setup-tena-devcontainer.sh
 
 # Already-built v2i-hub plugins from the full runtime image, so the devcontainer has a complete
 # V2X-Hub alongside whatever's built from the bind-mounted TENA plugin source.
@@ -41,13 +38,8 @@ COPY --from=v2xhub-default-runtime --chown=plugin:adm --chmod=544 /usr/local/plu
 
 COPY --from=tena-source --chown=plugin:nogroup /home/dt_user/TENA /home/plugin/TENA
 
-# postinst baked dt-build-general's own /home/dt_user path into TENA's scripts (e.g. tenaenv.sh
-# hardcodes and re-exports TENA_HOME="/home/dt_user/TENA" regardless of what's already set) --
-# repoint them so TENA_HOME resolves correctly here too.
-RUN grep -rlZ '/home/dt_user' /home/plugin/TENA | xargs -0r sed -i 's#/home/dt_user#/home/plugin#g'
-
-RUN export TENA_VERSION=$(ls "$TENA_HOME" | grep -E '^[0-9]+\.[0-9]+\.[0-9]+$' | head -1) && \
-    ./build.sh release --j2735-version "$J2735_VERSION" && ldconfig
+COPY --chmod=555 dt-v2xhub/scripts/build-tena.sh /usr/local/bin/build-tena.sh
+RUN /usr/local/bin/build-tena.sh
 
 # ---------------- build just the TENA plugin ---------------- #
 FROM tena-v2xhub-build-dependencies AS tena-v2xhub-plugin-build
@@ -63,13 +55,8 @@ RUN --mount=type=secret,id=GIT_AUTH_TOKEN \
     git clone "https://${GIT_AUTH_TOKEN}@${PLUGIN_REPO#https://}" . && \
     git checkout "$PLUGIN_REF"
 
-RUN export TENA_VERSION=$(ls "$TENA_HOME" | grep -E '^[0-9]+\.[0-9]+\.[0-9]+$' | head -1) && \
-    cmake -Bbuild -D CMAKE_BUILD_TYPE=RELEASE \
-      -D "CMAKE_PREFIX_PATH=${TENA_HOME}/lib/cmake;/usr/local/plugins/;/opt/carma/cmake;/opt/carma/lib" \
-      -D CMAKE_MODULE_PATH=/opt/carma/cmake \
-      -D VUG_INSTALL_DIR=/usr/local/plugins/ \
-      -D tmx-plugin_DIR=/usr/local/share/tmx/ . && \
-    cmake --build build -j"$(nproc)"
+COPY --chmod=555 dt-v2xhub/scripts/configure-build-plugin.sh /usr/local/bin/configure-build-plugin.sh
+RUN /usr/local/bin/configure-build-plugin.sh
 
 # ---------------- dt-v2xhub: V2X-Hub's runtime + the plugin dropped in ---------------- #
 FROM v2xhub-default-runtime AS dt-v2xhub
