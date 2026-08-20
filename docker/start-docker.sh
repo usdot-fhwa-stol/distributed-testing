@@ -5,7 +5,7 @@ stopDocker()
 
 echo
 echo STOPPING AND REMOVING VUG CONTAINERS
-$docker_compose_cmd -f $docker_compose_file down
+$docker_compose_cmd -f $docker_compose_file "${compose_profile_args[@]}" down
 if [ $VUG_FORMAL_EVENT = true ]; then 
     source $VUG_LOCAL_DT_PATH/scripts/utils/stop_current_vpn_connection.sh
 fi
@@ -336,18 +336,44 @@ else
 
 fi
 
+docker_compose_file='docker-compose.yml'
+
+compose_profile_args=()
+
 echo
-if [[ $VUG_DOCKER_START_CARLA == 'local' ]]; then
-    echo "Using CARLA docker-compose"
-    docker_compose_file='docker-compose.yml'
+# dt-core hosts a set of TENA apps that are each started inside the container by
+# start_scripts/startup-apps.sh based on their own individual VUG_DOCKER_START_* flags,
+# so dt-core is only needed if at least one of those flags is enabled.
+if [[ $VUG_DOCKER_START_EM == true || $VUG_DOCKER_START_CONSOLE == true || $VUG_DOCKER_START_CANARY == true || \
+        $VUG_DOCKER_START_TDCS == true || $VUG_DOCKER_START_TENA_PLAYBACK == true || $VUG_DOCKER_START_DATAVIEW == true || \
+        $VUG_DOCKER_START_SCENARIO_PUBLIHSER == true || $VUG_DOCKER_START_V2X_ADAPTER == true || $VUG_DOCKER_START_TENA_CARLA_ADAPTER == true || \
+        $VUG_DOCKER_START_JSON_STREAMER == true || $VUG_DOCKER_START_JSON_PUBLISHER == true || $VUG_DOCKER_START_ENTITY_GENERATOR || \
+        $VUG_DOCKER_START_MANUAL_CARLA_VEHICLE == true || $VUG_DOCKER_START_SUMO == true || \
+        $VUG_DOCKER_START_CARLA == 'local' || $VUG_DOCKER_START_CARLA == 'remote' ]]; then
+
+    echo "Enabling dt-core profile"
+    compose_profile_args+=(--profile core)
 else
-    echo "Using NO CARLA docker-compose"
-    docker_compose_file='no-carla_docker-compose.yml'
+    echo "dt-core profile not enabled"
+fi
+
+if [[ $VUG_DOCKER_START_CARLA == 'local' ]]; then
+    echo "Enabling CARLA profile"
+    compose_profile_args+=(--profile carla)
+else
+    echo "CARLA profile not enabled"
+fi
+
+if [[ $VUG_DOCKER_START_V2XHUB == true ]]; then
+    echo "Enabling V2XHub profile"
+    compose_profile_args+=(--profile v2xhub)
+else
+    echo "V2XHub profile not enabled"
 fi
 
 
 trap stopDocker SIGINT
 
-# $docker_compose_cmd -f $docker_compose_file pull
+# $docker_compose_cmd -f $docker_compose_file "${compose_profile_args[@]}" pull
 
-$docker_compose_cmd -f $docker_compose_file up "${EXTRA_ARGS[@]}"
+$docker_compose_cmd -f $docker_compose_file "${compose_profile_args[@]}" up "${EXTRA_ARGS[@]}"

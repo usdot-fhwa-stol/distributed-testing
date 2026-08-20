@@ -132,7 +132,112 @@ services:
       timeout: 5s
       retries: 12
       start_period: 30s
+
+  db:
+    image: mysql:8.0.40
+    container_name: mysql
+    profiles: ["v2xhub"]
+    environment:
+      - TZ=${TZ:-America/New_York}
+      - MYSQL_DATEBASE=IVP
+      - MYSQL_USER=IVP
+      - MYSQL_PASSWORD_FILE=/run/secrets/mysql_password
+      - MYSQL_RANDOM_ROOT_PASSWORD=yes
+    networks:
+      - v2xhub_data_internal
+    secrets:
+      - mysql_password
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "db", "-u", "IVP", "-p$$(cat /run/secrets/mysql_password)"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    volumes:
+      - ./mysql/localhost.sql:/docker-entrypoint-initdb.d/localhost.sql
+      - mysql-datavolume:/var/lib/mysql
+
+  php:
+    image: usdotfhwaops/php:${V2XHUB_VERSION:-develop}
+    container_name: php
+    profiles: ["v2xhub"]
+    networks:
+      - v2xhub_web_external
+    ports:
+      - "80:80"
+      - "443:443"
+    restart: always
+    depends_on:
+      - db
+      - v2xhub
+    stdin_open: true
+    tty: true
+    environment:
+      - TZ=${TZ:-America/New_York}
+    volumes:
+      - ssl-certs-volume:/etc/apache2/ssl:ro
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS -I http://127.0.0.1/ >/dev/null || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 30s
   
   volumes:
     mysql-datavolume:
     ssl-certs-volume:
+      # To access/set SSL certifications on host machine setup local mapping to ssl directory.
+      # NOTE: Ensure directory exists and has non-root privileges before running
+      # docker compose to prevent permission issues
+      driver: local
+      driver_opts:
+        type: 'none'
+        o: 'bind'
+        device: '${V2XHUB_VOLUME_PATH:-/tmp/v2xhub_data}/ssl' # Specify the absolute path on your host
+    v2xhub-download-volume:
+      # To access V2X Hub uploaded files on host machine setup local mapping to download directory.
+      # NOTE: Ensure directory exists and has non-root privileges before running
+      # docker compose to prevent permission issues
+      driver: local
+      driver_opts:
+        type: 'none'
+        o: 'bind'
+        device: '${V2XHUB_VOLUME_PATH:-/tmp/v2xhub_data}/download' # Specify the absolute path on your host
+    v2xhub-logs-volume:
+      # To access log files on host machine setup local mapping to logs directory.
+      # NOTE: Ensure directory exists and has non-root privileges before running
+      # docker compose to prevent permission issues
+      driver: local
+      driver_opts:
+        type: 'none'
+        o: 'bind'
+        device: '${V2XHUB_VOLUME_PATH:-/tmp/v2xhub_data}/logs' # Specify the absolute path on your host
+
+  # Networks: separated by purpose
+  networks:
+    v2xhub_web_external:
+      driver: bridge
+    v2xhub_app_external:
+      driver: bridge
+    v2xhub_data_internal:
+      driver: bridge
+      internal: true # No external internet access - only inter-service communication
+    tena_lan:
+      # Gives the v2xhub container its own address on the physical LAN, so the TENA
+      # plugin can bind and advertise a routable endpoint to the Execution Manager.
+      #
+      # ipvlan (not macvlan) because the parent interface is wireless: 802.11
+      # associates a single MAC per station, so macvlan's per-container MACs are
+      # dropped by the access point. ipvlan 12 shares the parent's MAC and
+      # distringuishes containers by IP alone
+      driver: ipvlan
+      driver_opts:
+        parent: ${LAN_PARENT_IF}
+        ipvlan_mode: 12
+      ipam:
+        config:
+          - subnet: ${LAN_SUBNET}
+            gateway: ${LAN_GATEWAY}
+  secrets:
+    mysql_password:
+      file: ../secrets/mysql_password.txt
