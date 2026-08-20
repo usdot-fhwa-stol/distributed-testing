@@ -7,8 +7,9 @@
 # headers. Built via docker-bake.hcl; see that file for the build-context/image-tagging setup.
 #
 # Stages:
-#   tena-v2xhub-build-dependencies -- TENA/boost + V2X-Hub's tmx/ SDK (v2i-hub skipped). What the
-#     devcontainer runs: bind-mount the plugin source and build interactively (cmake+make).
+#   tena-v2xhub-build-dependencies -- TENA (using V2X-Hub's own apt-installed Boost) + V2X-Hub's
+#     tmx/ SDK (v2i-hub skipped). What the devcontainer runs: bind-mount the plugin source and
+#     build interactively (cmake+make).
 #   tena-v2xhub-plugin-build -- clones and builds the plugin, for packaging only.
 #   dt-v2xhub -- V2X-Hub's complete runtime (all its own plugins) with the TENA plugin's zip
 #     dropped into /usr/local/plugins/ alongside them.
@@ -21,15 +22,9 @@
 FROM v2xhub-build-dependencies AS tena-v2xhub-build-dependencies
 ARG J2735_VERSION
 
-COPY --from=tena-source /opt/boost /opt/boost
-
-ENV BOOST_ROOT=/opt/boost \
-    CMAKE_PREFIX_PATH=/home/plugin/TENA/lib/cmake:/opt/boost:${CMAKE_PREFIX_PATH:-} \
-    LD_LIBRARY_PATH=/opt/boost/lib:${LD_LIBRARY_PATH:-} \
+ENV CMAKE_PREFIX_PATH=/home/plugin/TENA/lib/cmake:${CMAKE_PREFIX_PATH:-} \
     TENA_HOME=/home/plugin/TENA \
     TENA_PLATFORM=u2204-gcc11-64
-
-RUN echo "/opt/boost/lib" > /etc/ld.so.conf.d/boost.conf && ldconfig
 
 # V2X-Hub's own plugins come prebuilt from dt-v2xhub below, so drop v2i-hub to avoid building them twice.
 RUN sed -i '/add_subdirectory(v2i-hub)/d' CMakeLists.txt
@@ -85,7 +80,6 @@ COPY --from=tena-v2xhub-plugin-build --chown=plugin:adm --chmod=544 /src/plugin/
 # TenaV2Xplugin is dynamically linked against TENA's middleware/OM .so files
 # Therefore, add these runtime libraries
 COPY --from=tena-source --chown=plugin:adm --chmod=544 /home/dt_user/TENA/lib/*.so* /usr/local/lib/
-COPY --from=tena-source --chown=plugin:adm --chmod=544 /opt/boost/lib/*.so* /usr/local/lib/
 RUN ldconfig
 
 USER plugin
