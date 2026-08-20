@@ -1,0 +1,36 @@
+<?xml version="1.0" ?>
+<map>
+  <version>3</version>
+  <options name="SIMDIS Default">
+    <type>geocentric</type>
+    <profile>
+      <srs>wgs84</srs>
+    </profile>
+    <read_options />
+    <terrain>
+      <first_level>0</first_level>
+      <first_lod>0</first_lod>
+      <progressive>true</progressive>
+      <morph_imagery>false</morph_imagery>
+    </terrain>
+  </options>
+  <MBTilesImage name="Whole Earth">
+    <compute_levels>false</compute_levels>
+    <cache_policy>
+      <usage>no_cache</usage>
+    </cache_policy>
+    <visible>true</visible>
+    <opacity>1</opacity>
+    <morph_imagery>true</morph_imagery>
+    <filename>WorldImagery/NASA_BMNG_VE_GEBCO_hs_0-5.mbtiles</filename>
+  </MBTilesImage>
+  <MBTilesImage name="TFHRC">
+    <cache_policy>
+      <usage>no_cache</usage>
+      <max_age>32400000</max_age>
+    </cache_policy>
+    <visible>true</visible>
+    <morph_imagery>true</morph_imagery>
+    <filename>/home/dt_user/distributed-testing/simdis_offline_imagery/tfhrc.mbtiles</filename>
+  </MBTilesImage>
+</map>
