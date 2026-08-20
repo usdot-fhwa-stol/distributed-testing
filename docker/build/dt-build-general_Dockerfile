@@ -25,9 +25,9 @@ RUN apt update && apt-get install -y \
     cmake cmake-data git build-essential clang gcc-11 g++-11 lld ninja-build \
     libvulkan1 libpng-dev libtiff5-dev libjpeg-dev tzdata sed curl openssl unzip autoconf libtool rsync libxml2-dev
 
-RUN --mount=type=secret,id=ORG_TOKEN,required=true \
-    ORG_TOKEN="$(cat /run/secrets/ORG_TOKEN)" && \
-    git clone https://${ORG_TOKEN}@github.com/usdot-fhwa-stol/vug-cmake-package.git cmake_temp && \
+RUN --mount=type=secret,id=usdotfhwastol_token,required=true \
+    USDOTFHWASTOL_TOKEN="$(cat /run/secrets/usdotfhwastol_token)" && \
+    git clone https://x-access-token:${USDOTFHWASTOL_TOKEN}@github.com/usdot-fhwa-stol/vug-cmake-package.git cmake_temp && \
     chown -R dt_user:dt_user cmake_temp && \
 	mv cmake_temp/cmake/ /home/dt_user/TENA/lib/ && \
 	rm -rf cmake_temp

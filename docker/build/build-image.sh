@@ -176,7 +176,7 @@ if [[ "${NEEDS_SECRET[$IMAGE]:-0}" -eq 1 ]]; then
                   echo "ORG_TOKEN is required for build-general" >&2
                   exit 1
             fi
-            EXTRA_ARGS+=(--secret "id=ORG_TOKEN,env=ORG_TOKEN")
+            EXTRA_ARGS+=(--secret "id=usdotfhwastol_token,env=ORG_TOKEN")
       else
             if [[ ! -f "$TOKEN_FILE" ]]; then
                   echo "Missing $TOKEN_FILE - see the secret instructions at the top of dt-v2xhub_Dockerfile" >&2
