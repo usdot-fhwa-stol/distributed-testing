@@ -2,75 +2,55 @@
 #
 # BUILD COMMAND: VERSION=0.1.1 ./build-image.sh dt-v2xhub
 #
-# Builds the TENA V2X plugin against V2X-Hub's own SDK and ships it inside V2X-Hub's own,
-# fully-built runtime. Not the published usdotfhwaops/v2xhub image -- that never installs SDK
-# headers. Built via docker-bake.hcl; see that file for the build-context/image-tagging setup.
+# V2X-Hub's own build-environment stage (via the v2xhub-build-dependencies context) plus TENA plus
+# TenaV2XPlugin's source, dropped into src/v2i-hub/ as a native plugin -- V2X-Hub's own
+# src/v2i-hub/CMakeLists.txt auto-discovers it there, so their own Dockerfile needs no changes.
 #
-# Stages:
-#   tena-v2xhub-build-dependencies -- TENA (using V2X-Hub's own apt-installed Boost) + V2X-Hub's
-#     tmx/ SDK (v2i-hub skipped). What the devcontainer runs: bind-mount the plugin source and
-#     build interactively (cmake+make).
-#   tena-v2xhub-plugin-build -- clones and builds the plugin, for packaging only.
-#   dt-v2xhub -- V2X-Hub's complete runtime (all its own plugins) with the TENA plugin's zip
-#     dropped into /usr/local/plugins/ alongside them.
+# Used two ways: as the devcontainer image (bind-mount the plugin source over the injected copy and
+# build interactively), and as a drop-in replacement for V2X-Hub's own build-environment stage in
+# docker-bake.hcl's dt-v2xhub-image target -- their own "dependencies" and "v2xhub" stages then run
+# unmodified on top of it.
 #
-# TENA's cmake files (mw-config.cmake / mw-targets.cmake) resolve entirely from $ENV{TENA_HOME}/
-# $ENV{TENA_VERSION}/$ENV{TENA_PLATFORM} -- CMAKE_PREFIX_PATH (env form) is enough to make V2X-Hub's
-# own unmodified ./build.sh find it. No edits to V2X-Hub's own Dockerfile/scripts.
-
-# ---------------- devcontainer: build-environment + TENA, no plugin ---------------- #
+# TENA's cmake files resolve from $ENV{TENA_HOME}/$ENV{TENA_VERSION}/$ENV{TENA_PLATFORM}, so setting
+# those as ENV is enough for V2X-Hub's own ./build.sh to find TENA with no changes on their side.
+#
+# TENA lives under /opt/TENA so V2X-Hub's own final "v2xhub" stage's existing
+# `COPY --from=dependencies /opt/ /opt/` line sweeps its runtime .so files into the production image
+# for free. /home/plugin/TENA is just a symlink to it, kept because the plugin repo's own devcontainer
+# tooling hardcodes that path.
 FROM v2xhub-build-dependencies AS tena-v2xhub-build-dependencies
 ARG J2735_VERSION
-
-ENV CMAKE_PREFIX_PATH=/home/plugin/TENA/lib/cmake:${CMAKE_PREFIX_PATH:-} \
-    TENA_HOME=/home/plugin/TENA \
-    TENA_PLATFORM=u2204-gcc11-64
-
-# Drops v2i-hub and creates the plugin user -- TENA_HOME needs to live under its home dir to match
-# the plugin repo's own hardcoded expectations (build.sh, .vscode/c_cpp_properties.json,
-# container/service.sh). One RUN to keep this devcontainer-facing stage's layers down.
-COPY --chmod=555 dt-v2xhub/scripts/setup-tena-devcontainer.sh /usr/local/bin/setup-tena-devcontainer.sh
-RUN /usr/local/bin/setup-tena-devcontainer.sh
-
-# Already-built v2i-hub plugins from the full runtime image, so the devcontainer has a complete
-# V2X-Hub alongside whatever's built from the bind-mounted TENA plugin source.
-COPY --from=v2xhub-default-runtime --chown=plugin:adm --chmod=544 /usr/local/plugins/ /usr/local/plugins/
-
-COPY --from=tena-source --chown=plugin:nogroup /home/dt_user/TENA /home/plugin/TENA
-
-COPY --chmod=555 dt-v2xhub/scripts/build-tena.sh /usr/local/bin/build-tena.sh
-RUN /usr/local/bin/build-tena.sh
-
-# ---------------- build just the TENA plugin ---------------- #
-FROM tena-v2xhub-build-dependencies AS tena-v2xhub-plugin-build
+ARG TENA_VERSION
 ARG PLUGIN_REPO
 ARG PLUGIN_REF
 
-WORKDIR /src/plugin
+# ENV, not just ARG, for TENA_VERSION and J2735_VERSION -- ARG doesn't survive into V2X-Hub's own
+# later "dependencies" stage, which runs ./build.sh using both without redeclaring them itself.
+ENV CMAKE_PREFIX_PATH=/opt/TENA/lib/cmake:${CMAKE_PREFIX_PATH:-} \
+    TENA_HOME=/opt/TENA \
+    TENA_VERSION=${TENA_VERSION} \
+    TENA_PLATFORM=u2204-gcc11-64 \
+    J2735_VERSION=${J2735_VERSION}
 
-# --mount=type=secret (not a git-URL context -- see docker-bake.hcl) so the token never appears in
-# the build log, which only shows this literal command text, never the expanded value.
+# database.sh creates the plugin user (idempotent) and its home dir, needed before /home/plugin/TENA
+# can be symlinked in below.
+RUN /home/V2X-Hub/container/database.sh && \
+    /home/V2X-Hub/container/library.sh && \
+    ldconfig
+
+COPY --from=tena-source --chown=plugin:nogroup /home/dt_user/TENA /opt/TENA
+RUN ln -s /opt/TENA /home/plugin/TENA
+
+# postinst baked dt-build-general's own /home/dt_user path into TENA's scripts (e.g. tenaenv.sh
+# hardcodes and re-exports TENA_HOME regardless of what's already set) -- repoint them at /opt (where
+# this image actually keeps TENA) so TENA_HOME still resolves correctly if anything sources them.
+RUN grep -rlZ '/home/dt_user' /opt/TENA | xargs -0r sed -i 's#/home/dt_user#/opt#g'
+
+# --mount=type=secret (not a git-URL context) so the token never appears in the build log, which only
+# shows this literal command text, never the expanded value.
 RUN --mount=type=secret,id=GIT_AUTH_TOKEN \
     GIT_AUTH_TOKEN=$(cat /run/secrets/GIT_AUTH_TOKEN) && \
-    git clone "https://${GIT_AUTH_TOKEN}@${PLUGIN_REPO#https://}" . && \
-    git checkout "$PLUGIN_REF"
-
-COPY --chmod=555 dt-v2xhub/scripts/configure-build-plugin.sh /usr/local/bin/configure-build-plugin.sh
-RUN /usr/local/bin/configure-build-plugin.sh
-
-# ---------------- dt-v2xhub: V2X-Hub's runtime + the plugin dropped in ---------------- #
-FROM v2xhub-default-runtime AS dt-v2xhub
-
-USER root
-COPY --from=tena-v2xhub-plugin-build --chown=plugin:adm --chmod=544 /src/plugin/build/TenaV2XPlugin/TenaV2Xplugin.zip /usr/local/plugins/TenaV2Xplugin.zip
-
-# TenaV2Xplugin is dynamically linked against TENA's middleware/OM .so files
-# Therefore, add these runtime libraries
-COPY --from=tena-source --chown=plugin:adm --chmod=544 /home/dt_user/TENA/lib/*.so* /usr/local/lib/
-RUN ldconfig
-
-USER plugin
-
-ARG VERSION=dev
-LABEL version=${VERSION}
-LABEL description="V2XHub Distributed Testing Docker Image, with TENA V2X plugin"
+    git clone --quiet "https://${GIT_AUTH_TOKEN}@${PLUGIN_REPO#https://}" /tmp/plugin && \
+    git -C /tmp/plugin checkout --quiet "$PLUGIN_REF" && \
+    cp -r /tmp/plugin/TenaV2XPlugin /home/V2X-Hub/src/v2i-hub/TenaV2XPlugin && \
+    rm -rf /tmp/plugin
