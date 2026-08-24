@@ -39,9 +39,6 @@ KM_PER_DEGREE_LAT = 111.32
 
 
 def bounding_box(lat: float, lon: float, radius_km: float) -> tuple[float, float, float, float]:
-<<<<<<< HEAD
-    """Return (minLon, minLat, maxLon, maxLat) for a radius_km buffer around (lat, lon)."""
-=======
     """Compute a lat/lon bounding box around a center point.
 
     Args:
@@ -52,7 +49,6 @@ def bounding_box(lat: float, lon: float, radius_km: float) -> tuple[float, float
     Returns:
         (minLon, minLat, maxLon, maxLat) tuple in degrees.
     """
->>>>>>> event/hass_dt_develop
     km_per_degree_lon = KM_PER_DEGREE_LAT * math.cos(math.radians(lat))
     radius_deg_lat = radius_km / KM_PER_DEGREE_LAT
     radius_deg_lon = radius_km / km_per_degree_lon
@@ -65,8 +61,6 @@ def bounding_box(lat: float, lon: float, radius_km: float) -> tuple[float, float
 
 
 def deg2tile(lat: float, lon: float, zoom: int) -> tuple[int, int]:
-<<<<<<< HEAD
-=======
     """Convert a lat/lon point to its containing XYZ tile index.
 
     Args:
@@ -77,7 +71,6 @@ def deg2tile(lat: float, lon: float, zoom: int) -> tuple[int, int]:
     Returns:
         (x, y) tile indices, clamped to the valid range for the zoom level.
     """
->>>>>>> event/hass_dt_develop
     lat_rad = math.radians(lat)
     n = 2**zoom
     xtile = int((lon + 180.0) / 360.0 * n)
@@ -86,8 +79,6 @@ def deg2tile(lat: float, lon: float, zoom: int) -> tuple[int, int]:
 
 
 def tiles_for_zoom(bbox: tuple[float, float, float, float], zoom: int):
-<<<<<<< HEAD
-=======
     """Enumerate the XYZ tiles that cover a bounding box at one zoom level.
 
     Args:
@@ -97,7 +88,6 @@ def tiles_for_zoom(bbox: tuple[float, float, float, float], zoom: int):
     Yields:
         (x, y) tile indices, one per tile in the covering grid.
     """
->>>>>>> event/hass_dt_develop
     minlon, minlat, maxlon, maxlat = bbox
     x0, y0 = deg2tile(maxlat, minlon, zoom)  # top-left
     x1, y1 = deg2tile(minlat, maxlon, zoom)  # bottom-right
@@ -107,8 +97,6 @@ def tiles_for_zoom(bbox: tuple[float, float, float, float], zoom: int):
 
 
 def init_mbtiles(path: Path, name: str, fmt: str, bbox: tuple, minzoom: int, maxzoom: int) -> sqlite3.Connection:
-<<<<<<< HEAD
-=======
     """Create an empty .mbtiles database with its metadata table populated.
 
     Any existing file at path is overwritten.
@@ -125,7 +113,6 @@ def init_mbtiles(path: Path, name: str, fmt: str, bbox: tuple, minzoom: int, max
         Open sqlite3 connection to the new database, with the metadata and tiles
         tables created (and metadata rows inserted) but not yet containing tiles.
     """
->>>>>>> event/hass_dt_develop
     if path.exists():
         path.unlink()
     conn = sqlite3.connect(str(path))
@@ -152,8 +139,6 @@ def init_mbtiles(path: Path, name: str, fmt: str, bbox: tuple, minzoom: int, max
 
 
 def fetch_tile(session: requests.Session, base_url: str, z: int, x: int, y: int, retries: int = 3):
-<<<<<<< HEAD
-=======
     """Fetch a single tile's image bytes from an ArcGIS REST MapServer, retrying on failure.
 
     Args:
@@ -168,7 +153,6 @@ def fetch_tile(session: requests.Session, base_url: str, z: int, x: int, y: int,
         (z, x, y, data) tuple, where data is the tile's raw image bytes, or None
         if the tile has no imagery (HTTP 404) or all attempts failed.
     """
->>>>>>> event/hass_dt_develop
     url = f"{base_url}/tile/{z}/{y}/{x}"
     for attempt in range(1, retries + 1):
         try:
@@ -184,15 +168,12 @@ def fetch_tile(session: requests.Session, base_url: str, z: int, x: int, y: int,
 
 
 def main():
-<<<<<<< HEAD
-=======
     """Parse CLI args, compute the tile set, and download it into an .mbtiles file.
 
     Reads arguments from sys.argv (see module docstring / --help for the full list).
     Writes the downloaded tiles to the path given by --output; exits with status 1
     if the requested area/zoom range yields no tiles to fetch.
     """
->>>>>>> event/hass_dt_develop
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--lat", type=float, required=True, help="Center latitude in degrees")
     parser.add_argument("--lon", type=float, required=True, help="Center longitude in degrees")
