@@ -136,11 +136,4 @@ ARG TZ="America/New_York"
 # registration failures at joinExecution() time.
 ENV LD_LIBRARY_PATH=/home/dt_user/SIMDIS/plugins
 
-# "-plugin" makes SIMDIS load and dock the TENA panel automatically on startup, instead of
-# requiring it to be opened manually from the Plug-ins menu every session (verified via
-# screenshot). The very first time a given container's $HOME is fresh, this makes SIMDIS
-# show a one-time "New Plug-ins Found" dialog (Load All -> Save); that decision is then
-# persisted in the container's writable layer and does not reappear on subsequent restarts
-# of the same container (verified: restarted the same container and it skipped straight to
-# the TENA panel). It reappears only if the container is fully removed and recreated fresh.
-CMD ["/bin/bash","-l","-c","cd /home/dt_user/SIMDIS && ./startSIMDIS.sh -plugin /home/dt_user/SIMDIS/plugins/piTENAplugin_2.5.20_mw6.0.11_u2204-gcc11-64.so"]
+CMD ["/bin/bash","-l","-c","cd /home/dt_user/SIMDIS && ./startSIMDIS.sh"]
