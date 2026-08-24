@@ -112,3 +112,13 @@ def get_trafficSignalControllers():
         trafficSignalController_list.append(tsc)
     
     return trafficSignalController_list
+
+def get_bsm_data():
+    bsm_data = {
+        "bsmid": bytes.fromhex("87654321"),
+        "lat": 0,
+        "long": 0,
+        "speed": 20,
+        "role": "emergency"
+    }
+    return bsm_data
