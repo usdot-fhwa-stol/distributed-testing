@@ -1,4 +1,3 @@
-# GitHub Actions triggers based on the PR's and each commits on develop and master
 name: "CI"
 on:
   workflow_dispatch:
@@ -32,6 +31,9 @@ jobs:
   build-dt-base-buildGeneral-core:
     runs-on: ubuntu-22.04
     needs: determine_docker_org_and_tag
+    env:
+      DOCKER_ORG: ${{ needs.determine_docker_org_and_tag.outputs.docker_org }}
+      DOCKER_TAG: ${{ needs.determine_docker_org_and_tag.outputs.docker_tag }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
@@ -56,9 +58,6 @@ jobs:
 
       - name: Build dt-base image
         working-directory: ./docker/build
-        env:
-          docker_org: dot-ostr-dt
-          docker_tag: develop
         run: |
           chmod +x build-image.sh
           ./build-image.sh base -v "$DOCKER_TAG"
@@ -66,8 +65,6 @@ jobs:
       - name: Build dt-build-general image
         working-directory: ./docker/build
         env:
-          docker_org: dot-ostr-dt
-          docker_tag: develop
           USDOTFHWASTOL_TOKEN: ${{ secrets.GH_PAT }}
         run: |
           chmod +x build-image.sh
@@ -88,8 +85,6 @@ jobs:
 
       - name: Build all TENA adapters
         env:
-          docker_org: dot-ostr-dt
-          docker_tag: develop
           # Build against the dt-build-general image from above rather than
           # pulling :latest from harbor over top of it.
           VUG_BUILD_GENERAL_IMAGE: harbor.distributedtesting.org/${{ needs.determine_docker_org_and_tag.outputs.docker_org }}/dt-build-general:${{ needs.determine_docker_org_and_tag.outputs.docker_tag }}
@@ -110,9 +105,6 @@ jobs:
 
       - name: Build dt-core image
         working-directory: ./docker/build
-        env:
-          docker_org: dot-ostr-dt
-          docker_tag: develop
         run: |
           chmod +x build-image.sh
           ./build-image.sh core -v "$DOCKER_TAG"
@@ -120,8 +112,6 @@ jobs:
       - name: Build dt-v2xhub image
         working-directory: ./docker/build
         env:
-          DOCKER_ORG: dot-ostr-dt
-          DOCKER_TAG: develop
           USDOTFHWASTOL_TOKEN: ${{ secrets.GH_PAT }}
         run: |
           printf '%s' "$USDOTFHWASTOL_TOKEN" > usdotfhwastol_token
@@ -132,9 +122,6 @@ jobs:
       # Pushed only after every image in this job built. Skipped on pull_request:
       - name: Push images to DT registry
         if: github.event_name != 'pull_request'
-        env:
-          docker_org: dot-ostr-dt
-          docker_tag: develop
         run: |
           for image in dt-base dt-build-general dt-core dt-v2xhub; do
             docker push "${DOCKERHUB_NAMESPACE}/${DOCKER_ORG}/${image}:${DOCKER_TAG}"
@@ -143,6 +130,9 @@ jobs:
   build-dt-simdis:
     runs-on: ubuntu-22.04
     needs: [determine_docker_org_and_tag]
+    env:
+      DOCKER_ORG: ${{ needs.determine_docker_org_and_tag.outputs.docker_org }}
+      DOCKER_TAG: ${{ needs.determine_docker_org_and_tag.outputs.docker_tag }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
@@ -166,17 +156,11 @@ jobs:
 
       - name: Build dt-simdis image
         working-directory: ./docker/build
-        env:
-          docker_org: dot-ostr-dt
-          docker_tag: develop
         run: |
           chmod +x build-image.sh
           ./build-image.sh simdis -v "$DOCKER_TAG"
 
       - name: Push dt-simdis to DT registry
         if: github.event_name != 'pull_request'
-        env:
-          docker_org: dot-ostr-dt
-          docker_tag: develop
         run: |
           docker push "${DOCKERHUB_NAMESPACE}/${DOCKER_ORG}/dt-simdis:${DOCKER_TAG}"
