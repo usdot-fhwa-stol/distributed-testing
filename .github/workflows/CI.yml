@@ -5,6 +5,7 @@ on:
   push:
     branches:
     - event/hass_dt_develop
+    - hass-701-add-workflows
 
   pull_request:
     branches:
