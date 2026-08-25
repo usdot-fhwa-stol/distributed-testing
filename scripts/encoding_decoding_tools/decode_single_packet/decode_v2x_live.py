@@ -13,7 +13,7 @@ This script should be run with one of the following commands, from inside the dt
     python3 decode_v2x_live.py --host $VUG_V2X_ADAPTER_SEND_ADDRESS --port $VUG_V2X_ADAPTER_SEND_ADDRESS
 """
 
-import J2735_201603_2023_06_22 as J2735
+import j2735_202409 as J2735
 import socket
 import binascii as ba
 import argparse
@@ -31,12 +31,15 @@ def start_v2x_listener(host: str, port: int):
 
     while True:
         try:
-            data, addr = sock.recvfrom(4096)
+            data, addr = sock.recvfrom(8192)
             hex_data = data.hex()
+            print(f"Hex: {hex_data}")
+            print(f"Bytes: {list(data)}")
+
             
             #CUSTOM LOGIC FOR DECODING J2735 HERE
-            decoded_msg = J2735.DSRC.MessageFrame
-            decoded_msg.from_uper(ba.unhexlify(hex_data))
+            decoded_msg = J2735.MessageFrame.MessageFrame
+            decoded_msg.from_uper(data)
             decoded_msg_json = decoded_msg.to_json()
 
             print(f'Decoded msg from {addr}:')

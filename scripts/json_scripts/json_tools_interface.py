@@ -67,7 +67,7 @@ VUG_STREAMER_BIND_IP = os.getenv("VUG_STREAMER_BIND_IP", "0.0.0.0")  # IP to bin
 VUG_STREAMER_BIND_PORT = int(os.getenv("VUG_STREAMER_BIND_PORT","8005")) # Port to bind the TCP listener to; defaults to 8005
 VUG_PUBLISHER_REST_IP = os.getenv("VUG_PUBLISHER_REST_IP", "0.0.0.0") # IP of the JSON Publisher's REST API; defaults to 0.0.0.0
 VUG_PUBLISHER_REST_PORT = int(os.getenv("VUG_PUBLISHER_REST_PORT", "8004")) # Port of the JSON Publisher's REST API; defaults to 8004
-SELECTED_WAYPOINT_CSV = "/home/dt_user/distributed-testing/scripts/json_scripts/delave_waypoints_v4.csv" # CSV file containing waypoint data
+SELECTED_WAYPOINT_CSV = "/home/dt_user/distributed-testing/scripts/json_scripts/delave_waypoints_leftlane_v1.csv" # CSV file containing waypoint data
 
 GET_OBJECT_TYPE = "waypoints" # options are "waypoints" or "api"
 COORDINATE_FORMAT = "ltpENU" # options are "geocentric" or "ltpENU"
@@ -441,7 +441,10 @@ def transmit_object_json(object_json_list, EntityMap, session: requests.Session)
         elif object_json.get("attributes",{}).get("trafficSignalPhases") is not None:
             object_type = 'VUG-TrafficSignalController-v1.3.5'
             entity_type = 'VUG::Entities::TrafficSignalController'
-        
+
+        # TODO implement V2X URL and functionality
+        #       http://{PUBLISHER_ENDPOINT}/v1/objects/VUG-V2XMessage-v1.1.4/VUG::TV2XMsg::V2X
+
         tena_publisher_url = f"http://{PUBLISHER_ENDPOINT}/v1/objects/{object_type}/{entity_type}"
         
         logging.info(f"Transmitting {entity_type} {EntityName} to: {tena_publisher_url}")
@@ -459,7 +462,6 @@ def transmit_object_json(object_json_list, EntityMap, session: requests.Session)
             # update_response.raise_for_status()
         time.sleep(INDIVIDUAL_TRANSMIT_DELAY)
 
-        # this will send to a speficied REST endpoint
     return
 
 def transmit_main(mapOrigin_queue, stdout_lock):

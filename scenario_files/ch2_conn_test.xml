@@ -6,25 +6,82 @@
     </identifier>
 
     <OpenDrive>
-        <MapFileName name="Town04.umap">
+        <MapFileName name="Town04.xodr">
             <MapOrigin latitudeInDegrees="0" longitudeInDegrees="0" heightAboveEllipsoidInMeters="0"> </MapOrigin>
         </MapFileName>
     </OpenDrive>
 
     <vehicles>
+
+        <vehicle name="FHWA-M-1" bsmid="00000000" type="vehicle.ford.mustang" simulationIdentifier="CARLA-FHWA-1" material="Aluminum" lvcIndicator="Constructive" generate_bsms="true" organization="FHWA">
+            <initialTSPI>
+                <GeodeticPosition latitudeInDegrees="0.002902" longitudeInDegrees="0.001816" heightAboveEllipsoidInMeters="1.014072">
+                </GeodeticPosition>
+                <Heading>90.446060</Heading>
+            </initialTSPI>
+        </vehicle>
+
+        <vehicle name="AMG-M-1" bsmid="11111111" type="vehicle.ford.mustang" simulationIdentifier="CARLA-AMG-1" material="Aluminum" lvcIndicator="Constructive" generate_bsms="true" organization="AMG">
+            <initialTSPI>
+                <GeodeticPosition latitudeInDegrees="0.002791" longitudeInDegrees="0.002422" heightAboveEllipsoidInMeters="1.001166">
+                </GeodeticPosition>
+                <Heading>180.546768</Heading>
+            </initialTSPI>
+        </vehicle>
+
+        <vehicle name="VW-M-1" bsmid="22222222" type="vehicle.ford.mustang" simulationIdentifier="CARLA-VW-1" material="Aluminum" lvcIndicator="Constructive" generate_bsms="true" organization="VW">
+            <initialTSPI>
+                <GeodeticPosition latitudeInDegrees="0.001452" longitudeInDegrees="0.001815" heightAboveEllipsoidInMeters="1.014136">
+                </GeodeticPosition>
+                <Heading>270.078583</Heading>
+            </initialTSPI>
+        </vehicle>
+
+        <vehicle name="UTC-M-1" bsmid="33333333" type="vehicle.ford.mustang" simulationIdentifier="CARLA-UTC-1" material="Aluminum" lvcIndicator="Constructive" generate_bsms="true" organization="UTC">
+            <initialTSPI>
+                <GeodeticPosition latitudeInDegrees="0.001525" longitudeInDegrees="0.001061" heightAboveEllipsoidInMeters="1.190417">
+                </GeodeticPosition>
+                <Heading>0.449317</Heading>
+            </initialTSPI>
+        </vehicle>
+
+        <vehicle name="PATH-M-1" bsmid="44444444" type="vehicle.ford.mustang" simulationIdentifier="CARLA-PATH-1" material="Aluminum" lvcIndicator="Constructive" generate_bsms="true" organization="PATH">
+            <initialTSPI>
+                <GeodeticPosition latitudeInDegrees="0.002102" longitudeInDegrees="0.002830" heightAboveEllipsoidInMeters="1.001163">
+                </GeodeticPosition>
+                <Heading>271.003784</Heading>
+            </initialTSPI>
+        </vehicle>
+
+        <vehicle name="PATH-M-2" bsmid="55555555" type="vehicle.ford.mustang" simulationIdentifier="CARLA-PATH-1" material="Aluminum" lvcIndicator="Constructive" generate_bsms="true" organization="PATH">
+            <initialTSPI>
+                <GeodeticPosition latitudeInDegrees="0.002198" longitudeInDegrees="0.001695" heightAboveEllipsoidInMeters="1.033182">
+                </GeodeticPosition>
+                <Heading>357.349457</Heading>
+            </initialTSPI>
+        </vehicle>
+
+        <vehicle name="PATH-M-3" bsmid="66666666" type="vehicle.ford.mustang" simulationIdentifier="CARLA-PATH-3" material="Aluminum" lvcIndicator="Constructive" generate_bsms="true" organization="PATH">
+            <initialTSPI>
+                <GeodeticPosition latitudeInDegrees="0.001548" longitudeInDegrees="0.002928" heightAboveEllipsoidInMeters="1.154178">
+                </GeodeticPosition>
+                <Heading>181.179550</Heading>
+            </initialTSPI>
+        </vehicle>
+
     </vehicles>
 
     <simulations>
 
-        <simulation name="CARLA-FHWA-3" type="CARLA">
-            <WeatherState>ClearNoon</WeatherState>
-        </simulation>
-
-        <simulation name="CARLA-VW-1" type="CARLA">
+        <simulation name="CARLA-FHWA-1" type="CARLA">
             <WeatherState>ClearNoon</WeatherState>
         </simulation>
 
         <simulation name="CARLA-AMG-1" type="CARLA">
+            <WeatherState>ClearNoon</WeatherState>
+        </simulation>
+
+        <simulation name="CARLA-VW-1" type="CARLA">
             <WeatherState>ClearNoon</WeatherState>
         </simulation>
 
@@ -40,6 +97,9 @@
             <WeatherState>ClearNoon</WeatherState>
         </simulation>
 
+        <simulation name="CARLA-PATH-3" type="CARLA">
+            <WeatherState>ClearNoon</WeatherState>
+        </simulation>
 
     </simulations>
 

@@ -38,6 +38,9 @@ BRANCH_APP_6="develop"
 # [7] v2xhub-tena-v2x-plugin
 BRANCH_APP_7="develop"
 
+# [8] hwil-gnss-emulator
+BRANCH_APP_8="develop"
+
 # -----------------------------------------------
 
 # Check if build script exists
@@ -69,6 +72,7 @@ run_build 4 "$BRANCH_APP_4" "vug-carla-adapter"
 run_build 5 "$BRANCH_APP_5" "tena-v2x-adapter"
 run_build 6 "$BRANCH_APP_6" "tena-entity-generator"
 # run_build 7 "$BRANCH_APP_7" "v2xhub-tena-v2x-plugin"
+run_build 8 "$BRANCH_APP_8" "hwil-gnss-emulator"
 
 echo "================================================================================"
 echo "All adapters built successfully!"
