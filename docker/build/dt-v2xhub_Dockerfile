@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1
 #
-# BUILD COMMAND: VERSION=0.1.1 ./build-image.sh dt-v2xhub
+# BUILD COMMAND: VERSION=0.2.0 ./build-image.sh dt-v2xhub
 #
 # V2X-Hub's own build-environment stage (via the v2xhub-build-dependencies context) plus TENA plus
 # TenaV2XPlugin's source, dropped into src/v2i-hub/ as a native plugin -- V2X-Hub's own
