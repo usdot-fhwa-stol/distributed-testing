@@ -24,9 +24,7 @@ INPUT
 
 2. The injected NMEA, as a capture or a text log:
 
-       tcpdump -i any -w d5_nmea.pcap tcp port 5000
-
-Both must come from the same run, on a common clock.
+       tcpdump -i any -w d5_nmea.pcap tcp port X
 
 USAGE
 -----

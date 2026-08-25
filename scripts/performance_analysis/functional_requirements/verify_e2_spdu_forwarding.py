@@ -29,8 +29,7 @@ A TDCS SQLite recording from a run carrying V2X traffic:
 
     ./verify_e2_spdu_forwarding.py run.sqlite
 
-The recording must have TDCS subscribed to the V2X message types. A
-GNSS-emulator-only scenario contains no V2X traffic and will report NO_DATA.
+The recording must have TDCS subscribed to the V2X message types
 
 EXIT CODES
 ----------
