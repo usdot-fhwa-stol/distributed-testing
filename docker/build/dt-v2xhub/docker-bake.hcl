@@ -43,7 +43,7 @@ variable "DT_BUILD_GENERAL_TAG" {
 }
 
 variable "TENA_VERSION" {
-  default = "6.0.9"
+  default = "6.0.11"
 }
 
 group "dt-v2xhub" {
