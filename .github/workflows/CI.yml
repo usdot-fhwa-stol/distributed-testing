@@ -25,9 +25,9 @@ jobs:
       - name: Determine Docker organization and tag
         id: docker-org-and-tag
         uses: usdot-fhwa-stol/actions/docker-org-and-tag@main
-    outputs:
-      docker_org: ${{ steps.docker-org-and-tag.outputs.docker_organization }}
-      docker_tag: ${{ steps.docker-org-and-tag.outputs.docker_image_tag }}
+    outputs: # Currently harcoding the docker org and tag since there is only one image repository and  supported base branch is currently only events/hass-dt-develop
+      docker_org: dot-ostr-dt
+      docker_tag: develop
 
   build-dt-base-buildGeneral-core:
     runs-on: ubuntu-22.04
@@ -57,8 +57,8 @@ jobs:
       - name: Build dt-base image
         working-directory: ./docker/build
         env:
-          DOCKER_ORG: ${{ needs.determine_docker_org_and_tag.outputs.docker_org }}
-          DOCKER_TAG: ${{ needs.determine_docker_org_and_tag.outputs.docker_tag }}
+          docker_org: dot-ostr-dt
+          docker_tag: develop
         run: |
           chmod +x build-image.sh
           ./build-image.sh base -v "$DOCKER_TAG"
@@ -66,8 +66,8 @@ jobs:
       - name: Build dt-build-general image
         working-directory: ./docker/build
         env:
-          DOCKER_ORG: ${{ needs.determine_docker_org_and_tag.outputs.docker_org }}
-          DOCKER_TAG: ${{ needs.determine_docker_org_and_tag.outputs.docker_tag }}
+          docker_org: dot-ostr-dt
+          docker_tag: develop
           USDOTFHWASTOL_TOKEN: ${{ secrets.GH_PAT }}
         run: |
           chmod +x build-image.sh
@@ -88,8 +88,8 @@ jobs:
 
       - name: Build all TENA adapters
         env:
-          DOCKER_ORG: ${{ needs.determine_docker_org_and_tag.outputs.docker_org }}
-          DOCKER_TAG: ${{ needs.determine_docker_org_and_tag.outputs.docker_tag }}
+          docker_org: dot-ostr-dt
+          docker_tag: develop
           # Build against the dt-build-general image from above rather than
           # pulling :latest from harbor over top of it.
           VUG_BUILD_GENERAL_IMAGE: harbor.distributedtesting.org/${{ needs.determine_docker_org_and_tag.outputs.docker_org }}/dt-build-general:${{ needs.determine_docker_org_and_tag.outputs.docker_tag }}
@@ -111,20 +111,32 @@ jobs:
       - name: Build dt-core image
         working-directory: ./docker/build
         env:
-          DOCKER_ORG: ${{ needs.determine_docker_org_and_tag.outputs.docker_org }}
-          DOCKER_TAG: ${{ needs.determine_docker_org_and_tag.outputs.docker_tag }}
+          docker_org: dot-ostr-dt
+          docker_tag: develop
         run: |
           chmod +x build-image.sh
           ./build-image.sh core -v "$DOCKER_TAG"
+
+      - name: Build dt-v2xhub image
+        working-directory: ./docker/build
+        env:
+          DOCKER_ORG: dot-ostr-dt
+          DOCKER_TAG: develop
+          USDOTFHWASTOL_TOKEN: ${{ secrets.GH_PAT }}
+        run: |
+          printf '%s' "$USDOTFHWASTOL_TOKEN" > usdotfhwastol_token
+          chmod +x build-image.sh
+          ./build-image.sh v2xhub -v "$DOCKER_TAG" --target runtime
+          rm -f usdotfhwastol_token
 
       # Pushed only after every image in this job built. Skipped on pull_request:
       - name: Push images to DT registry
         if: github.event_name != 'pull_request'
         env:
-          DOCKER_ORG: ${{ needs.determine_docker_org_and_tag.outputs.docker_org }}
-          DOCKER_TAG: ${{ needs.determine_docker_org_and_tag.outputs.docker_tag }}
+          docker_org: dot-ostr-dt
+          docker_tag: develop
         run: |
-          for image in dt-base dt-build-general dt-core; do
+          for image in dt-base dt-build-general dt-core dt-v2xhub; do
             docker push "${DOCKERHUB_NAMESPACE}/${DOCKER_ORG}/${image}:${DOCKER_TAG}"
           done
 
@@ -155,8 +167,8 @@ jobs:
       - name: Build dt-simdis image
         working-directory: ./docker/build
         env:
-          DOCKER_ORG: ${{ needs.determine_docker_org_and_tag.outputs.docker_org }}
-          DOCKER_TAG: ${{ needs.determine_docker_org_and_tag.outputs.docker_tag }}
+          docker_org: dot-ostr-dt
+          docker_tag: develop
         run: |
           chmod +x build-image.sh
           ./build-image.sh simdis -v "$DOCKER_TAG"
@@ -164,7 +176,7 @@ jobs:
       - name: Push dt-simdis to DT registry
         if: github.event_name != 'pull_request'
         env:
-          DOCKER_ORG: ${{ needs.determine_docker_org_and_tag.outputs.docker_org }}
-          DOCKER_TAG: ${{ needs.determine_docker_org_and_tag.outputs.docker_tag }}
+          docker_org: dot-ostr-dt
+          docker_tag: develop
         run: |
           docker push "${DOCKERHUB_NAMESPACE}/${DOCKER_ORG}/dt-simdis:${DOCKER_TAG}"

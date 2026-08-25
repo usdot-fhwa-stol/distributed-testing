@@ -9,10 +9,12 @@
 #
 #   <image>            One of: base, build-general, build-carla, core, v2xhub, carla, carla-0-9-15, simdis
 #   -v, --version      Image version tag (required)
-#   --plugin-branch    v2xhub only: vug-v2xhub-v2x-plugin branch to build (default develop)
-#   --target           Dockerfile stage to build, e.g. v2xhub's "base" (plugin not baked in,
-#                       always builds - use for a devcontainer) vs "runtime" (default; the
-#                       full deployable image, requires the plugin to build cleanly)
+#   --plugin-branch    v2xhub only: vug-v2xhub-v2x-plugin branch/ref to build
+#                       (default: the PLUGIN_REF pinned in dt-v2xhub/versions.env)
+#   --target           Stage/variant to build: v2xhub's "base" (plugin not baked in, always
+#                       builds - use for a devcontainer) vs "runtime" (the full deployable
+#                       image, requires the plugin to build cleanly). Default for v2xhub is
+#                       both; for the other images, the Dockerfile stage of that name.
 #   --tag-latest       Also tag the image as :latest
 #   -h, --help         Show this help
 #
@@ -20,7 +22,8 @@
 #   DOCKER_ORG   Harbor org/project the built image is tagged under, and that
 #                base-image FROM lines pull dt-* images from, e.g.
 #                "distributed-testing" (default) or "distributed-testing-dev"
-#   DOCKER_TAG   Tag to pull dt-* base images at, e.g. "latest" (default) or "0.0.1"
+#   DOCKER_TAG   Tag to pull dt-* base images at, e.g. "latest" (default) or "0.0.1".
+#                Not used by v2xhub - its base images are pinned in versions.env
 
 set -euo pipefail
 
@@ -68,7 +71,6 @@ declare -A TAG_PREFIX=(
 declare -A NEEDS_ASSETS=(
       [base]=1
       [core]=1
-      [v2xhub]=1
       [simdis]=1
 )
 
@@ -88,7 +90,15 @@ declare -A USES_ORG_TAG=(
       [build-general]=1
       [build-carla]=1
       [core]=1
-      [v2xhub]=1
+)
+
+# v2xhub only: directory holding its docker-bake.hcl + versions.env, and the bake target
+# (or group) each --target value selects
+V2XHUB_DIR="dt-v2xhub"
+declare -A V2XHUB_BAKE_TARGET=(
+      [default]="dt-v2xhub"                    # group: deployable image + devcontainer image
+      [base]="tena-v2xhub-build-dependencies"  # devcontainer image, plugin not baked in
+      [runtime]="dt-v2xhub-image"              # deployable image
 )
 
 usage() {
@@ -96,8 +106,8 @@ usage() {
       echo
       echo "  image            one of: ${!DOCKERFILE[*]}"
       echo "  -v, --version    image version tag (required)"
-      echo "  --plugin-branch  v2xhub only: vug-v2xhub-v2x-plugin branch to build (default develop)"
-      echo "  --target         Dockerfile stage to build, e.g. v2xhub's 'base' vs 'runtime' (default)"
+      echo "  --plugin-branch  v2xhub only: vug-v2xhub-v2x-plugin ref (default: versions.env's PLUGIN_REF)"
+      echo "  --target         stage/variant to build, e.g. v2xhub's 'base' vs 'runtime' (default: both)"
       echo "  --tag-latest     also tag the image as :latest"
       echo "  -h, --help       show this help"
       exit 1
@@ -111,7 +121,7 @@ IMAGE="$1"
 shift
 
 VERSION=""
-PLUGIN_BRANCH="develop"
+PLUGIN_BRANCH=""
 TARGET=""
 TAG_LATEST=0
 
@@ -191,28 +201,54 @@ if [[ "${NEEDS_SECRET[$IMAGE]:-0}" -eq 1 ]]; then
                   echo "Missing $TOKEN_FILE - see the secret instructions at the top of dt-v2xhub_Dockerfile" >&2
                   exit 1
             fi
-            EXTRA_ARGS+=(--secret "id=usdotfhwastol_token,src=$TOKEN_FILE")
+            # v2xhub's docker-bake.hcl declares this secret itself (as GIT_AUTH_TOKEN, read
+            # from ../usdotfhwastol_token), so only its presence is checked here.
+            if [[ "$IMAGE" != "v2xhub" ]]; then
+                  EXTRA_ARGS+=(--secret "id=usdotfhwastol_token,src=$TOKEN_FILE")
+            fi
       fi
-fi
-
-if [[ "$IMAGE" == "v2xhub" ]]; then
-      BUILD_ARGS+=(--build-arg "PLUGIN_BRANCH=${PLUGIN_BRANCH}")
 fi
 
 if [[ "${USES_ORG_TAG[$IMAGE]:-0}" -eq 1 ]]; then
       BUILD_ARGS+=(--build-arg "DOCKER_ORG=${DOCKER_ORG}" --build-arg "DOCKER_TAG=${DOCKER_TAG}")
 fi
 
-DOCKER_BUILDKIT=1 docker build \
-      "${EXTRA_ARGS[@]}" \
-      "${BUILD_ARGS[@]}" \
-      -t "$FULL_TAG" \
-      --progress=plain \
-      -f "$DOCKERFILE_PATH" \
-      .
+if [[ "$IMAGE" == "v2xhub" ]]; then
+      BAKE_TARGET="${V2XHUB_BAKE_TARGET[${TARGET:-default}]:-$TARGET}"
+      
+      set -a
+      source "${V2XHUB_DIR}/versions.env"
+      set +a
+
+      # --plugin-branch overrides the pinned PLUGIN_REF, but only when actually passed
+      if [[ -n "$PLUGIN_BRANCH" ]]; then
+            PLUGIN_REF="$PLUGIN_BRANCH"
+      fi
+      export PLUGIN_REF VERSION REGISTRY
+
+      # The devcontainer image is tagged by the V2X-Hub ref it was built against, not VERSION
+      if [[ "$BAKE_TARGET" == "tena-v2xhub-build-dependencies" ]]; then
+            FULL_TAG="${REGISTRY}/dt-build-v2xhub:${V2XHUB_REF}"
+      else
+            FULL_TAG="${REGISTRY}/${IMAGE_NAME[$IMAGE]}:${VERSION}"
+      fi
+
+      # bake runs from dt-v2xhub/ so docker-bake.hcl's ".." context and its
+      # ../usdotfhwastol_token secret resolve to this directory; --allow grants BuildKit the
+      # read access outside that cwd those need.
+      ( cd "$V2XHUB_DIR" && docker buildx bake --allow=fs.read=.. "$BAKE_TARGET" )
+else
+      DOCKER_BUILDKIT=1 docker build \
+            "${EXTRA_ARGS[@]}" \
+            "${BUILD_ARGS[@]}" \
+            -t "$FULL_TAG" \
+            --progress=plain \
+            -f "$DOCKERFILE_PATH" \
+            .
+fi
 
 if [[ "$TAG_LATEST" -eq 1 ]]; then
-      LATEST_TAG="${REGISTRY}/${IMAGE_NAME[$IMAGE]}:latest"
+      LATEST_TAG="${FULL_TAG%:*}:latest"
       docker tag "$FULL_TAG" "$LATEST_TAG"
       echo "Tagged $LATEST_TAG"
 fi
