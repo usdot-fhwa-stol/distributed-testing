@@ -1,5 +1,5 @@
 #
-# BUILD COMMAND: VERSION=0.1.1 && source build-assets_simdis.env && sudo DOCKER_BUILDKIT=1 docker build --build-arg VERSION=$VERSION --build-context assets="$BUILD_DIR" -t harbor.distributedtesting.org/dot-ostr-dt/dt-simdis:$VERSION . --progress=plain -f dt-simdis_Dockerfile
+# BUILD COMMAND: VERSION=0.2.0 && source build-assets_simdis.env && sudo DOCKER_BUILDKIT=1 docker build --build-arg VERSION=$VERSION --build-context assets="$BUILD_DIR" -t harbor.distributedtesting.org/dot-ostr-dt/dt-simdis:$VERSION . --progress=plain -f dt-simdis_Dockerfile
 #
 
 # ----------------------- BUILD STAGE ----------------------- #

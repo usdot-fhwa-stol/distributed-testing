@@ -1,5 +1,5 @@
 #
-# BUILD COMMAND: VERSION=0.1.7 && source build-assets.env && DOCKER_BUILDKIT=1 docker build --build-arg version=$VERSION --build-context assets="$BUILD_DIR" -t harbor.distributedtesting.org/dot-ostr-dt/dt-core:$VERSION . --progress=plain -f dt-core_Dockerfile
+# BUILD COMMAND: VERSION=0.2.0 && source build-assets.env && DOCKER_BUILDKIT=1 docker build --build-arg version=$VERSION --build-context assets="$BUILD_DIR" -t harbor.distributedtesting.org/dot-ostr-dt/dt-core:$VERSION . --progress=plain -f dt-core_Dockerfile
 #
 # Which harbor org/tag to pull the dt-base base image from, e.g. distributed-testing-dev:latest
 # vs distributed-testing:0.0.1. Overridable so this Dockerfile can build against a dev registry org.
@@ -40,7 +40,7 @@ RUN --mount=type=bind,from=assets,source=.,target=/mnt/build,readonly \
     mv ./postinst ./opt/TENA/postinst-DV
 
 # INSTALL TENA Data Collection System
-ARG TDCS_VERSION="DOT_OSTR-Combined-DataCollectionDistribution-v1.2.3"
+ARG TDCS_VERSION="DOT_OSTR-Combined-DataCollectionDistribution-v1.2.6"
 WORKDIR /home/$USER/INSTALL/TDCS
 RUN --mount=type=bind,from=assets,source=.,target=/mnt/build,readonly \
     set -euo pipefail; \
@@ -51,7 +51,7 @@ RUN --mount=type=bind,from=assets,source=.,target=/mnt/build,readonly \
     mv ./postinst ./opt/TENA/postinst-TDCS
 
 # INSTALL TENA JSON Tools
-ARG JSON_VERSION="DOT_OSTR-Combined-JSONtoolsDistribution-v1.2.4"
+ARG JSON_VERSION="DOT_OSTR-Combined-JSONtoolsDistribution-v1.2.6"
 WORKDIR /home/$USER/INSTALL/JSON
 RUN --mount=type=bind,from=assets,source=.,target=/mnt/build,readonly \
     export ; \
@@ -169,6 +169,7 @@ USER $USER
 COPY --chown=dt_user:dt_user --from=build /home/$USER/TENA /home/$USER/TENA
 
 RUN DSTROOT=/home/dt_user ./TENA/postinst-DV
+RUN sed -i '/^chown -R root/d;/^chgrp -R root/d' ./TENA/postinst-TDCS
 RUN DSTROOT=/home/dt_user ./TENA/postinst-TDCS
 RUN sed -i '/^chown -R root/d;/^chgrp -R root/d' ./TENA/postinst-JSON
 RUN DSTROOT=/home/dt_user ./TENA/postinst-JSON
