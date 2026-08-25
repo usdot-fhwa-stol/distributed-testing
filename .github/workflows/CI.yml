@@ -1,5 +1,5 @@
 # GitHub Actions triggers based on the PR's and each commits on develop and master
-name: "CI: Run tests"
+name: "CI"
 on:
   workflow_dispatch:
   push:
