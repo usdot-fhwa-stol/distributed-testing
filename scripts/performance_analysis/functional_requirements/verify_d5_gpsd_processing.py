@@ -11,13 +11,10 @@ WHAT THIS VERIFIES
 That gpsd produced position fixes, and that those fixes derive from the
 *emulated* NMEA rather than from a real antenna.
 
-That second half is the substance of the check. Observing that gpsd is running
-and emitting TPV reports proves nothing on its own -- a DUT with a live GNSS
-antenna does exactly that while ignoring the emulator entirely. So each gpsd fix
-is paired with the injected sentence nearest it in time and the horizontal
-separation is measured. gpsd passes NMEA positions through essentially
+The second half of the check pairs each gpsd fix with the injected sentence nearest 
+to it in time and the horizontal separation is measured. gpsd passes NMEA positions through essentially
 unchanged, so agreement should be sub-metre; a large separation means gpsd is
-reading something other than the emulated stream.
+reading something other than the emulated stream
 
 INPUT
 -----
