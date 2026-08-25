@@ -17,3 +17,5 @@ services:
     volumes:
       - /tmp/.X11-unix:/tmp/.X11-unix:rw
       - ${VUG_LOCAL_DT_PATH}:/home/dt_user/distributed-testing
+      #- ~/distributed-testing/docker/build/lib/COPY/start_scripts:/home/dt_user/start_scripts
+      #- ~/tenadev/INSTALL/tena-entity-generator-2.3.3:/home/dt_user/tena-entity-generator-2.3.3
