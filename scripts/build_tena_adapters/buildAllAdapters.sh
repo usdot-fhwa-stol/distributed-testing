@@ -21,7 +21,7 @@ BUILD_MODE="release"
 ADAPTER_BRANCH="${ADAPTER_BRANCH:-event/hass_dt_develop}"
 
 # [1] vug-threads-library
-BRANCH_APP_1="${BRANCH_APP_1:develop}"
+BRANCH_APP_1="${BRANCH_APP_1:-develop}"
 
 # [2] vug-udp-protocolio
 BRANCH_APP_2="${BRANCH_APP_2:-develop}"
@@ -68,7 +68,7 @@ run_build() {
 run_build 1 "$BRANCH_APP_1" "vug-threads-library"
 run_build 2 "$BRANCH_APP_2" "vug-udp-protocolio"
 run_build 3 "$BRANCH_APP_3" "scenario-publisher"
-run_build 4 "$BRANCH_APP_4" "vug-carla-adapter"
+# run_build 4 "$BRANCH_APP_4" "vug-carla-adapter"
 run_build 5 "$BRANCH_APP_5" "tena-v2x-adapter"
 run_build 6 "$BRANCH_APP_6" "tena-entity-generator"
 # run_build 7 "$BRANCH_APP_7" "v2xhub-tena-v2x-plugin"

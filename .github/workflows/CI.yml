@@ -4,13 +4,12 @@ on:
   workflow_dispatch:
   push:
     branches:
-    - event/hass-dt-develop
+    - event/hass_dt_develop
     - hass-701-add-workflows
 
   pull_request:
     branches:
       - event/hass-dt-develop
-      - hass-701-add-workflows
     types: [opened, synchronize, reopened]
   
 permissions:
@@ -18,7 +17,7 @@ permissions:
   pull-requests: write
 
 env:
-  DOCKERHUB_NAMESPACE: harbor.distributed-testing.org
+  DOCKERHUB_NAMESPACE: harbor.distributedtesting.org
 
 jobs:
   determine_docker_org_and_tag:
@@ -118,7 +117,18 @@ jobs:
         run: |
           chmod +x build-image.sh
           ./build-image.sh core -v "$DOCKER_TAG"
-  
+
+      # Pushed only after every image in this job built. Skipped on pull_request:
+      - name: Push images to DT registry
+        if: github.event_name != 'pull_request'
+        env:
+          DOCKER_ORG: ${{ needs.determine_docker_org_and_tag.outputs.docker_org }}
+          DOCKER_TAG: ${{ needs.determine_docker_org_and_tag.outputs.docker_tag }}
+        run: |
+          for image in dt-base dt-build-general dt-core; do
+            docker push "${DOCKERHUB_NAMESPACE}/${DOCKER_ORG}/${image}:${DOCKER_TAG}"
+          done
+
   build-dt-simdis:
     runs-on: ubuntu-22.04
     needs: [determine_docker_org_and_tag]
@@ -149,6 +159,13 @@ jobs:
           DOCKER_ORG: ${{ needs.determine_docker_org_and_tag.outputs.docker_org }}
           DOCKER_TAG: ${{ needs.determine_docker_org_and_tag.outputs.docker_tag }}
         run: |
-          source build-assets_simdis.env && sudo DOCKER_BUILDKIT=1 \
-          docker build --build-arg VERSION=$DOCKER_TAG --build-context assets="$BUILD_DIR" \
-          -t $DOCKER_ORG/dt-simdis:$DOCKER_TAG . --progress=plain -f dt-simdis_Dockerfile
+          chmod +x build-image.sh
+          ./build-image.sh simdis -v "$DOCKER_TAG"
+
+      - name: Push dt-simdis to DT registry
+        if: github.event_name != 'pull_request'
+        env:
+          DOCKER_ORG: ${{ needs.determine_docker_org_and_tag.outputs.docker_org }}
+          DOCKER_TAG: ${{ needs.determine_docker_org_and_tag.outputs.docker_tag }}
+        run: |
+          docker push "${DOCKERHUB_NAMESPACE}/${DOCKER_ORG}/dt-simdis:${DOCKER_TAG}"

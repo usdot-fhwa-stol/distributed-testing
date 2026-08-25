@@ -7,7 +7,7 @@
 #
 # Usage: ./build-image.sh <image> -v VERSION [options]
 #
-#   <image>            One of: base, build-general, build-carla, core, v2xhub, carla, carla-0-9-15
+#   <image>            One of: base, build-general, build-carla, core, v2xhub, carla, carla-0-9-15, simdis
 #   -v, --version      Image version tag (required)
 #   --plugin-branch    v2xhub only: vug-v2xhub-v2x-plugin branch to build (default develop)
 #   --target           Dockerfile stage to build, e.g. v2xhub's "base" (plugin not baked in,
@@ -43,6 +43,7 @@ declare -A DOCKERFILE=(
       [v2xhub]="dt-v2xhub_Dockerfile"
       [carla]="dt-carla_Dockerfile"
       [carla-0-9-15]="dt-carla-0-9-15_Dockerfile"
+      [simdis]="dt-simdis_Dockerfile"
 )
 
 # Harbor repo name each image key publishes under (carla-0-9-15 shares dt-carla,
@@ -55,6 +56,7 @@ declare -A IMAGE_NAME=(
       [v2xhub]="dt-v2xhub"
       [carla]="dt-carla"
       [carla-0-9-15]="dt-carla"
+      [simdis]="dt-simdis"
 )
 
 declare -A TAG_PREFIX=(
@@ -67,6 +69,12 @@ declare -A NEEDS_ASSETS=(
       [base]=1
       [core]=1
       [v2xhub]=1
+      [simdis]=1
+)
+
+# Images whose assets come from an env file other than the default build-assets.env
+declare -A ASSETS_ENV_FILE=(
+      [simdis]="build-assets_simdis.env"
 )
 
 # Images whose Dockerfile mounts the usdotfhwastol_token secret
@@ -161,6 +169,7 @@ if [[ -n "$TARGET" ]]; then
 fi
 
 if [[ "${NEEDS_ASSETS[$IMAGE]:-0}" -eq 1 ]]; then
+      ASSETS_ENV="${ASSETS_ENV_FILE[$IMAGE]:-$ASSETS_ENV}"
       # shellcheck disable=SC1090
       source "$ASSETS_ENV"
       if [[ -z "${BUILD_DIR:-}" ]]; then
