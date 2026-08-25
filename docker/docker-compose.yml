@@ -1,7 +1,7 @@
 services:
   dt-core:
     container_name: dt-core
-    image: harbor.distributedtesting.org/distributed-testing/dt-core:0.1.6
+    image: harbor.distributedtesting.org/dot-ostr-dt/dt-core:0.1.7
     profiles: ["core"]
     tty: true
     ipc: "host"
@@ -22,7 +22,7 @@ services:
 
   dt-carla:
     container_name: dt-carla
-    image: harbor.distributedtesting.org/distributed-testing/dt-carla:0-9-15-0.0.6
+    image: harbor.distributedtesting.org/dot-ostr-dt/dt-carla:0-9-15-0.0.6
     profiles: ["carla"]
     privileged: true
     network_mode: "host"
@@ -49,7 +49,7 @@ services:
 
   dt-simdis:
     container_name: dt-simdis
-    image: harbor.distributedtesting.org/distributed-testing/dt-simdis:0.0.1
+    image: harbor.distributedtesting.org/dot-ostr-dt/dt-simdis:0.1.1
     profiles: ["simdis"]
     privileged: true
     network_mode: "host"
@@ -62,10 +62,14 @@ services:
       - VUG_SCENARIO_CONFIG_FILE=${VUG_SCENARIO_CONFIG_FILE}
       - VUG_VPN_LOCAL_ADDRESS=${VUG_VPN_LOCAL_ADDRESS}
       - VUG_VPN_EM_ADDRESS=${VUG_VPN_EM_ADDRESS}
+      - SIMDIS_DIR=/home/dt_user/SIMDIS
+      - SIMDIS_MAP_FILE=/home/dt_user/distributed-testing/simdis_offline_imagery/TFHRC.earth
+      - SIMDIS_LAYOUT=/home/dt_user/distributed-testing/simdis_config/layout.ini
     volumes:
       - /tmp/.X11-unix:/tmp/.X11-unix:rw
       - ${VUG_LOCAL_DT_PATH}:/home/dt_user/distributed-testing
     stop_grace_period: 30s
+    command: ["/bin/bash","-l","-c","cd /home/dt_user/SIMDIS && ./startSIMDIS.sh --maximized -m $${SIMDIS_MAP_FILE} -l $${SIMDIS_LAYOUT}"]
     # Enable on systems with NVIDIA GPUs
     # deploy:
     #   resources:
