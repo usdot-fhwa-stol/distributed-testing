@@ -5,11 +5,10 @@ on:
   push:
     branches:
     - event/hass_dt_develop
-    - hass-701-add-workflows
 
   pull_request:
     branches:
-      - event/hass-dt-develop
+      - event/hass_dt_develop
     types: [opened, synchronize, reopened]
   
 permissions:
