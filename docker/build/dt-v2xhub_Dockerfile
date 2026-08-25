@@ -1,80 +1,56 @@
+# syntax=docker/dockerfile:1
 #
-# BUILD COMMAND: VERSION=hass-latest && source build-assets.env && sudo DOCKER_BUILDKIT=1 docker build --secret id=usdotfhwastol_token,src=usdotfhwastol_token --build-arg VERSION=$VERSION --build-context assets="$BUILD_DIR" -t harbor.distributedtesting.org/distributed-testing-dev/dt-v2xhub:$VERSION . --progress=plain -f dt-v2xhub_Dockerfile
-# dt-build-v2xhub image is a commit of the .devcontainer V2XHub image with all build artifacts. It was built locally using develop and then committed and tagged using 'docker commit ....'
-# To update dt-build-v2xhub, you'll need to clone V2XHub and build/launch the devcontainer and all plugins - then commit that image again.
+# BUILD COMMAND: VERSION=0.1.1 ./build-image.sh dt-v2xhub
+#
+# V2X-Hub's own build-environment stage (via the v2xhub-build-dependencies context) plus TENA plus
+# TenaV2XPlugin's source, dropped into src/v2i-hub/ as a native plugin -- V2X-Hub's own
+# src/v2i-hub/CMakeLists.txt auto-discovers it there, so their own Dockerfile needs no changes.
+#
+# Used two ways: as the devcontainer image (bind-mount the plugin source over the injected copy and
+# build interactively), and as a drop-in replacement for V2X-Hub's own build-environment stage in
+# docker-bake.hcl's dt-v2xhub-image target -- their own "dependencies" and "v2xhub" stages then run
+# unmodified on top of it.
+#
+# TENA's cmake files resolve from $ENV{TENA_HOME}/$ENV{TENA_VERSION}/$ENV{TENA_PLATFORM}, so setting
+# those as ENV is enough for V2X-Hub's own ./build.sh to find TENA with no changes on their side.
+#
+# TENA lives under /opt/TENA so V2X-Hub's own final "v2xhub" stage's existing
+# `COPY --from=dependencies /opt/ /opt/` line sweeps its runtime .so files into the production image
+# for free. /home/plugin/TENA is just a symlink to it, kept because the plugin repo's own devcontainer
+# tooling hardcodes that path.
+FROM v2xhub-build-dependencies AS tena-v2xhub-build-dependencies
+ARG J2735_VERSION
+ARG TENA_VERSION
+ARG PLUGIN_REPO
+ARG PLUGIN_REF
 
-# Secret instructions:
-# Github -> Settings -> developer settings -> create token(classic) -> give it all repo permissions, 90+ days expiration
-# Make a file named `usdotfhwastol_token` under distributed-testing/docker/
-# Copy your token into that file
+# ENV, not just ARG, for TENA_VERSION and J2735_VERSION -- ARG doesn't survive into V2X-Hub's own
+# later "dependencies" stage, which runs ./build.sh using both without redeclaring them itself.
+ENV CMAKE_PREFIX_PATH=/opt/TENA/lib/cmake:${CMAKE_PREFIX_PATH:-} \
+    TENA_HOME=/opt/TENA \
+    TENA_VERSION=${TENA_VERSION} \
+    TENA_PLATFORM=u2204-gcc11-64 \
+    J2735_VERSION=${J2735_VERSION}
 
-FROM harbor.distributedtesting.org/distributed-testing/dt-build-v2xhub:latest AS build
+# database.sh creates the plugin user (idempotent) and its home dir, needed before /home/plugin/TENA
+# can be symlinked in below.
+RUN /home/V2X-Hub/container/database.sh && \
+    /home/V2X-Hub/container/library.sh && \
+    ldconfig
 
-SHELL ["/bin/bash", "-ec"]
+COPY --from=tena-source --chown=plugin:nogroup /home/dt_user/TENA /opt/TENA
+RUN ln -s /opt/TENA /home/plugin/TENA
 
-WORKDIR /home/plugin
+# postinst baked dt-build-general's own /home/dt_user path into TENA's scripts (e.g. tenaenv.sh
+# hardcodes and re-exports TENA_HOME regardless of what's already set) -- repoint them at /opt (where
+# this image actually keeps TENA) so TENA_HOME still resolves correctly if anything sources them.
+RUN grep -rlZ '/home/dt_user' /opt/TENA | xargs -0r sed -i 's#/home/dt_user#/opt#g'
 
-USER root
-
-RUN apt-get update && \
-    apt-get install -y python3-pip \
-    # add some build packages
-    zstd
-
-ARG TENA_VERSION="TENA-MiddlewareSDK-v6.0.11"
-# INSTALL TENA deb
-RUN --mount=type=bind,from=assets,source=.,target=/mnt/build,readonly \
-    set -euo pipefail; \
-    dpkg -x --force-overwrite /mnt/build/${TENA_VERSION}@Product@u2204-gcc11-64-*.deb . && \
-    ar -x /mnt/build/${TENA_VERSION}@Product@u2204-gcc11-64-*.deb && \
-    tar xf control.tar.* && \
-    # move the postinst script into TENA dir to make it easier to copy and run later on final container
-    mv ./postinst ./opt/TENA/postinst-MW
-
-ARG DIST_VERSION="DOT_OSTR-Combined-Distribution-v1.2.6"
-# Install DT OMs
-RUN --mount=type=bind,from=assets,source=.,target=/mnt/build,readonly \
-    set -euo pipefail; \
-    dpkg -x --force-overwrite /mnt/build/${DIST_VERSION}@Product@u2204-gcc11-64-*.deb . && \
-    ar -x /mnt/build/${DIST_VERSION}@Product@u2204-gcc11-64-*.deb && \
-    tar xf control.tar.* && \
-    # move the postinst script into TENA dir to make it easier to copy and run later on final container
-    mv ./postinst ./opt/TENA/postinst-DIST
-
-FROM harbor.distributedtesting.org/distributed-testing/dt-build-v2xhub:latest
-
-WORKDIR /home/plugin
-
-USER root
-
-# Mounts files in a temporary space with rw perms, copies them to container, runs postinst scripts, changes ownership
-COPY --from=build --chown=plugin:nogroup /home/plugin/opt/TENA /home/plugin/TENA
-RUN DSTROOT=/home/plugin ./TENA/postinst-MW
-RUN DSTROOT=/home/plugin ./TENA/postinst-DIST
-RUN mkdir /home/plugin/TENA/log
-RUN chown -R plugin:nogroup /home/plugin/TENA
-
-RUN apt-get update && apt-get install -y \
-    cmake cmake-data git build-essential libboost-all-dev clang g++ lld ninja-build \
-    libvulkan1 libpng-dev libtiff5-dev libjpeg-dev tzdata sed curl openssl unzip autoconf libtool rsync libxml2-dev
-
-RUN --mount=type=secret,id=usdotfhwastol_token \
-    USDOTFHWASTOL_TOKEN=$(cat /run/secrets/usdotfhwastol_token) && \
-    git clone https://${USDOTFHWASTOL_TOKEN}@github.com/usdot-fhwa-stol/vug-cmake-package.git cmake_temp && \
-    mv cmake_temp/cmake/ /home/plugin/TENA/lib/ && \
-	  rm -rf cmake_temp  
-
-USER plugin
-
-ARG VERSION=dev
-LABEL version=${VERSION}
-LABEL description="V2XHub Distributed Testing Docker Image"
-
-# Once you have the built TENA V2X Plugin, uncomment the line below to copy it directly into the Docker image
-# COPY lib/TenaV2Xplugin.zip /usr/local/plugins/TenaV2Xplugin.zip
-
-RUN echo 'source /home/plugin/TENA/6.0.11/scripts/tenaenv-u2204-gcc11-64-v6.0.11.sh' >> /home/plugin/.bashrc
-
-WORKDIR /var/log/tmx
-
-ENTRYPOINT ["/usr/local/bin/service.sh"]
+# --mount=type=secret (not a git-URL context) so the token never appears in the build log, which only
+# shows this literal command text, never the expanded value.
+RUN --mount=type=secret,id=GIT_AUTH_TOKEN \
+    GIT_AUTH_TOKEN=$(cat /run/secrets/GIT_AUTH_TOKEN) && \
+    git clone --quiet "https://${GIT_AUTH_TOKEN}@${PLUGIN_REPO#https://}" /tmp/plugin && \
+    git -C /tmp/plugin checkout --quiet "$PLUGIN_REF" && \
+    cp -r /tmp/plugin/TenaV2XPlugin /home/V2X-Hub/src/v2i-hub/TenaV2XPlugin && \
+    rm -rf /tmp/plugin
