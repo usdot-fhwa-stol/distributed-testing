@@ -1,9 +1,9 @@
 #
-# BUILD COMMAND: VERSION=0.1.7 && source build-assets.env && DOCKER_BUILDKIT=1 docker build --build-arg version=$VERSION --build-context assets="$BUILD_DIR" -t harbor.distributedtesting.org/dot-ostr-dt/dt-core:$VERSION . --progress=plain -f dt-core_Dockerfile
+# BUILD COMMAND: VERSION=0.2.0 && source build-assets.env && DOCKER_BUILDKIT=1 docker build --build-arg version=$VERSION --build-context assets="$BUILD_DIR" -t harbor.distributedtesting.org/dot-ostr-dt/dt-core:$VERSION . --progress=plain -f dt-core_Dockerfile
 #
 
 # ----------------------- BUILD STAGE ----------------------- #
-FROM harbor.distributedtesting.org/dot-ostr-dt/dt-base:0.1.1 AS build
+FROM harbor.distributedtesting.org/dot-ostr-dt/dt-base:0.2.0 AS build
 
 SHELL ["/bin/bash", "-ec"]
 
@@ -73,7 +73,7 @@ RUN --mount=type=bind,from=assets,source=.,target=/mnt/build,readonly \
     mv CARLA_0.9.15 $HOME/CARLA
 
 # ----------------------- RUNTIME STAGE ----------------------- #
-FROM harbor.distributedtesting.org/dot-ostr-dt/dt-base:0.1.1
+FROM harbor.distributedtesting.org/dot-ostr-dt/dt-base:0.2.0
 
 ARG VERSION=dev
 LABEL version=${VERSION}

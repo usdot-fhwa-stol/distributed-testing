@@ -1,7 +1,7 @@
 services:
   dt-core:
     container_name: dt-core
-    image: harbor.distributedtesting.org/dot-ostr-dt/dt-core:0.1.7
+    image: harbor.distributedtesting.org/dot-ostr-dt/dt-core:0.2.0
     profiles: ["core"]
     tty: true
     ipc: "host"
@@ -49,7 +49,7 @@ services:
 
   dt-simdis:
     container_name: dt-simdis
-    image: harbor.distributedtesting.org/dot-ostr-dt/dt-simdis:0.1.1
+    image: harbor.distributedtesting.org/dot-ostr-dt/dt-simdis:0.2.0
     profiles: ["simdis"]
     privileged: true
     network_mode: "host"

@@ -39,7 +39,7 @@ variable "J2735_VERSION" {
 }
 
 variable "DT_BUILD_GENERAL_TAG" {
-  default = "0.1.1"
+  default = "0.2.0"
 }
 
 variable "TENA_VERSION" {
