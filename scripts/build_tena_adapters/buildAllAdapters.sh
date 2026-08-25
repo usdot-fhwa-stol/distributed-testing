@@ -18,13 +18,13 @@ BUILD_MODE="release"
 # You can modify these variables to change the target branch for each adapter, or
 # override them from the environment (e.g. in CI) without editing this file.
 # ADAPTER_BRANCH sets the default for every adapter; BRANCH_APP_<n> overrides one.
-ADAPTER_BRANCH="${ADAPTER_BRANCH:-event/hass-dt-develop}"
+ADAPTER_BRANCH="${ADAPTER_BRANCH:-event/hass_dt_develop}"
 
 # [1] vug-threads-library
-BRANCH_APP_1="${BRANCH_APP_1:-$ADAPTER_BRANCH}"
+BRANCH_APP_1="${BRANCH_APP_1:develop}"
 
 # [2] vug-udp-protocolio
-BRANCH_APP_2="${BRANCH_APP_2:-$ADAPTER_BRANCH}"
+BRANCH_APP_2="${BRANCH_APP_2:-develop}"
 
 # [3] scenario-publisher
 BRANCH_APP_3="${BRANCH_APP_3:-$ADAPTER_BRANCH}"
