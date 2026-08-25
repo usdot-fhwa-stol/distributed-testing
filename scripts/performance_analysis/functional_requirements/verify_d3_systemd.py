@@ -17,31 +17,25 @@ There are three checks this script does. It runs all three and reports the
 strongest one that succeeded, because they differ in how much they actually
 prove.
 
-The first check looks for the unit file itself: a path under
-/etc/systemd/system/ together with the file's contents, as `systemctl cat`
-produces. 
-
-The second check looks for the unit's installation state: `systemctl status`
-reporting it loaded, from a known path, with a known enablement state. This
+The first check looks for the systemd config file. The second check looks for
+the unit's installation state by calling systemctl status. This
 shows the service is administered through systemd rather than started by hand,
-which implies it is configurable.
-
-The third check looks for lifecycle activity in the journal: a daemon-reload, an
-enable, a start or a restart. 
+which implies it is configurable. The last check looks for lifecycle activity 
+the journal
 
 INPUT
 -----
-One or more text files. Concatenating these on the DUT is enough:
+To gather the necessary log files, call the following:
 
     systemctl cat  <unit>                         >  d3_service.txt
     systemctl status <unit>                       >> d3_service.txt
     journalctl -u <unit> --output=short-precise   >> d3_service.txt
 
+The <unit> is the name of the systemd service for netcat running on the DUT.
+
 USAGE
 -----
-    ./verify_d3_systemd.py d3_service.txt
     ./verify_d3_systemd.py d3_service.txt --unit netcat-gpsd
-    ./verify_d3_systemd.py logs/ --json
 
 EXIT CODES
 ----------
