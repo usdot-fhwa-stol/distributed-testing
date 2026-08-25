@@ -380,9 +380,10 @@ else
 		buildVersionCmakeArg="-D CMAKE_BUILD_TYPE=RELEASE"
 		
 	elif [[ $releaseOrDebug == 2 ]]; then
-		buildVersion="-B debug"
-		buildVersionDirCmd=
-		buildVersionCaps="-D CMAKE_BUILD_TYPE=DEBUG"
+		buildVersion="debug"
+		buildVersionDirArg="-B debug"
+		buildVersionCmake="DEBUG"
+		buildVersionCmakeArg="-D CMAKE_BUILD_TYPE=DEBUG"
 
 	else
 		echo

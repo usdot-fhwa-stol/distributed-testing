@@ -99,19 +99,19 @@ fi
 
 if [[ $VUG_DOCKER_START_CONSOLE == true ]]; then
    echo "STARTING TENA CONSOLE"
-   $VUG_LOCAL_TENA_PATH/Console-v2.0.1/start.sh -emEndpoints $VUG_EM_ADDRESS:$VUG_EM_PORT -listenEndpoints $VUG_LOCAL_ADDRESS -autoConnect &
+   $VUG_LOCAL_TENA_PATH/Console-v2.0.4/start.sh -emEndpoints $VUG_EM_ADDRESS:$VUG_EM_PORT -listenEndpoints $VUG_LOCAL_ADDRESS -autoConnect &
 
    sleep 5s
 fi
 
-# try to change carla map 
+# try to change carla map
 if [[ $VUG_DOCKER_START_CARLA == "local" ]] || [[ $VUG_DOCKER_START_CARLA == "remote" ]]; then
    echo "CHANGING CARLA MAP TO: $VUG_CARLA_MAP_NAME"
 	python3 $HOME/distributed-testing/scripts/carla_python_scripts/config.py \
       -m $VUG_CARLA_MAP_NAME --weather ClearNoon --host $VUG_CARLA_ADDRESS 2>&1 | awk '{ print "CHANGE MAP: ", $0; fflush(); }'
 
    sleep 5s
-   
+
    if [[ $VUG_CARLA_BLANK_SIGNALS == true ]]; then
       # blank signals and essentially disable their timing so that the only TL states we see are from TENA TrafficLight SDO updates
       python3 "$HOME/distributed-testing/scripts/carla_python_scripts/blank_traffic_signals.py" \
@@ -127,7 +127,7 @@ if [[ $VUG_DOCKER_START_CARLA == "local" ]] || [[ $VUG_DOCKER_START_CARLA == "re
    if [[ $VUG_CARLA_MAP_NAME == *"Delave"* ]]; then
       python3 $HOME/distributed-testing/scripts/carla_python_scripts/spectator_view_delave.py --host $VUG_CARLA_ADDRESS 2>&1 | awk '{ print "SET VIEW: ", $0; fflush(); }'
    fi
-  
+
 
    if [[ $VUG_DISPLAY_VEHICLE_ROLENAMES == true ]] || [[ $VUG_DISPLAY_TRAFFIC_SIGNAL_STATES == true ]]; then
       # display vehicle names and/or traffic light info
@@ -160,14 +160,14 @@ fi
 if [[ $VUG_DOCKER_START_TDCS == true ]]; then
    echo "STARTING TENA DATA COLLECTION SYSTEM"
    $HOME/distributed-testing/scripts/run_scripts/start-tdcs.sh 2>&1 | awk '{ print "TENA COLLECTOR: ", $0; fflush(); }' &
-   
+
    sleep 5s
 fi
 
 if [[ $VUG_DOCKER_START_TENA_PLAYBACK == true ]]; then
    echo "STARTING TENA PLAYBACK SYSTEM"
    $HOME/distributed-testing/scripts/run_scripts/start-playback-tool.sh 2>&1 | awk '{ print "TENA PLAYBACK: ", $0; fflush(); }' &
-   
+
    sleep 5s
 fi
 
