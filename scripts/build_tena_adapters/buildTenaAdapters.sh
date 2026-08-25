@@ -177,9 +177,11 @@ fi
 
 carlaTenaAdapterGitUrl="git@github.com:usdot-fhwa-stol/vug-carla-adapter.git"
 
-buildGeneralImage="harbor.distributedtesting.org/distributed-testing/dt-build-general:latest"
-buildCarlaImage="harbor.distributedtesting.org/distributed-testing/dt-build-carla:latest"
-buildV2xImage="usdotfhwaops/v2xhubamd:dt-P-1.1.0"
+# Build containers. Overridable via the environment so CI can build against the
+# images it just produced (e.g. a dev org / versioned tag) instead of :latest.
+buildGeneralImage="${VUG_BUILD_GENERAL_IMAGE:-harbor.distributedtesting.org/distributed-testing/dt-build-general:latest}"
+buildCarlaImage="${VUG_BUILD_CARLA_IMAGE:-harbor.distributedtesting.org/distributed-testing/dt-build-carla:latest}"
+buildV2xImage="${VUG_BUILD_V2X_IMAGE:-usdotfhwaops/v2xhubamd:dt-P-1.1.0}"
 
 if [[ $tenaAppIndex == 1 ]]; then
 	tenaApp=vug-threads-library
@@ -455,7 +457,11 @@ currentDockerImages=$(docker image list -q $dockerContainer)
 
 build_container_exists=false
 
-if [[ -n $currentDockerImages ]] ; then
+if [[ -n $currentDockerImages && "${VUG_SKIP_DOCKER_PULL:-false}" == "true" ]] ; then
+	echo
+	echo "Found build docker container: $dockerContainer, VUG_SKIP_DOCKER_PULL set - using the local image"
+
+elif [[ -n $currentDockerImages ]] ; then
 	echo
 	echo "Found build docker container: $dockerContainer, pulling the latest version"
 	docker pull $dockerContainer
@@ -569,7 +575,7 @@ if [[ "$skipMake" == true ]]
 
 				echo
 				echo "Changing permissions for built applications"
-				sudo chown -R $USER:$USER $localInstallDir
+				sudo chown -R $username:$username $localInstallDir
 				sudo chmod -R a+rwx $localInstallDir
 				sudo -k
 

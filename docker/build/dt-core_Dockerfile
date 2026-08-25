@@ -77,7 +77,7 @@ RUN --mount=type=bind,from=assets,source=.,target=/mnt/build,readonly \
     mv CARLA_0.9.15 $HOME/CARLA
 
 # ----------------------- RUNTIME STAGE ----------------------- #
-FROM harbor.distributedtesting.org/distributed-testing/dt-base:0.1.1
+FROM harbor.distributedtesting.org/${DOCKER_ORG}/dt-base:${DOCKER_TAG}
 
 ARG VERSION=dev
 LABEL version=${VERSION}

@@ -15,28 +15,31 @@ BUILD_SCRIPT_PATH="$(dirname "$0")/buildTenaAdapters.sh"
 BUILD_MODE="release"
 
 # Branch Configuration for each Adapter
-# You can modify these variables to change the target branch for each adapter
+# You can modify these variables to change the target branch for each adapter, or
+# override them from the environment (e.g. in CI) without editing this file.
+# ADAPTER_BRANCH sets the default for every adapter; BRANCH_APP_<n> overrides one.
+ADAPTER_BRANCH="${ADAPTER_BRANCH:-event/hass-dt-develop}"
 
 # [1] vug-threads-library
-BRANCH_APP_1="event/hass-dt-develop"
+BRANCH_APP_1="${BRANCH_APP_1:-$ADAPTER_BRANCH}"
 
 # [2] vug-udp-protocolio
-BRANCH_APP_2="event/hass-dt-develop"
+BRANCH_APP_2="${BRANCH_APP_2:-$ADAPTER_BRANCH}"
 
 # [3] scenario-publisher
-BRANCH_APP_3="event/hass-dt-develop"
+BRANCH_APP_3="${BRANCH_APP_3:-$ADAPTER_BRANCH}"
 
 # [4] vug-carla-adapter
-BRANCH_APP_4="event/hass-dt-develop"
+BRANCH_APP_4="${BRANCH_APP_4:-$ADAPTER_BRANCH}"
 
 # [5] tena-v2x-adapter
-BRANCH_APP_5="event/hass-dt-develop"
+BRANCH_APP_5="${BRANCH_APP_5:-$ADAPTER_BRANCH}"
 
 # [6] tena-entity-generator
-BRANCH_APP_6="event/hass-dt-develop"
+BRANCH_APP_6="${BRANCH_APP_6:-$ADAPTER_BRANCH}"
 
 # [7] v2xhub-tena-v2x-plugin
-BRANCH_APP_7="event/hass-dt-develop"
+BRANCH_APP_7="${BRANCH_APP_7:-$ADAPTER_BRANCH}"
 
 # -----------------------------------------------
 
