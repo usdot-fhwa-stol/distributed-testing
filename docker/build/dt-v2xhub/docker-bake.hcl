@@ -39,7 +39,7 @@ variable "J2735_VERSION" {
 }
 
 variable "DT_BUILD_GENERAL_TAG" {
-  default = "dev-latest"
+  default = "latest"
 }
 
 variable "TENA_VERSION" {
@@ -65,7 +65,7 @@ target "tena-v2xhub-build-dependencies" {
   dockerfile = "dt-v2xhub_Dockerfile"
   contexts = {
     v2xhub-build-dependencies = "target:v2xhub-build-environment"
-    tena-source                = "docker-image://harbor.distributedtesting.org/distributed-testing-dev/dt-build-general:${DT_BUILD_GENERAL_TAG}"
+    tena-source                = "docker-image://harbor.distributedtesting.org/distributed-testing/dt-build-general:${DT_BUILD_GENERAL_TAG}"
   }
   args = {
     J2735_VERSION = J2735_VERSION
@@ -75,7 +75,7 @@ target "tena-v2xhub-build-dependencies" {
   }
   secret = ["id=GIT_AUTH_TOKEN,src=../usdotfhwastol_token"]
   output = ["type=docker"]
-  tags   = ["harbor.distributedtesting.org/distributed-testing-dev/dt-build-v2xhub:${V2XHUB_REF}"]
+  tags   = ["harbor.distributedtesting.org/distributed-testing/dt-build-v2xhub:${V2XHUB_REF}"]
 }
 
 // V2X-Hub's own, unmodified Dockerfile, run at its "v2xhub" stage, with `build-environment`
@@ -91,5 +91,5 @@ target "dt-v2xhub-image" {
     VERSION = VERSION
   }
   output = ["type=docker"]
-  tags   = ["harbor.distributedtesting.org/distributed-testing-dev/dt-v2xhub:${VERSION}"]
+  tags   = ["harbor.distributedtesting.org/distributed-testing/dt-v2xhub:${VERSION}"]
 }

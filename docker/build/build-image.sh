@@ -28,7 +28,7 @@ fi
 
 # This piece of logic will be changing once automated dockerhub is implemented
 source dt-v2xhub/versions.env
-docker pull "harbor.distributedtesting.org/distributed-testing-dev/dt-build-general:${DT_BUILD_GENERAL_TAG}"
+docker pull "harbor.distributedtesting.org/distributed-testing/dt-build-general:${DT_BUILD_GENERAL_TAG}"
 
 cd "${TARGET_DIR}"
 set -a
