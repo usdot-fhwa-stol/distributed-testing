@@ -28,7 +28,7 @@ jobs:
       docker_org: dot-ostr-dt
       docker_tag: develop
 
-  build-dt-base-buildGeneral-core:
+  build-dt-main:
     runs-on: ubuntu-22.04
     needs: determine_docker_org_and_tag
     env:
