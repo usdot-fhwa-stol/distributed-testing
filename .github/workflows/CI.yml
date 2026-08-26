@@ -9,7 +9,7 @@ on:
     branches:
       - event/hass_dt_develop
     types: [opened, synchronize, reopened]
-  
+
 permissions:
   contents: read
   pull-requests: write
@@ -58,58 +58,58 @@ jobs:
           source build-assets.env
           chmod -R a+rX "$BUILD_DIR"
 
-      - name: Build dt-base image
-        working-directory: ./docker/build
-        run: |
-          chmod +x build-image.sh
-          ./build-image.sh base -v "$DOCKER_TAG"
+      # - name: Build dt-base image
+      #   working-directory: ./docker/build
+      #   run: |
+      #     chmod +x build-image.sh
+      #     ./build-image.sh base -v "$DOCKER_TAG"
 
-      - name: Build dt-build-general image
-        working-directory: ./docker/build
-        env:
-          USDOTFHWASTOL_TOKEN: ${{ secrets.GH_PAT }}
-        run: |
-          chmod +x build-image.sh
-          ./build-image.sh build-general -v "$DOCKER_TAG"
+      # - name: Build dt-build-general image
+      #   working-directory: ./docker/build
+      #   env:
+      #     USDOTFHWASTOL_TOKEN: ${{ secrets.GH_PAT }}
+      #   run: |
+      #     chmod +x build-image.sh
+      #     ./build-image.sh build-general -v "$DOCKER_TAG"
 
-      # buildTenaAdapters.sh sources ~/.dt_site_config and ~/.dt_scenario_config for
-      # VUG_LOCAL_TENADEV_DIR / VUG_LOCAL_INSTALL_PATH, so they must exist on the runner.
-      - name: Set DT site and scenario config
-        run: |
-          chmod +x config/set_dt_config.sh
-          ./config/set_dt_config.sh --site default_site.config --scenario default_scenario.config
+      # # buildTenaAdapters.sh sources ~/.dt_site_config and ~/.dt_scenario_config for
+      # # VUG_LOCAL_TENADEV_DIR / VUG_LOCAL_INSTALL_PATH, so they must exist on the runner.
+      # - name: Set DT site and scenario config
+      #   run: |
+      #     chmod +x config/set_dt_config.sh
+      #     ./config/set_dt_config.sh --site default_site.config --scenario default_scenario.config
 
-      # The adapter repos are private and cloned over SSH; rewrite to HTTPS + PAT so
-      # the runner can clone them.
-      - name: Configure git for private adapter repos
-        run: |
-          git config --global url."https://x-access-token:${{ secrets.GH_PAT }}@github.com/".insteadOf "git@github.com:"
+      # # The adapter repos are private and cloned over SSH; rewrite to HTTPS + PAT so
+      # # the runner can clone them.
+      # - name: Configure git for private adapter repos
+      #   run: |
+      #     git config --global url."https://x-access-token:${{ secrets.GH_PAT }}@github.com/".insteadOf "git@github.com:"
 
-      - name: Build all TENA adapters
-        env:
-          # Build against the dt-build-general image from above rather than
-          # pulling :latest from harbor over top of it.
-          VUG_BUILD_GENERAL_IMAGE: harbor.distributedtesting.org/${{ needs.determine_docker_org_and_tag.outputs.docker_org }}/dt-build-general:${{ needs.determine_docker_org_and_tag.outputs.docker_tag }}
-          VUG_SKIP_DOCKER_PULL: "true"
-        run: |
-          chmod +x scripts/build_tena_adapters/buildAllAdapters.sh scripts/build_tena_adapters/buildTenaAdapters.sh
-          ./scripts/build_tena_adapters/buildAllAdapters.sh
+      # - name: Build all TENA adapters
+      #   env:
+      #     # Build against the dt-build-general image from above rather than
+      #     # pulling :latest from harbor over top of it.
+      #     VUG_BUILD_GENERAL_IMAGE: harbor.distributedtesting.org/${{ needs.determine_docker_org_and_tag.outputs.docker_org }}/dt-build-general:${{ needs.determine_docker_org_and_tag.outputs.docker_tag }}
+      #     VUG_SKIP_DOCKER_PULL: "true"
+      #   run: |
+      #     chmod +x scripts/build_tena_adapters/buildAllAdapters.sh scripts/build_tena_adapters/buildTenaAdapters.sh
+      #     ./scripts/build_tena_adapters/buildAllAdapters.sh
 
-      # dt-core COPYs lib/COPY into /home/dt_user, and .dt_site_config_docker points
-      # VUG_LOCAL_INSTALL_PATH at $HOME/VUG_Adapters, so the built adapters go there.
-      - name: Stage built adapters for dt-core
-        run: |
-          source ~/.dt_site_config
-          rm -rf docker/build/lib/COPY/VUG_Adapters
-          mkdir -p docker/build/lib/COPY/VUG_Adapters
-          cp -a "$VUG_LOCAL_INSTALL_PATH/." docker/build/lib/COPY/VUG_Adapters/
-          ls -la docker/build/lib/COPY/VUG_Adapters
+      # # dt-core COPYs lib/COPY into /home/dt_user, and .dt_site_config_docker points
+      # # VUG_LOCAL_INSTALL_PATH at $HOME/VUG_Adapters, so the built adapters go there.
+      # - name: Stage built adapters for dt-core
+      #   run: |
+      #     source ~/.dt_site_config
+      #     rm -rf docker/build/lib/COPY/VUG_Adapters
+      #     mkdir -p docker/build/lib/COPY/VUG_Adapters
+      #     cp -a "$VUG_LOCAL_INSTALL_PATH/." docker/build/lib/COPY/VUG_Adapters/
+      #     ls -la docker/build/lib/COPY/VUG_Adapters
 
-      - name: Build dt-core image
-        working-directory: ./docker/build
-        run: |
-          chmod +x build-image.sh
-          ./build-image.sh core -v "$DOCKER_TAG"
+      # - name: Build dt-core image
+      #   working-directory: ./docker/build
+      #   run: |
+      #     chmod +x build-image.sh
+      #     ./build-image.sh core -v "$DOCKER_TAG"
 
       - name: Build dt-v2xhub image
         working-directory: ./docker/build
