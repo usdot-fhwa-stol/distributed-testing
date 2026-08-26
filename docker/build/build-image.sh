@@ -236,7 +236,12 @@ if [[ "$IMAGE" == "v2xhub" ]]; then
       # bake runs from dt-v2xhub/ so docker-bake.hcl's ".." context and its
       # ../usdotfhwastol_token secret resolve to this directory; --allow grants BuildKit the
       # read access outside that cwd those need.
-      ( cd "$V2XHUB_DIR" && docker buildx bake --allow=fs.read=.. "$BAKE_TARGET" )
+      #
+      # --builder default: the docker-container builder CI's `docker/setup-buildx-action` creates
+      # can't complete harbor.distributedtesting.org's OAuth token exchange. The "default" builder
+      # (docker driver) shares the host daemon's credentials, like every other image here already
+      # does via plain `docker build`, and pulls from harbor fine.
+      ( cd "$V2XHUB_DIR" && docker buildx bake --builder default --allow=fs.read=.. "$BAKE_TARGET" )
 else
       DOCKER_BUILDKIT=1 docker build \
             "${EXTRA_ARGS[@]}" \
