@@ -215,7 +215,7 @@ fi
 
 if [[ "$IMAGE" == "v2xhub" ]]; then
       BAKE_TARGET="${V2XHUB_BAKE_TARGET[${TARGET:-default}]:-$TARGET}"
-      
+
       set -a
       source "${V2XHUB_DIR}/versions.env"
       set +a
@@ -233,10 +233,16 @@ if [[ "$IMAGE" == "v2xhub" ]]; then
             FULL_TAG="${REGISTRY}/${IMAGE_NAME[$IMAGE]}:${VERSION}"
       fi
 
+      # BuildKit's own registry-auth client can't complete harbor.distributedtesting.org's OAuth
+      # token exchange with our Keycloak-backed login credentials, unlike classic `docker pull`.
+      # Pre-pulling here and building on --builder default (the "docker" driver, sharing the
+      # daemon's image store) lets docker bake reuse that pull instead of re-authenticating itself.
+      docker pull "harbor.distributedtesting.org/dot-ostr-dt/dt-build-general:${DT_BUILD_GENERAL_TAG}"
+
       # bake runs from dt-v2xhub/ so docker-bake.hcl's ".." context and its
       # ../usdotfhwastol_token secret resolve to this directory; --allow grants BuildKit the
       # read access outside that cwd those need.
-      ( cd "$V2XHUB_DIR" && docker buildx bake --allow=fs.read=.. "$BAKE_TARGET" )
+      ( cd "$V2XHUB_DIR" && docker buildx bake --builder default --allow=fs.read=.. "$BAKE_TARGET" )
 else
       DOCKER_BUILDKIT=1 docker build \
             "${EXTRA_ARGS[@]}" \
