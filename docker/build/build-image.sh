@@ -224,7 +224,8 @@ if [[ "$IMAGE" == "v2xhub" ]]; then
       if [[ -n "$PLUGIN_BRANCH" ]]; then
             PLUGIN_REF="$PLUGIN_BRANCH"
       fi
-      export PLUGIN_REF VERSION REGISTRY
+      # DOCKER_TAG: so tena-source (below) tracks the dt-build-general this pipeline just built.
+      export PLUGIN_REF VERSION REGISTRY DOCKER_TAG
 
       # The devcontainer image is tagged by the V2X-Hub ref it was built against, not VERSION
       if [[ "$BAKE_TARGET" == "tena-v2xhub-build-dependencies" ]]; then
@@ -233,11 +234,13 @@ if [[ "$IMAGE" == "v2xhub" ]]; then
             FULL_TAG="${REGISTRY}/${IMAGE_NAME[$IMAGE]}:${VERSION}"
       fi
 
-      # BuildKit's own registry-auth client can't complete harbor.distributedtesting.org's OAuth
-      # token exchange with our Keycloak-backed login credentials, unlike classic `docker pull`.
-      # Pre-pulling here and building on --builder default (the "docker" driver, sharing the
-      # daemon's image store) lets docker bake reuse that pull instead of re-authenticating itself.
-      docker pull "harbor.distributedtesting.org/dot-ostr-dt/dt-build-general:${DT_BUILD_GENERAL_TAG}"
+      # Already local after `build-general` runs first, so bake reuses it with no network call.
+      # If missing (standalone v2xhub build), pull with the classic client: BuildKit's own auth
+      # client can't complete harbor.distributedtesting.org's OAuth exchange, unlike `docker pull`.
+      TENA_SOURCE_IMAGE="${REGISTRY}/dt-build-general:${DOCKER_TAG}"
+      if ! docker image inspect "$TENA_SOURCE_IMAGE" >/dev/null 2>&1; then
+            docker pull "$TENA_SOURCE_IMAGE"
+      fi
 
       # bake runs from dt-v2xhub/ so docker-bake.hcl's ".." context and its
       # ../usdotfhwastol_token secret resolve to this directory; --allow grants BuildKit the

@@ -16,10 +16,10 @@
 //   set -a && source versions.env && set +a
 //   docker buildx bake --allow=fs.read=.. dt-v2xhub
 
-// Harbor host/org the built images are tagged under. build-image.sh exports this from its own
-// DOCKER_ORG so `./build-image.sh v2xhub` tags the same way it tags every other dt-* image; the
-// default here is what a bare `docker buildx bake` publishes under. Output tags only -- the
-// dt-build-general image pulled in below is a pinned published image, independent of this.
+// Harbor host/org the built images are tagged under, and that dt-build-general (below) is pulled
+// from. build-image.sh exports this from its own DOCKER_ORG so `./build-image.sh v2xhub` tags and
+// pulls the same way every other dt-* image does; the default here is what a bare `docker buildx
+// bake` uses.
 variable "REGISTRY" {
   default = "harbor.distributedtesting.org/dot-ostr-dt"
 }
@@ -48,7 +48,11 @@ variable "J2735_VERSION" {
   default = "2024"
 }
 
-variable "DT_BUILD_GENERAL_TAG" {
+// Tag dt-build-general (below) is pulled at. build-image.sh exports this from its own DOCKER_TAG so
+// the full pipeline (base -> build-general -> core -> v2xhub) builds v2xhub's TENA/boost dependency
+// from the same dt-build-general it just built, rather than an independently-drifting pin; the
+// default here is a known-published stable tag, for building v2xhub standalone.
+variable "DOCKER_TAG" {
   default = "0.2.0"
 }
 
@@ -75,7 +79,7 @@ target "tena-v2xhub-build-dependencies" {
   dockerfile = "dt-v2xhub_Dockerfile"
   contexts = {
     v2xhub-build-dependencies = "target:v2xhub-build-environment"
-    tena-source               = "docker-image://harbor.distributedtesting.org/dot-ostr-dt/dt-build-general:${DT_BUILD_GENERAL_TAG}"
+    tena-source               = "docker-image://${REGISTRY}/dt-build-general:${DOCKER_TAG}"
   }
   args = {
     J2735_VERSION = J2735_VERSION
