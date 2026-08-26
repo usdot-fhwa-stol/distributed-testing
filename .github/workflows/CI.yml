@@ -1,0 +1,170 @@
+name: "CI"
+on:
+  workflow_dispatch:
+  push:
+    branches:
+    - event/hass_dt_develop
+
+  pull_request:
+    branches:
+      - event/hass_dt_develop
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+env:
+  DOCKERHUB_NAMESPACE: harbor.distributedtesting.org
+
+jobs:
+  determine_docker_org_and_tag:
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Determine Docker organization and tag
+        id: docker-org-and-tag
+        uses: usdot-fhwa-stol/actions/docker-org-and-tag@main
+    outputs: # Currently harcoding the docker org and tag since there is only one image repository and  supported base branch is currently only events/hass-dt-develop
+      docker_org: dot-ostr-dt
+      docker_tag: develop
+
+  build-dt-images:
+    runs-on: ubuntu-22.04
+    needs: determine_docker_org_and_tag
+    env:
+      DOCKER_ORG: ${{ needs.determine_docker_org_and_tag.outputs.docker_org }}
+      DOCKER_TAG: ${{ needs.determine_docker_org_and_tag.outputs.docker_tag }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+        with:
+          version: latest
+
+      - name: Log in to DT Docker registry
+        uses: docker/login-action@v3
+        with:
+          registry: harbor.distributedtesting.org
+          username: ${{ secrets.KEYCLOAK_USERNAME }}
+          password: ${{ secrets.KEYCLOAK_TOKEN }}
+
+      - name: Fetch required assets
+        working-directory: ./docker/build
+        run: |
+          chmod +x fetch-assets.sh
+          ./fetch-assets.sh build-assets.env
+          source build-assets.env
+          chmod -R a+rX "$BUILD_DIR"
+
+      - name: Build dt-base image
+        working-directory: ./docker/build
+        run: |
+          chmod +x build-image.sh
+          ./build-image.sh base -v "$DOCKER_TAG"
+
+      - name: Build dt-build-general image
+        working-directory: ./docker/build
+        env:
+          USDOTFHWASTOL_TOKEN: ${{ secrets.GH_PAT }}
+        run: |
+          chmod +x build-image.sh
+          ./build-image.sh build-general -v "$DOCKER_TAG"
+
+      # buildTenaAdapters.sh sources ~/.dt_site_config and ~/.dt_scenario_config for
+      # VUG_LOCAL_TENADEV_DIR / VUG_LOCAL_INSTALL_PATH, so they must exist on the runner.
+      - name: Set DT site and scenario config
+        run: |
+          chmod +x config/set_dt_config.sh
+          ./config/set_dt_config.sh --site default_site.config --scenario default_scenario.config
+
+      # The adapter repos are private and cloned over SSH; rewrite to HTTPS + PAT so
+      # the runner can clone them.
+      - name: Configure git for private adapter repos
+        run: |
+          git config --global url."https://x-access-token:${{ secrets.GH_PAT }}@github.com/".insteadOf "git@github.com:"
+
+      - name: Build all TENA adapters
+        env:
+          # Build against the dt-build-general image from above rather than
+          # pulling :latest from harbor over top of it.
+          VUG_BUILD_GENERAL_IMAGE: harbor.distributedtesting.org/${{ needs.determine_docker_org_and_tag.outputs.docker_org }}/dt-build-general:${{ needs.determine_docker_org_and_tag.outputs.docker_tag }}
+          VUG_SKIP_DOCKER_PULL: "true"
+        run: |
+          chmod +x scripts/build_tena_adapters/buildAllAdapters.sh scripts/build_tena_adapters/buildTenaAdapters.sh
+          ./scripts/build_tena_adapters/buildAllAdapters.sh
+
+      # dt-core COPYs lib/COPY into /home/dt_user, and .dt_site_config_docker points
+      # VUG_LOCAL_INSTALL_PATH at $HOME/VUG_Adapters, so the built adapters go there.
+      - name: Stage built adapters for dt-core
+        run: |
+          source ~/.dt_site_config
+          rm -rf docker/build/lib/COPY/VUG_Adapters
+          mkdir -p docker/build/lib/COPY/VUG_Adapters
+          cp -a "$VUG_LOCAL_INSTALL_PATH/." docker/build/lib/COPY/VUG_Adapters/
+          ls -la docker/build/lib/COPY/VUG_Adapters
+
+      - name: Build dt-core image
+        working-directory: ./docker/build
+        run: |
+          chmod +x build-image.sh
+          ./build-image.sh core -v "$DOCKER_TAG"
+
+      - name: Build dt-v2xhub image
+        working-directory: ./docker/build
+        env:
+          USDOTFHWASTOL_TOKEN: ${{ secrets.GH_PAT }}
+        run: |
+          printf '%s' "$USDOTFHWASTOL_TOKEN" > usdotfhwastol_token
+          chmod +x build-image.sh
+          ./build-image.sh v2xhub -v "$DOCKER_TAG" --target runtime
+          rm -f usdotfhwastol_token
+
+      # Pushed only after every image in this job built. Skipped on pull_request:
+      - name: Push images to DT registry
+        if: github.event_name != 'pull_request'
+        run: |
+          for image in dt-base dt-build-general dt-core dt-v2xhub dt-build-v2xhub; do
+            docker push "${DOCKERHUB_NAMESPACE}/${DOCKER_ORG}/${image}:${DOCKER_TAG}"
+          done
+
+  build-dt-simdis:
+    runs-on: ubuntu-22.04
+    needs: [determine_docker_org_and_tag]
+    env:
+      DOCKER_ORG: ${{ needs.determine_docker_org_and_tag.outputs.docker_org }}
+      DOCKER_TAG: ${{ needs.determine_docker_org_and_tag.outputs.docker_tag }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+        with:
+          version: latest
+
+      - name: Log in to DT Docker registry
+        uses: docker/login-action@v3
+        with:
+          registry: harbor.distributedtesting.org
+          username: ${{ secrets.KEYCLOAK_USERNAME }}
+          password: ${{ secrets.KEYCLOAK_TOKEN }}
+      - name: Fetch required assets
+        working-directory: ./docker/build
+        run: |
+          chmod +x fetch-assets.sh
+          ./fetch-assets.sh build-assets_simdis.env
+          source build-assets_simdis.env
+          chmod -R a+rX "$BUILD_DIR"
+
+      - name: Build dt-simdis image
+        working-directory: ./docker/build
+        run: |
+          chmod +x build-image.sh
+          ./build-image.sh simdis -v "$DOCKER_TAG"
+
+      - name: Push dt-simdis to DT registry
+        if: github.event_name != 'pull_request'
+        run: |
+          docker push "${DOCKERHUB_NAMESPACE}/${DOCKER_ORG}/dt-simdis:${DOCKER_TAG}"

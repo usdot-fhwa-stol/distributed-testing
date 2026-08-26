@@ -1,9 +1,29 @@
-#
+#/bin/bash
+
+#  *
+#  * Copyright (C) 2022-2026 LEIDOS.
+#  *
+#  * Licensed under the Apache License, Version 2.0 (the "License"); you may not
+#  * use this file except in compliance with the License. You may obtain a copy of
+#  * the License at
+#  *
+#  * http://www.apache.org/licenses/LICENSE-2.0
+#  *
+#  * Unless required by applicable law or agreed to in writing, software
+#  * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+#  * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+#  * License for the specific language governing permissions and limitations under
+#  * the License.
+#  *
 # BUILD COMMAND: VERSION=0.2.0 && source build-assets.env && DOCKER_BUILDKIT=1 docker build --build-arg version=$VERSION --build-context assets="$BUILD_DIR" -t harbor.distributedtesting.org/dot-ostr-dt/dt-core:$VERSION . --progress=plain -f dt-core_Dockerfile
 #
+# Which harbor org/tag to pull the dt-base base image from, e.g. distributed-testing-dev:latest
+# vs distributed-testing:0.0.1. Overridable so this Dockerfile can build against a dev registry org.
+ARG DOCKER_ORG="distributed-testing"
+ARG DOCKER_TAG="latest"
 
 # ----------------------- BUILD STAGE ----------------------- #
-FROM harbor.distributedtesting.org/dot-ostr-dt/dt-base:0.2.0 AS build
+FROM harbor.distributedtesting.org/${DOCKER_ORG}/dt-base:${DOCKER_TAG} AS build
 
 SHELL ["/bin/bash", "-ec"]
 
@@ -73,7 +93,7 @@ RUN --mount=type=bind,from=assets,source=.,target=/mnt/build,readonly \
     mv CARLA_0.9.15 $HOME/CARLA
 
 # ----------------------- RUNTIME STAGE ----------------------- #
-FROM harbor.distributedtesting.org/dot-ostr-dt/dt-base:0.2.0
+FROM harbor.distributedtesting.org/${DOCKER_ORG}/dt-base:${DOCKER_TAG}
 
 ARG VERSION=dev
 LABEL version=${VERSION}
