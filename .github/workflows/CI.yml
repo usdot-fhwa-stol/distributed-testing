@@ -122,12 +122,25 @@ jobs:
           rm -f usdotfhwastol_token
 
       # Pushed only after every image in this job built. Skipped on pull_request:
-      - name: Push images to DT registry
-        if: github.event_name != 'pull_request'
-        run: |
-          for image in dt-base dt-build-general dt-core dt-v2xhub dt-build-v2xhub; do
-            docker push "${DOCKERHUB_NAMESPACE}/${DOCKER_ORG}/${image}:${DOCKER_TAG}"
-          done
+      - name: Push images to DT Registery
+        parallel_tasks:
+        steps:
+          - name: Push dt-base
+            if: github.event_name != 'pull_request'
+            run: |
+                docker push "${DOCKERHUB_NAMESPACE}/${DOCKER_ORG}/dt-base:${DOCKER_TAG}"
+          - name: Push dt-build-general
+            if: github.event_name != 'pull_request'
+            run: |
+                docker push "${DOCKERHUB_NAMESPACE}/${DOCKER_ORG}/dt-build-general:${DOCKER_TAG}"
+          - name: Push dt-core
+            if: github.event_name != 'pull_request'
+            run: |
+                docker push "${DOCKERHUB_NAMESPACE}/${DOCKER_ORG}/dt-core:${DOCKER_TAG}"
+          - name: Push dt-build-v2xhub
+            if: github.event_name != 'pull_request'
+            run: |
+                docker push "${DOCKERHUB_NAMESPACE}/${DOCKER_ORG}/dt-build-v2xhub:${DOCKER_TAG}"
 
   build-dt-simdis:
     runs-on: ubuntu-22.04
