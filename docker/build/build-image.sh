@@ -215,7 +215,7 @@ fi
 
 if [[ "$IMAGE" == "v2xhub" ]]; then
       BAKE_TARGET="${V2XHUB_BAKE_TARGET[${TARGET:-default}]:-$TARGET}"
-      
+
       set -a
       source "${V2XHUB_DIR}/versions.env"
       set +a
@@ -234,12 +234,9 @@ if [[ "$IMAGE" == "v2xhub" ]]; then
       fi
 
       # BuildKit's own registry-auth client can't complete harbor.distributedtesting.org's OAuth
-      # token exchange when docker/login-action's credentials include an identitytoken (e.g. from a
-      # Keycloak-backed login), unlike classic `docker pull`/`docker build`, which authenticate fine
-      # against the same registry with the same credentials. Pre-pulling with the classic client, then
-      # building on --builder default (the "docker" driver, sharing the daemon's image store with
-      # `docker pull`), lets bake find dt-build-general already resolved and skip its own broken
-      # auth path entirely instead of re-authenticating against the registry itself.
+      # token exchange with our Keycloak-backed login credentials, unlike classic `docker pull`.
+      # Pre-pulling here and building on --builder default (the "docker" driver, sharing the
+      # daemon's image store) lets docker bake reuse that pull instead of re-authenticating itself.
       docker pull "harbor.distributedtesting.org/dot-ostr-dt/dt-build-general:${DT_BUILD_GENERAL_TAG}"
 
       # bake runs from dt-v2xhub/ so docker-bake.hcl's ".." context and its
