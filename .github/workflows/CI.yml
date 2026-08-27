@@ -137,7 +137,7 @@ jobs:
 
       # Pushed only after every image in this job built. Skipped on pull_request:
       - name: Push images to DT registry
-        if: github.event_name == 'pull_request'
+        if: github.event_name != 'pull_request'
         run: |
           fail=0
 
