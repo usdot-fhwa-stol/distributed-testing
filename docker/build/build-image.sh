@@ -38,6 +38,13 @@ REGISTRY="${REGISTRY_HOST}/${DOCKER_ORG}"
 TOKEN_FILE="usdotfhwastol_token"
 ASSETS_ENV="build-assets.env"
 
+# Fixed, not derived from wall-clock time or commit, so a from-scratch rebuild of unchanged
+# inputs produces byte-identical layers instead of new ones stamped with "now". We still build
+# with no BuildKit cache reuse (every RUN/COPY re-executes every time) - this only makes the
+# resulting layer digests reproducible, so `docker push` recognizes unchanged layers already in
+# the registry and skips re-uploading them instead of pushing a full new set every run.
+SOURCE_DATE_EPOCH="${SOURCE_DATE_EPOCH:-1704067200}"
+
 declare -A DOCKERFILE=(
       [base]="dt-base_Dockerfile"
       [build-general]="dt-build-general_Dockerfile"
@@ -171,7 +178,7 @@ DOCKERFILE_PATH="${DOCKERFILE[$IMAGE]}"
 TAG="${TAG_PREFIX[$IMAGE]:-}${VERSION}${TARGET:+-$TARGET}"
 FULL_TAG="${REGISTRY}/${IMAGE_NAME[$IMAGE]}:${TAG}"
 
-BUILD_ARGS=(--build-arg "VERSION=${VERSION}")
+BUILD_ARGS=(--build-arg "VERSION=${VERSION}" --build-arg "SOURCE_DATE_EPOCH=${SOURCE_DATE_EPOCH}")
 EXTRA_ARGS=()
 
 if [[ -n "$TARGET" ]]; then
@@ -225,7 +232,7 @@ if [[ "$IMAGE" == "v2xhub" ]]; then
             PLUGIN_REF="$PLUGIN_BRANCH"
       fi
       # DOCKER_TAG: so tena-source (below) tracks the dt-build-general this pipeline just built.
-      export PLUGIN_REF VERSION REGISTRY DOCKER_TAG
+      export PLUGIN_REF VERSION REGISTRY DOCKER_TAG SOURCE_DATE_EPOCH
 
       # The devcontainer image is tagged by the V2X-Hub ref it was built against, not VERSION
       if [[ "$BAKE_TARGET" == "tena-v2xhub-build-dependencies" ]]; then

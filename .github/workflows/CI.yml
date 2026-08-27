@@ -50,6 +50,19 @@ jobs:
           username: ${{ secrets.KEYCLOAK_USERNAME }}
           password: ${{ secrets.KEYCLOAK_TOKEN }}
 
+      # BUILD_DIR (per build-assets.env) is wiped with the rest of the runner after every job,
+      # so without this, every run re-downloads every asset from the same handful of Google
+      # Drive file IDs - which is what trips Drive's anonymous-link download quota. Keyed on the
+      # env file so a version/ID bump busts the cache; restore-keys still gets a partial hit
+      # (fetch-assets.sh downloads only whatever doesn't match) if just one entry changed.
+      - name: Cache downloaded build assets
+        uses: actions/cache@v4
+        with:
+          path: ~/distributed-testing/docker/build/lib/BUILD
+          key: build-assets-${{ hashFiles('docker/build/build-assets.env') }}
+          restore-keys: |
+            build-assets-
+
       - name: Fetch required assets
         working-directory: ./docker/build
         run: |
@@ -93,6 +106,7 @@ jobs:
           VUG_SKIP_DOCKER_PULL: "true"
         run: |
           chmod +x scripts/build_tena_adapters/buildAllAdapters.sh scripts/build_tena_adapters/buildTenaAdapters.sh
+          export TENA_BUILD_JOBS="$(nproc)"
           ./scripts/build_tena_adapters/buildAllAdapters.sh
 
       # dt-core COPYs lib/COPY into /home/dt_user, and .dt_site_config_docker points
@@ -125,9 +139,28 @@ jobs:
       - name: Push images to DT registry
         if: github.event_name != 'pull_request'
         run: |
+          fail=0
+
           for image in dt-base dt-build-general dt-core dt-v2xhub dt-build-v2xhub; do
-            docker push "${DOCKERHUB_NAMESPACE}/${DOCKER_ORG}/${image}:${DOCKER_TAG}"
+            repo="${DOCKERHUB_NAMESPACE}/${DOCKER_ORG}/${image}"
+            refs=$(docker images --format '{{.Repository}}:{{.Tag}}' "$repo")
+
+            if [[ -z "$refs" ]]; then
+              echo "No local image found for $image; expected it to have been built earlier in this job" >&2
+              fail=1
+              continue
+            fi
+
+            while IFS= read -r ref; do
+              docker push "$ref" &
+            done <<< "$refs"
           done
+
+          for pid in $(jobs -p); do
+            wait "$pid" || fail=1
+          done
+
+          exit "$fail"
 
   build-dt-simdis:
     runs-on: ubuntu-22.04
@@ -150,6 +183,17 @@ jobs:
           registry: harbor.distributedtesting.org
           username: ${{ secrets.KEYCLOAK_USERNAME }}
           password: ${{ secrets.KEYCLOAK_TOKEN }}
+      # See the equivalent step in build-dt-images: without this, BUILD_DIR is wiped every run
+      # and every asset gets re-pulled from the same Drive file IDs, which is what trips
+      # Drive's anonymous-link download quota.
+      - name: Cache downloaded build assets
+        uses: actions/cache@v4
+        with:
+          path: ~/distributed-testing/docker/build/lib/BUILD
+          key: build-assets-simdis-${{ hashFiles('docker/build/build-assets_simdis.env') }}
+          restore-keys: |
+            build-assets-simdis-
+
       - name: Fetch required assets
         working-directory: ./docker/build
         run: |

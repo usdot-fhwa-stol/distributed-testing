@@ -60,6 +60,14 @@ variable "TENA_VERSION" {
   default = "6.0.11"
 }
 
+// Fixed, not derived from wall-clock time or commit, so a from-scratch rebuild of unchanged
+// inputs produces byte-identical layers instead of new ones stamped with "now" - lets `docker
+// push` skip re-uploading layers already in the registry instead of pushing a full new set
+// every run. Same constant build-image.sh exports for the other dt-* images.
+variable "SOURCE_DATE_EPOCH" {
+  default = "1704067200"
+}
+
 group "dt-v2xhub" {
   targets = ["dt-v2xhub-image", "tena-v2xhub-build-dependencies"]
 }
@@ -68,6 +76,9 @@ target "v2xhub-build-environment" {
   context    = "${V2XHUB_REPO}#${V2XHUB_REF}"
   dockerfile = "Dockerfile"
   target     = "build-environment"
+  args = {
+    SOURCE_DATE_EPOCH = SOURCE_DATE_EPOCH
+  }
   output     = ["type=cacheonly"]
 }
 
@@ -82,10 +93,11 @@ target "tena-v2xhub-build-dependencies" {
     tena-source               = "docker-image://${REGISTRY}/dt-build-general:${DOCKER_TAG}"
   }
   args = {
-    J2735_VERSION = J2735_VERSION
-    TENA_VERSION  = TENA_VERSION
-    PLUGIN_REPO   = PLUGIN_REPO
-    PLUGIN_REF    = PLUGIN_REF
+    J2735_VERSION     = J2735_VERSION
+    TENA_VERSION      = TENA_VERSION
+    PLUGIN_REPO       = PLUGIN_REPO
+    PLUGIN_REF        = PLUGIN_REF
+    SOURCE_DATE_EPOCH = SOURCE_DATE_EPOCH
   }
   secret = ["id=GIT_AUTH_TOKEN,src=../usdotfhwastol_token"]
   output = ["type=docker"]
@@ -102,7 +114,8 @@ target "dt-v2xhub-image" {
     "build-environment" = "target:tena-v2xhub-build-dependencies"
   }
   args = {
-    VERSION = VERSION
+    VERSION           = VERSION
+    SOURCE_DATE_EPOCH = SOURCE_DATE_EPOCH
   }
   output = ["type=docker"]
   tags   = ["${REGISTRY}/dt-v2xhub:${VERSION}"]
