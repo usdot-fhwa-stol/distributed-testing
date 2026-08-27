@@ -114,7 +114,7 @@ done
 VUG_LOCAL_TENADEV_DIR=$VUG_LOCAL_TENADEV_DIR			#location of local tenadev
 localInstallDir=$VUG_LOCAL_INSTALL_PATH		#location to install/build TENA adapters
 localDTDir=$VUG_LOCAL_DT_PATH
-numBuildJobs=4    # number of build jobs to speed up compilation
+numBuildJobs="${TENA_BUILD_JOBS:-4}"    # number of build jobs to speed up compilation; override via TENA_BUILD_JOBS
 #---------------------------------------------------------#
 
 # Ensure the install directory exists so Docker doesn't create it as root
