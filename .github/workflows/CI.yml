@@ -124,7 +124,8 @@ jobs:
 
       # Pushed only after every image in this job built. Skipped on pull_request:
       - name: Push images to DT registry
-        if: github.event_name != 'pull_request'
+        # test the push
+        if: github.event_name == 'pull_request'
         run: |
           for image in dt-base dt-build-general dt-core dt-v2xhub dt-build-v2xhub; do
             docker push "${DOCKERHUB_NAMESPACE}/${DOCKER_ORG}/${image}:${DOCKER_TAG}" &
