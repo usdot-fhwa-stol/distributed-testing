@@ -29,7 +29,7 @@ jobs:
       docker_tag: develop
 
   build-dt-images:
-    runs-on: ubuntu-22.04-16-cores
+    runs-on: ubuntu-22.04-16core
     needs: determine_docker_org_and_tag
     env:
       DOCKER_ORG: ${{ needs.determine_docker_org_and_tag.outputs.docker_org }}
