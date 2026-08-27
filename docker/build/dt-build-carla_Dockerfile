@@ -1,3 +1,4 @@
+# syntax=docker/dockerfile:1
 #
 # BUILD COMMAND: VERSION=0.0.2 && sudo DOCKER_BUILDKIT=1 docker build --build-arg version=$VERSION -t harbor.distributedtesting.org/dot-ostr-dt/dt-build-carla:$VERSION . --progress=plain -f dt-build-carla_Dockerfile
 # VERSION=0.0.2 && docker tag harbor.distributedtesting.org/dot-ostr-dt/dt-build-carla:$VERSION harbor.distributedtesting.org/dot-ostr-dt/dt-build-carla:latest
