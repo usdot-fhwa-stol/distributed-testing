@@ -5,7 +5,7 @@ stopDocker()
 
 echo
 echo STOPPING AND REMOVING VUG CONTAINERS
-$docker_compose_cmd "${compose_env_args[@]}" -f "$docker_compose_file" "${compose_profile_args[@]}" down
+$docker_compose_cmd "${compose_env_args[@]}" -f "$docker_compose_file" "${compose_profile_args[@]}" down -v
 if [ $VUG_FORMAL_EVENT = true ]; then 
     source $VUG_LOCAL_DT_PATH/scripts/utils/stop_current_vpn_connection.sh
 fi
@@ -349,9 +349,8 @@ if [[ $VUG_DOCKER_START_EM == true || $VUG_DOCKER_START_CONSOLE == true || $VUG_
         $VUG_DOCKER_START_TDCS == true || $VUG_DOCKER_START_TENA_PLAYBACK == true || $VUG_DOCKER_START_DATAVIEW == true || \
         $VUG_DOCKER_START_SCENARIO_PUBLIHSER == true || $VUG_DOCKER_START_V2X_ADAPTER == true || $VUG_DOCKER_START_TENA_CARLA_ADAPTER == true || \
         $VUG_DOCKER_START_JSON_STREAMER == true || $VUG_DOCKER_START_JSON_PUBLISHER == true || $VUG_DOCKER_START_ENTITY_GENERATOR == true || \
-        $VUG_DOCKER_START_GNSS_EMULATOR == true || $VUG_DOCKER_START_MANUAL_CARLA_VEHICLE == true || $VUG_DOCKER_START_SUMO == true || \
-        $VUG_DOCKER_START_CARLA == 'local' || $VUG_DOCKER_START_CARLA == 'remote' ]]; then
-
+        $VUG_DOCKER_START_GNSS_EMULATOR == true || $VUG_DOCKER_START_MANUAL_CARLA_VEHICLE == true || $VUG_DOCKER_START_SUMO == true ]]; 
+then
     echo "Enabling dt-core profile"
     compose_profile_args+=(--profile core)
 else
@@ -367,8 +366,17 @@ fi
 
 if [[ $VUG_DOCKER_START_V2XHUB == true ]]; then
     echo "Enabling V2XHub profile"
+
+    source "$SCRIPT_DIR/build/dt-v2xhub/v2xhub.env"
+
     compose_profile_args+=(--profile v2xhub)
-    compose_env_args+=(--env-file "$SCRIPT_DIR/dt-v2xhub/v2xhub.env")
+    compose_env_args+=(--env-file "$SCRIPT_DIR/build/dt-v2xhub/v2xhub.env")
+
+    mkdir -p "$V2XHUB_VOLUME_PATH/ssl"
+    mkdir -p "$V2XHUB_VOLUME_PATH/download"
+    mkdir -p "$V2XHUB_VOLUME_PATH/logs"
+
+    echo "V2XHub Volume Path: $V2XHUB_VOLUME_PATH"
 else
     echo "V2XHub profile not enabled"
 fi

@@ -97,7 +97,7 @@ services:
       - v2xhub-logs-volume:/var/log/tmx:rw
       - v2xhub-download-volume:/var/www/download/:rw
       - ssl-certs-volume:/var/www/plugins/ssl:rw
-      - ../container/service.sh:/usr/local/bin/service.sh:ro
+      - ./build/dt-v2xhub/service.sh:/usr/local/bin/service.sh:ro
     healthcheck:
       test: ["CMD-SHELL", "ps -ef | grep -v grep | grep -q tmxcore && ps -ef | grep -v grep | grep -q CommandPlugin || exit 1"]
       interval: 10s
@@ -156,7 +156,7 @@ services:
   
 secrets:
   mysql_password:
-    file: ../secrets/mysql_password.txt
+    file: ./build/dt-v2xhub/secrets/mysql_password.txt
 
 volumes:
   mysql-datavolume:
