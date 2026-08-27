@@ -89,9 +89,10 @@ USER $USER
 ENV USER="dt_user"
 
 # CARLA_0.9.15 (contains just the PythonAPI folder for CARLA PythonAPI capabilities)
-RUN --mount=type=bind,from=assets,source=.,target=/mnt/build,readonly \
-    unzip /mnt/build/CARLA_0.9.15.zip && \
-    mv CARLA_0.9.15 $HOME/CARLA
+# Disabled for now - not needed; see build-assets.env, CARLA asset fetch is also disabled
+# RUN --mount=type=bind,from=assets,source=.,target=/mnt/build,readonly \
+#     unzip /mnt/build/CARLA_0.9.15.zip && \
+#     mv CARLA_0.9.15 $HOME/CARLA
 
 # ----------------------- RUNTIME STAGE ----------------------- #
 FROM harbor.distributedtesting.org/${DOCKER_ORG}/dt-base:${DOCKER_TAG}
@@ -191,7 +192,8 @@ RUN DSTROOT=/home/dt_user ./TENA/postinst-TDCS
 RUN sed -i '/^chown -R root/d;/^chgrp -R root/d' ./TENA/postinst-JSON
 RUN DSTROOT=/home/dt_user ./TENA/postinst-JSON
 
-COPY --chown=dt_user:dt_user --from=build /home/$USER/CARLA /home/$USER/CARLA
+# Disabled for now - not needed; see build-assets.env, CARLA asset fetch is also disabled
+# COPY --chown=dt_user:dt_user --from=build /home/$USER/CARLA /home/$USER/CARLA
 
 COPY --chown=dt_user:dt_user ./lib/COPY /home/$USER
 
