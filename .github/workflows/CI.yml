@@ -124,16 +124,29 @@ jobs:
 
       # Pushed only after every image in this job built. Skipped on pull_request:
       - name: Push images to DT registry
-        # test the push
         if: github.event_name == 'pull_request'
         run: |
-          for image in dt-base dt-build-general dt-core dt-v2xhub dt-build-v2xhub; do
-            docker push "${DOCKERHUB_NAMESPACE}/${DOCKER_ORG}/${image}:${DOCKER_TAG}" &
-          done
           fail=0
-          for job in $(jobs -p); do
-            wait "$job" || fail=1
+
+          for image in dt-base dt-build-general dt-core dt-v2xhub dt-build-v2xhub; do
+            repo="${DOCKERHUB_NAMESPACE}/${DOCKER_ORG}/${image}"
+            refs=$(docker images --format '{{.Repository}}:{{.Tag}}' "$repo")
+
+            if [[ -z "$refs" ]]; then
+              echo "No local image found for $image; expected it to have been built earlier in this job" >&2
+              fail=1
+              continue
+            fi
+
+            while IFS= read -r ref; do
+              docker push "$ref" &
+            done <<< "$refs"
           done
+
+          for pid in $(jobs -p); do
+            wait "$pid" || fail=1
+          done
+
           exit "$fail"
 
   build-dt-simdis:
