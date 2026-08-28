@@ -69,3 +69,16 @@ config/*.log
 
 # ignore generated png files
 scripts/utils/*.png
+scripts/performance_analysis/**/*.png
+
+# ignore generated csv files
+scripts/performance_analysis/**/*.csv
+
+# ignore generated json files
+scripts/performance_analysis/**/*.json
+
+# ignore generated log files
+scripts/performance_analysis/**/*.log
+
+# ignore virtual environments
+*.venv/
