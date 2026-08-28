@@ -93,6 +93,14 @@ data_types = {
     #     "pcap_file_pattern" : "SPAT",
     #     "sdo_file_pattern"   : ["Entities-TrafficSignalController"]
     # },
+    "Radio": {
+        "pcap_file_pattern": "Radio-THIS-DOES-NOT-EXIST",
+        "sdo_file_pattern": ["Entities-Radio"],
+    },
+    "SecureV2XMessage": {
+        "pcap_file_pattern": "SecureV2XMessage-THIS-DOES-NOT-EXIST",
+        "sdo_file_pattern": ["TV2XMsg-SecureV2XMsg"],
+    },
 }
 
 ################################################## FUNCTIONS ##################################################

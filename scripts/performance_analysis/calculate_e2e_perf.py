@@ -1653,7 +1653,7 @@ def select_message_type_user_input():
 # specifies the number of match_keys defined in the params for each data source
 num_match_keys = 5
 
-J2735_message_types = ["J2735","J3224","J2735-BSM","J2735-SPAT","J2735-MAP","LandVehicle","MAP","TrafficLight","BSM","Mobility_Request","Mobility_Response","Mobility_Path","Mobility_Operations-STATUS","Mobility_Operations-INFO","Traffic_Control_Request","Traffic_Control_Message", "V2XMessage", "TrafficSignalController"]
+J2735_message_types = ["J2735","J3224","J2735-BSM","J2735-SPAT","J2735-MAP","LandVehicle","MAP","TrafficLight","BSM","Mobility_Request","Mobility_Response","Mobility_Path","Mobility_Operations-STATUS","Mobility_Operations-INFO","Traffic_Control_Request","Traffic_Control_Message", "V2XMessage", "TrafficSignalController", "Radio", "SecureV2XMessage"]
 
 J2735_message_type_ids = {
     "BSM"   : "0014",
@@ -2344,6 +2344,32 @@ data_params = {
                 },
             ]
         },
+        "SecureV2XMsg": {
+            "skip_if_neqs": [
+                {
+                    "key": "Metadata,Endpoint",
+                    "value": source_ip_address,
+                },
+            ],
+            "skip_if_eqs": [],
+            "match_keys": [
+                {
+                    "key": "Metadata,MessageCount",
+                },
+                {
+                    "key": "senderIdentifier,String",
+                },
+                {
+                    "key": "uuid,String",
+                },
+                {
+                    "key": None,
+                },
+                {
+                    "key": None,
+                },
+            ],
+        },
         "LandVehicle" : {
             "skip_if_neqs"      : [
                 {
@@ -2393,6 +2419,41 @@ data_params = {
                     "key"       : None,
                 },
             ]
+        },
+        "Radio": {
+            "skip_if_neqs": [
+                {
+                    "key": "const^Metadata,SDOid.hostIPaddress",
+                    "value": source_ip_address,
+                },
+            ],
+            "skip_if_eqs": [
+                {
+                    "key": "Metadata,Enum,Middleware::EventType",
+                    "value": "Discovery",
+                },
+                {
+                    "key": "Metadata,Enum,Middleware::EventType",
+                    "value": "Destruction",
+                },
+            ],
+            "match_keys": [
+                {
+                    "key": "const^identifier,String",
+                },
+                {
+                    "key": "Metadata,StateVersion",
+                },
+                {
+                    "key": None,
+                },
+                {
+                    "key": None,
+                },
+                {
+                    "key": None,
+                },
+            ],
         },
         "TrafficSignalController" : {
             "skip_if_neqs" : [
