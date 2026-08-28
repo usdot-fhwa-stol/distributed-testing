@@ -1,8 +1,29 @@
 services:
+  dt-core:
+    container_name: dt-core
+    image: harbor.distributedtesting.org/distributed-testing/dt-core:latest
+    profiles: ["core"]
+    tty: true 
+    network_mode: "host"
+    ipc: "host"
+    environment:
+      - DISPLAY=$DISPLAY
+      - SDL_VIDEODRIVER=x11
+      - XAUTHORITY=~/.Xauthority
+      - VUG_CONTAINER_IMAGE=dt-core
+      - VUG_SITE_CONFIG_FILE=${VUG_SITE_CONFIG_FILE}
+      - VUG_SCENARIO_CONFIG_FILE=${VUG_SCENARIO_CONFIG_FILE}
+      - VUG_VPN_LOCAL_ADDRESS=${VUG_VPN_LOCAL_ADDRESS}
+      - VUG_VPN_EM_ADDRESS=${VUG_VPN_EM_ADDRESS}
+    volumes:
+      - /tmp/.X11-unix:/tmp/.X11-unix:rw
+      - ${VUG_LOCAL_DT_PATH}:/home/dt_user/distributed-testing
+    stop_grace_period: 30s
+  
   dt-carla:
     container_name: dt-carla
     image: harbor.distributedtesting.org/distributed-testing/dt-carla:latest
-    privileged: true
+    profiles: ["carla"]
     network_mode: "host"
     environment:
       - DISPLAY=$DISPLAY
@@ -25,31 +46,143 @@ services:
               count: 1
               capabilities: [gpu]
 
-  dt-core:
-    container_name: dt-core
-    image: harbor.distributedtesting.org/distributed-testing/dt-core:latest
-    tty: true 
+  v2xhub:
+    image: harbor.distributedtesting.org/distributed-testing/dt-v2xhub:latest
+    container_name: v2xhub
+    profiles: ["v2xhub"]
+    network_mode: host
+    extra_hosts:
+      # In the host network namespace the host machine is reachable on loopback.
+      # Keeps plugin defaults that reference host.docker.internal working
+      # (e.g. CARMACloudPlugin's CARMACloudBaseUrl).
+      - "host.docker.internal:127.0.0.1"
+    restart: always
     depends_on:
-      - dt-carla
-    network_mode: "host"
-    ipc: "host"
-    environment:
-      - DISPLAY=$DISPLAY
-      - SDL_VIDEODRIVER=x11
-      - XAUTHORITY=~/.Xauthority
-      - VUG_CONTAINER_IMAGE=dt-core
-      - VUG_SITE_CONFIG_FILE=${VUG_SITE_CONFIG_FILE}
-      - VUG_SCENARIO_CONFIG_FILE=${VUG_SCENARIO_CONFIG_FILE}
-      - VUG_VPN_LOCAL_ADDRESS=${VUG_VPN_LOCAL_ADDRESS}
-      - VUG_VPN_EM_ADDRESS=${VUG_VPN_EM_ADDRESS}
-    volumes:
-      - /tmp/.X11-unix:/tmp/.X11-unix:rw
-      - ${VUG_LOCAL_DT_PATH}:/home/dt_user/distributed-testing
-    stop_grace_period: 30s
+      db:
+        condition: service_healthy
+    ulimits:
+      nofile:
+        soft: 2560
+        hard: 2560
     deploy:
       resources:
+        limits:
+          memory: 2g
         reservations:
-          devices:
-            - driver: nvidia
-              count: 1
-              capabilities: [gpu]
+          memory: 1g
+    environment:
+      - MYSQL_HOST=127.0.0.1
+      - MYSQL_PORT=3306
+      - MYSQL_DATABASE=IVP
+      - MYSQL_USER=IVP
+      - MYSQL_PASSWORD=/run/secrets/mysql_password
+      - SIMULATION_MODE=${SIMULATION_MODE:-false}
+      - SIMULATION_IP=${SIMULATION_IP:-127.0.0.1}
+      - SIMULATION_REGISTRATION_PORT=6767
+      - V2XHUB_IP=${V2XHUB_IP:-0.0.0.0}
+      - TIME_SYNC_TOPIC=time_sync
+      - TIME_SYNC_PORT=7575
+      - SIM_V2X_PORT=5757
+      - SIM_INTERACTION_PORT=7576
+      - V2X_PORT=8686
+      - INFRASTRUCTURE_ID=${INFRASTRUCTURE_ID:-rsu_1234}
+      - INFRASTRUCTURE_NAME=${INFRASTRUCTURE_NAME:-East Intersection}
+      - SENSOR_JSON_FILE_PATH=${SENSOR_JSON_FILE_PATH:-/var/www/download/sensors.json}
+      - V2XHUB_USERNAME=${V2XHUB_USERNAME:-v2xadmin}
+      - V2XHUB_PASSWORD=${V2XHUB_PASSWORD:-ChangeMe123!}
+      - TZ=${TZ:-America/New_York}
+    secrets:
+      - mysql_password
+    volumes:
+      - v2xhub-logs-volume:/var/log/tmx:rw
+      - v2xhub-download-volume:/var/www/download/:rw
+      - ssl-certs-volume:/var/www/plugins/ssl:rw
+    healthcheck:
+      test: ["CMD-SHELL", "ps -ef | grep -v grep | grep -q tmxcore && ps -ef | grep -v grep | grep -q CommandPlugin || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 30s
+
+  db:
+    image: mysql:8.0.40
+    container_name: mysql
+    profiles: ["v2xhub"]
+    network_mode: host
+    # Listen on loopback only. v2xhub shares the host network namespace so it still
+    # reaches the database at 127.0.0.1:3306, but nothing off this machine can
+    command: ["--bind-address=127.0.0.1"]
+    environment:
+      - TZ=${TZ:-America/New_York}
+      - MYSQL_DATABASE=IVP
+      - MYSQL_USER=IVP
+      - MYSQL_PASSWORD_FILE=/run/secrets/mysql_password
+      - MYSQL_RANDOM_ROOT_PASSWORD=yes
+    secrets:
+      - mysql_password
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-u", "IVP", "-p$$(cat /run/secrets/mysql_password)"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    volumes:
+      - ./mysql/localhost.sql:/docker-entrypoint-initdb.d/localhost.sql
+      - mysql-datavolume:/var/lib/mysql
+
+  php:
+    image: usdotfhwaops/php:${V2XHUB_VERSION:-develop}
+    container_name: php
+    profiles: ["v2xhub"]
+    network_mode: host
+    # Apache binds host ports 80 and 443 directly
+    restart: always
+    depends_on:
+      - db
+      - v2xhub
+    stdin_open: true
+    tty: true
+    environment:
+      - TZ=${TZ:-America/New_York}
+    volumes:
+      - ssl-certs-volume:/etc/apache2/ssl:ro
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS -I http://127.0.0.1/ >/dev/null || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 30s
+  
+secrets:
+  mysql_password:
+    file: ./build/dt-v2xhub/secrets/mysql_password.txt
+
+volumes:
+  mysql-datavolume:
+  ssl-certs-volume:
+    # To access/set SSL certifications on host machine setup local mapping to ssl directory.
+    # NOTE: Ensure directory exists and has non-root privileges before running
+    # docker compose to prevent permission issues
+    driver: local
+    driver_opts:
+      type: 'none'
+      o: 'bind'
+      device: '${V2XHUB_VOLUME_PATH:-/tmp/v2xhub_data}/ssl' # Specify the absolute path on your host
+  v2xhub-download-volume:
+    # To access V2X Hub uploaded files on host machine setup local mapping to download directory.
+    # NOTE: Ensure directory exists and has non-root privileges before running
+    # docker compose to prevent permission issues
+    driver: local
+    driver_opts:
+      type: 'none'
+      o: 'bind'
+      device: '${V2XHUB_VOLUME_PATH:-/tmp/v2xhub_data}/download' # Specify the absolute path on your host
+  v2xhub-logs-volume:
+    # To access log files on host machine setup local mapping to logs directory.
+    # NOTE: Ensure directory exists and has non-root privileges before running
+    # docker compose to prevent permission issues
+    driver: local
+    driver_opts:
+      type: 'none'
+      o: 'bind'
+      device: '${V2XHUB_VOLUME_PATH:-/tmp/v2xhub_data}/logs' # Specify the absolute path on your host

@@ -58,8 +58,16 @@ check_pattern_match() {
   shopt -s nullglob
   # unquoted to allow glob expansion intentionally
   # shellcheck disable=SC2086
-  local matches=( $BUILD_DIR/$pattern )
+  local candidates=( $BUILD_DIR/$pattern )
   shopt -u nullglob
+
+  # nullglob only helps for patterns containing glob metacharacters; a literal pattern
+  # (no *, ?, [) never expands at all, so it passes through unchanged even when the
+  # file doesn't exist. Filter to entries that actually exist on disk either way
+  local matches = ()
+  for f in "${candidates[@]}"; do
+    [[ -e "$f" ]] && matches+=("$f")
+  done
 
   if (( ${#matches[@]} == 0 )); then
     echo "! $key: download finished but no files match pattern '$pattern' in $BUILD_DIR" >&2
@@ -91,8 +99,15 @@ download_one() {
 
   shopt -s nullglob
   # shellcheck disable=SC2086
-  local matches=( $BUILD_DIR/$pattern )
+  local candidates=( $BUILD_DIR/$pattern )
   shopt -u nullglob
+
+  # See check_pattern_match() above: a literal (non-glob) pattern passes through nullglob
+  # unchanged even when the file doesn't exist, so verify each candidate actually exists.
+  local matches=()
+  for f in "${candidates[@]}"; do
+    [[ -e "$f" ]] && matches+=("$f")
+  done
 
   if (( ${#matches[@]} > 0 )); then
     echo "? $key: found ${#matches[@]} file(s) matching '$pattern'; skipping download"
