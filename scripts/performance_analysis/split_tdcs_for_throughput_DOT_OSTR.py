@@ -54,15 +54,13 @@ def find_matching_rows(database_file, ip_address, entity_type, is_msg):
             cursor.execute(f"SELECT name FROM sqlite_master WHERE type='table' AND name LIKE '{entity_type}%const'")
 
             table_name_with_const = cursor.fetchone()
-            
+            table_name_with_const = table_name_with_const[0]
 
             print(f"\tFound const table: {table_name_with_const}")
 
             if not table_name_with_const:
                 print(f"\tNo matching table found for {entity_type}.")
                 return []
-
-            table_name_with_const = table_name_with_const[0]
 
             # Find the table with the same name but without "const" at the end
             #       For msg, there is no const so table with and without will be the same
@@ -240,8 +238,11 @@ def split_tdcs(database_file,ip_address,force_split):
     if skip_export == True:
         return
 
-    entity_types = ["Class,VUG::Entities::Vehicle", "Class,DOT_OSTR::Entities::LandVehicle", "Msg,DOT_OSTR::TV2XMsg::V2X", "Class,VUG::Entities::Signals::TrafficLight","Msg,VUG::TJ2735Msg::J2735","Msg,VUG::TJ3224Msg::J3224","Class,VUG::Track::BSM"]
-    
+    entity_types = [
+        "Class,DOT_OSTR::Entities::LandVehicle",
+        "Class,DOT_OSTR::Entities::TrafficSignalController",
+        "Msg,DOT_OSTR::TV2XMsg::V2X"
+    ]
     matching_rows_by_type = {}
 
     for entity_type in entity_types:

@@ -1,0 +1,274 @@
+<?xml version="1.0.0" encoding="UTF-8"?>
+<scenario>
+  <identifier>
+    <name>DT Energy - Integration Test</name>
+  </identifier>
+  <OpenDrive>
+    <MapFileName name="DelaveV21.xodr">
+      <MapOrigin latitudeInDegrees="39.68854712116352" longitudeInDegrees="-75.74805413881644" heightAboveEllipsoidInMeters="0"> </MapOrigin>
+    </MapFileName>
+  </OpenDrive>
+
+  <vehicles>
+    <!-- NOTE: type must match vehicle -->
+    <vehicle name="ORNL-AUTO-1" bsmid="f03ad658" type="vehicle.toyota.prius" simulationIdentifier="CARLA-ORNL-1" material="Aluminum" lvcIndicator="Constructive" generate_bsms="true" organization="ORNL">
+        <initialTSPI>
+            <GeodeticPosition latitudeInDegrees="0.001800" longitudeInDegrees="0.001122" heightAboveEllipsoidInMeters="1"> </GeodeticPosition>
+            <Heading>21.85235</Heading>
+        </initialTSPI>
+    </vehicle>
+
+    <vehicle name="ORNL-M-1" bsmid="f03ad638" type="vehicle.toyota.prius" simulationIdentifier="CARLA-ORNL-1" material="Aluminum" lvcIndicator="Constructive" generate_bsms="true" organization="ORNL">
+        <initialTSPI>
+            <GeodeticPosition latitudeInDegrees="0.001800" longitudeInDegrees="0.001122" heightAboveEllipsoidInMeters="1"> </GeodeticPosition>
+            <Heading>21.85235</Heading>
+        </initialTSPI>
+    </vehicle>
+
+    <vehicle name="SWRI-JSON-1" bsmid="f03ad627" type="vehicle.toyota.prius" simulationIdentifier="JSON-SWRI-1" material="Aluminum" lvcIndicator="Constructive" generate_bsms="true" organization="SWRI">
+        <initialTSPI>
+            <GeodeticPosition latitudeInDegrees="0.001857" longitudeInDegrees="0.000962" heightAboveEllipsoidInMeters="1"> </GeodeticPosition>
+            <Heading>21.85235</Heading>
+        </initialTSPI>
+    </vehicle>
+
+    <vehicle name="SWRI-M-1" bsmid="f03ad637" type="vehicle.toyota.prius" simulationIdentifier="CARLA-SWRI-1" material="Aluminum" lvcIndicator="Constructive" generate_bsms="true" organization="SWRI">
+        <initialTSPI>
+            <GeodeticPosition latitudeInDegrees="0.001857" longitudeInDegrees="0.000962" heightAboveEllipsoidInMeters="1"> </GeodeticPosition>
+            <Heading>21.85235</Heading>
+        </initialTSPI>
+    </vehicle>
+
+    <vehicle name="ANL-AUTO-1" bsmid="f03ad626" type="vehicle.toyota.prius" simulationIdentifier="JSON-ANL-1" material="Aluminum" lvcIndicator="Constructive" generate_bsms="true" organization="ANL">
+        <initialTSPI>
+            <GeodeticPosition latitudeInDegrees="0.001906" longitudeInDegrees="0.000843" heightAboveEllipsoidInMeters="1"> </GeodeticPosition>
+            <Heading>21.85235</Heading>
+        </initialTSPI>
+    </vehicle>
+
+    <vehicle name="ANL-M-1" bsmid="f03ad636" type="vehicle.toyota.prius" simulationIdentifier="CARLA-ANL-1" material="Aluminum" lvcIndicator="Constructive" generate_bsms="true" organization="ANL">
+        <initialTSPI>
+            <GeodeticPosition latitudeInDegrees="0.001906" longitudeInDegrees="0.000843" heightAboveEllipsoidInMeters="1"> </GeodeticPosition>
+            <Heading>21.85235</Heading>
+        </initialTSPI>
+    </vehicle> 
+
+    <vehicle name="FHWA-M-3" bsmid="f03ad628" type="vehicle.ford.mustang" simulationIdentifier="CARLA-FHWA-3" material="Aluminum" lvcIndicator="Constructive" generate_bsms="true" organization="FHWA">
+        <initialTSPI>
+            <GeodeticPosition latitudeInDegrees="0.001936" longitudeInDegrees="0.000771" heightAboveEllipsoidInMeters="1"> </GeodeticPosition>
+            <Heading>21.85235</Heading>
+        </initialTSPI>
+    </vehicle>
+
+    <vehicle name="PITT-JSON-1" bsmid="f03ad610" type="vehicle.toyota.prius" simulationIdentifier="JSON-PITT-1" material="Aluminum" lvcIndicator="Constructive" generate_bsms="true" organization="PITT">
+        <initialTSPI>
+            <GeodeticPosition latitudeInDegrees="0.001821" longitudeInDegrees="0.001168" heightAboveEllipsoidInMeters="1"> </GeodeticPosition>
+            <Heading>21.85235</Heading>
+        </initialTSPI>
+    </vehicle>
+
+    <vehicle name="PITT-JSON-2" bsmid="f03ad612" type="vehicle.toyota.prius" simulationIdentifier="JSON-PITT-1" material="Aluminum" lvcIndicator="Constructive" generate_bsms="true" organization="PITT">
+        <initialTSPI>
+            <GeodeticPosition latitudeInDegrees="0.001878" longitudeInDegrees="0.001013" heightAboveEllipsoidInMeters="1"> </GeodeticPosition>
+            <Heading>21.85235</Heading>
+        </initialTSPI>
+    </vehicle>
+
+    <vehicle name="PITT-JSON-3" bsmid="f03ad613" type="vehicle.toyota.prius" simulationIdentifier="JSON-PITT-1" material="Aluminum" lvcIndicator="Constructive" generate_bsms="true" organization="PITT">
+        <initialTSPI>
+            <GeodeticPosition latitudeInDegrees="0.001931" longitudeInDegrees="0.000911" heightAboveEllipsoidInMeters="1"> </GeodeticPosition>
+            <Heading>21.85235</Heading>
+        </initialTSPI>
+    </vehicle>
+
+    <vehicle name="PITTS-M-3" bsmid="f03ad632" type="vehicle.toyota.prius" simulationIdentifier="CARLA-PITTS-3" material="Aluminum" lvcIndicator="Constructive" generate_bsms="true" organization="PITT">
+        <initialTSPI>
+            <GeodeticPosition latitudeInDegrees="0.001931" longitudeInDegrees="0.000911" heightAboveEllipsoidInMeters="1"> </GeodeticPosition>
+            <Heading>21.85235</Heading>
+        </initialTSPI>
+    </vehicle>
+
+  </vehicles>
+
+  <pedestrians>
+    <pedestrian name="PITTS-VRU-1" type="walker.pedestrian.0001" identifierType="psm" safetyid="12345678" cosimulationIdentifier="CARLA-PITTS-1" organization="PITT" lvcIndicator="Constructive">
+        <initialTSPI>
+            <GeodeticPosition latitudeInDegrees="0.001830" longitudeInDegrees="0.001160" heightAboveEllipsoidInMeters="1"> </GeodeticPosition>
+            <Heading>0</Heading>
+        </initialTSPI>
+    </pedestrian>
+
+    <pedestrian name="STOL-VRU-4" type="walker.pedestrian.0001" identifierType="psm" safetyid="12345678" cosimulationIdentifier="CARLA-STOL-4" organization="PITT" lvcIndicator="Constructive">
+        <initialTSPI>
+            <GeodeticPosition latitudeInDegrees="0.001830" longitudeInDegrees="0.001160" heightAboveEllipsoidInMeters="1"> </GeodeticPosition>
+            <Heading>0</Heading>
+        </initialTSPI>
+    </pedestrian>
+
+  </pedestrians>
+  
+
+  <intersectionSignalControllers>
+    <intersectionSignalController name="DelAve_01" adapterName="SPAT-1" lvcIndicator="Live">
+      <controller name="" id="1"/>     
+    </intersectionSignalController>
+
+    <intersectionSignalController name="DelAve_02" adapterName="SPAT-1" lvcIndicator="Live">
+      <controller name="" id="2"/>     
+    </intersectionSignalController>
+
+    <intersectionSignalController name="DelAve_03" adapterName="SPAT-1" lvcIndicator="Live">
+      <controller name="" id="3"/>    
+    </intersectionSignalController>
+
+    <intersectionSignalController name="DelAve_04" adapterName="SPAT-1" lvcIndicator="Live">
+      <controller name="" id="4"/>   
+    </intersectionSignalController>
+
+    <intersectionSignalController name="DelAve_05" adapterName="SPAT-1" lvcIndicator="Live">
+      <controller name="" id="5"/>    
+    </intersectionSignalController>
+
+    <intersectionSignalController name="DelAve_06" adapterName="SPAT-1" lvcIndicator="Live">
+      <controller name="" id="6"/>    
+    </intersectionSignalController>
+
+    <intersectionSignalController name="DelAve_07" adapterName="SPAT-1" lvcIndicator="Live">
+      <controller name="" id="7"/>     
+    </intersectionSignalController>
+
+
+    <intersectionSignalController name="DelAve_08" adapterName="SPAT-1" lvcIndicator="Live">
+      <controller name="" id="8"/>      
+    </intersectionSignalController>
+
+    <intersectionSignalController name="DelAve_09" adapterName="SPAT-1" lvcIndicator="Live">
+      <controller name="" id="9"/>      
+    </intersectionSignalController>
+  </intersectionSignalControllers>
+
+  <phaseSignalMappings>
+  <!-- name of config doesnt matter, match controllerName with intersectionSignalController name  -->
+    <configuration name="DelAve_01 Configuration" controllerName="DelAve_01">
+      <GeodeticPosition latitudeInDegrees="39.681590" longitudeInDegrees="-75.755311" heightAboveEllipsoidInMeters="0"/>
+      <mapping signalId="102" phase="2"/>
+      <mapping signalId="100" phase="3"/>
+      <mapping signalId="101" phase="4"/>
+    </configuration>
+
+    <configuration name="DelAve_02 Configuration" controllerName="DelAve_02">
+      <GeodeticPosition latitudeInDegrees="39.681635" longitudeInDegrees="-75.753626" heightAboveEllipsoidInMeters="0"/>
+      <mapping signalId="201" phase="2"/>
+      <mapping signalId="200" phase="4"/>
+      <mapping signalId="202" phase="8"/>
+    </configuration>
+
+    <configuration name="DelAve_03 Configuration" controllerName="DelAve_03">
+      <GeodeticPosition latitudeInDegrees="39.681743" longitudeInDegrees="-75.752443" heightAboveEllipsoidInMeters="0"/>
+      <mapping signalId="300" phase="2"/>
+    </configuration>
+
+    <configuration name="DelAve_04 Configuration" controllerName="DelAve_04">
+      <GeodeticPosition latitudeInDegrees="39.681961" longitudeInDegrees="-75.749513" heightAboveEllipsoidInMeters="0"/>
+      <mapping signalId="400" phase="2"/>
+      <mapping signalId="402" phase="4"/>
+      <mapping signalId="401" phase="8"/>
+    </configuration>
+
+    <configuration name="DelAve_05 Configuration" controllerName="DelAve_05">
+      <GeodeticPosition latitudeInDegrees="39.682130" longitudeInDegrees="-75.747327" heightAboveEllipsoidInMeters="0"/>
+      <mapping singalId="500" phase="2"/>
+      <mapping signalId="501" phase="4"/>
+      <mapping signalId="502" phase="8"/>
+    </configuration>
+
+    <configuration name="DelAve_06 Configuration" controllerName="DelAve_06">
+      <GeodeticPosition latitudeInDegrees="39.682209" longitudeInDegrees="-75.745210" heightAboveEllipsoidInMeters="0"/>
+      <mapping signalId="600" phase="2"/>
+      <mapping signalId="602" phase="4"/>
+      <mapping singalId="601" phase="8"/>
+    </configuration>
+
+    <configuration name="DelAve_07 Configuration" controllerName="DelAve_07">
+      <GeodeticPosition latitudeInDegrees="39.682073" longitudeInDegrees="-75.743805" heightAboveEllipsoidInMeters="0"/>
+      <mapping signalId="700" phase="2"/>
+    </configuration>
+
+    <configuration name="DelAve_08 Configuration" controllerName="DelAve_08">
+    <!-- "intersection" 8 is an visual warning ahead of intersection 9 -->
+    <!-- we are assuming that this signal head matches the behavior of intersection 9, phase 2 -->
+      <GeodeticPosition latitudeInDegrees="39.680978" longitudeInDegrees="-75.741739" heightAboveEllipsoidInMeters="0"/>
+      <mapping signalId="800" phase="2"/>
+      <mapping signalId="900" phase="2"/>
+      <mapping signalId="902" phase="4"/>
+      <mapping signalId="901" phase="3"/>
+    </configuration>
+
+    <!-- this intersection is off of DelAve and will not be used, adding just for completenesss -->
+    <configuration name="DelAve_09 Configuration" controllerName="DelAve_09">
+      <GeodeticPosition latitudeInDegrees="39.683623" longitudeInDegrees="-75.745524" heightAboveEllipsoidInMeters="0"/>
+      <mapping signalId="1001" phase="6"/>
+      <mapping signalId="1000" phase="4"/>
+      <mapping signalId="1002" phase="8"/>
+    </configuration>
+
+  </phaseSignalMappings>
+
+  <simulations>
+
+    <simulation name="CARLA-FHWA-3" type="CARLA">
+      <WeatherState>ClearNoon</WeatherState>
+    </simulation>
+
+    <simulation name="CARLA-PITTS-1" type="CARLA">
+      <WeatherState>ClearNoon</WeatherState>
+    </simulation>
+
+    <simulation name="CARLA-PITTS-2" type="CARLA">
+      <WeatherState>ClearNoon</WeatherState>
+    </simulation>
+
+    <simulation name="CARLA-PITTS-3" type="CARLA">
+      <WeatherState>ClearNoon</WeatherState>
+    </simulation>
+    
+    <simulation name="CARLA-PITTS-4" type="CARLA">
+      <WeatherState>ClearNoon</WeatherState>
+    </simulation>
+
+    <simulation name="JSON-FHWA-3" type="JSON">
+      <WeatherState>ClearNoon</WeatherState>
+    </simulation>
+
+    <simulation name="CARLA-ORNL-1" type="CARLA">
+      <WeatherState>ClearNoon</WeatherState>
+    </simulation>
+
+    <simulation name="JSON-PITT-1" type="JSON">
+      <WeatherState>ClearNoon</WeatherState>
+    </simulation>
+
+    <simulation name="CARLA-SWRI-1" type="CARLA">
+      <WeatherState>ClearNoon</WeatherState>
+    </simulation>
+
+    <simulation name="JSON-SWRI-1" type="JSON">
+      <WeatherState>ClearNoon</WeatherState>
+    </simulation>
+
+    <simulation name="JSON-ALA-1" type="JSON">
+      <WeatherState>ClearNoon</WeatherState>
+    </simulation>
+
+    <simulation name="JSON-ANL-1" type="JSON">
+      <WeatherState>ClearNoon</WeatherState>
+    </simulation>
+
+    <simulation name="CARLA-ANL-1" type="CARLA">
+      <WeatherState>ClearNoon</WeatherState>
+    </simulation>
+
+  </simulations>
+
+
+</scenario>
