@@ -1,7 +1,7 @@
 """
 Messaging Performance Analyzer
 This script analyzes messaging performance between a message source and a message destination
-by reading log files, calculating message drop, latency, and throughput,
+by reading log files, calculating message latency,
 and generating plots for visualization.
 """
 
