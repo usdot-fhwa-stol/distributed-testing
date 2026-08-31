@@ -1,6 +1,6 @@
 """Decode PCAPs and run V2X messaging-performance analysis.
 
-Raw PCAP names are automatically discovered from file names. 
+Raw PCAP names are automatically discovered from file names.
 
     dut_1_tx, dut_1_rx
     proxy_1_tx, proxy_1_rx
@@ -15,7 +15,7 @@ Hyphens and expanded direction names are accepted. Examples:
     proxy_1_transmit_eth0.pcap
     v2xhub-rx.pcap
 
-You can set command-line arguments to manually control which devices are which.  
+You can set command-line arguments to manually control which devices are which.
 
 Pipeline:
 
@@ -39,7 +39,6 @@ Default output structure:
                     latency_timeseries.png
             proxy_1_to_dut_1/
                 ...
-        run_manifest.json
 
 Supported analysis:
 
@@ -69,11 +68,10 @@ from pathlib import Path
 from typing import Any
 
 SCRIPT_DIR = Path(__file__).resolve().parent
-DEFAULT_DECODER_SCRIPT = SCRIPT_DIR / "pcapdecoder" / "src" / "pcapDecode.py"
+DEFAULT_DECODER_SCRIPT = SCRIPT_DIR / "pcapDecode.py"
 DEFAULT_PLOTTER_SCRIPT = SCRIPT_DIR / "radio_latency_plotting.py"
 
 PCAP_SUFFIXES = {".pcap", ".pcapng"}
-SQLITE_SUFFIXES = {".db", ".db3", ".sqlite", ".sqlite3"}
 
 ENDPOINTS = (
     "dut_1",
@@ -120,19 +118,17 @@ EXPECTED_PLOT_FILENAMES = (
 
 
 def run_command(command: list[str]) -> None:
-    """Run a subprocess and raise an exception on failure."""
     logging.debug("Running command: %s", shlex.join(command))
     subprocess.run(command, check=True)
 
 
 def validate_helper_script(path: Path, description: str) -> None:
-    """Verify a required helper script exists."""
     if not path.is_file():
         raise FileNotFoundError(f"{description} not found: {path}")
 
 
 def validate_pcap(role: str, path: Path) -> None:
-    """Verify a PCAP path exists and has a supported file extension."""
+    """Verify a PCAP file exists"""
     if not path.is_file():
         raise FileNotFoundError(
             f"PCAP assigned to {role} does not exist: {path}"
@@ -192,7 +188,7 @@ def find_pcap_candidates(input_dir: Path, role: str) -> list[Path]:
 
 
 def discover_role_pcap(input_dir: Path, role: str) -> Path | None:
-    """Discover exactly one PCAP for a role, if one is present."""
+    """Discover exactly one PCAP for a role"""
     candidates = find_pcap_candidates(input_dir, role)
 
     if not candidates:
@@ -212,7 +208,7 @@ def discover_role_pcap(input_dir: Path, role: str) -> Path | None:
 
 
 def resolve_explicit_path(value: Path, input_dir: Path) -> Path:
-    """Resolve an explicit path relative to input directory, then CWD."""
+    """Resolve an explicit path relative to input directory"""
     value = value.expanduser()
 
     if value.is_absolute():
@@ -260,29 +256,12 @@ def collect_pcap_inputs(
 
     return inputs
 
-
-def discover_sqlite_inputs(input_dir: Path) -> list[Path]:
-    """Find SQLite files in the input directory for the run manifest."""
-    return sorted(
-        (
-            path.resolve()
-            for path in input_dir.iterdir()
-            if path.is_file() and path.suffix.lower() in SQLITE_SUFFIXES
-        ),
-        key=lambda path: path.name.lower(),
-    )
-
-
 def locate_decoder_output(
     decoded_dir: Path,
     pcap_path: Path,
     expected_output: Path,
 ) -> Path:
-    """Locate the decoded log specifically associated with a PCAP.
-
-    The decoded directory is shared across all roles, so this deliberately
-    does not fall back to an arbitrary .log file in the directory.
-    """
+    """Locate the decoded log specifically associated with a PCAP."""
     if expected_output.is_file() and expected_output.stat().st_size > 0:
         return expected_output.resolve()
 
@@ -314,7 +293,6 @@ def decode_pcap(
     decoder_script: Path,
     force_decode: bool,
 ) -> Path:
-    """Decode one PCAP into the shared decoded output directory."""
     decoded_dir.mkdir(parents=True, exist_ok=True)
 
     expected_output = decoded_dir / decoded_log_name(pcap_path)
@@ -412,7 +390,7 @@ def parse_custom_result_names(values: list[str]) -> dict[str, str]:
 
 
 def verify_plot_outputs(output_dir: Path) -> None:
-    """Ensure the analyzer/plotter created all expected PNG plot artifacts."""
+    """Check if plots were generated"""
     plots_dir = output_dir / "plots"
 
     missing_plots = [
@@ -442,7 +420,6 @@ def evaluate_direction(
     rolling_window: int,
     debug: bool,
 ) -> Path | None:
-    """Run the analyzer/plotter for one source-to-destination direction."""
     tx_role = f"{tx_endpoint}_tx"
     rx_role = f"{rx_endpoint}_rx"
 
@@ -505,7 +482,6 @@ def evaluate_bidirectional(
     rolling_window: int,
     debug: bool,
 ) -> list[Path]:
-    """Evaluate every available direction for one supported logical link."""
     has_forward = (
         f"{endpoint_a}_tx" in decoded_logs
         and f"{endpoint_b}_rx" in decoded_logs
@@ -568,54 +544,6 @@ def relative_or_absolute(path: Path, base_dir: Path) -> str:
         return str(path)
 
 
-def write_manifest(
-    run_dir: Path,
-    input_dir: Path,
-    pcap_inputs: dict[str, Path],
-    sqlite_inputs: list[Path],
-    decoded_logs: dict[str, Path],
-    result_dirs: list[Path],
-    custom_result_names: dict[str, str],
-    decoder_script: Path,
-    plotter_script: Path,
-) -> Path:
-    """Write run metadata and generated artifact paths to JSON."""
-    manifest_path = run_dir / "run_manifest.json"
-
-    manifest: dict[str, Any] = {
-        "schema_version": 3,
-        "generated_at_utc": datetime.now(timezone.utc).isoformat(),
-        "run_directory": str(run_dir),
-        "input_directory": relative_or_absolute(input_dir, run_dir),
-        "decoder_script": str(decoder_script),
-        "plotter_script": str(plotter_script),
-        "pcap_inputs": {
-            role: relative_or_absolute(path, run_dir)
-            for role, path in sorted(pcap_inputs.items())
-        },
-        "sqlite_inputs": [
-            relative_or_absolute(path, run_dir) for path in sqlite_inputs
-        ],
-        "decoded_logs": {
-            role: relative_or_absolute(path, run_dir)
-            for role, path in sorted(decoded_logs.items())
-        },
-        "custom_result_names": custom_result_names,
-        "result_directories": [
-            relative_or_absolute(path, run_dir)
-            for path in sorted(result_dirs)
-        ],
-        "expected_plot_files": list(EXPECTED_PLOT_FILENAMES),
-    }
-
-    manifest_path.write_text(
-        json.dumps(manifest, indent=2) + "\n",
-        encoding="utf-8",
-    )
-
-    return manifest_path
-
-
 def parse_arguments() -> argparse.Namespace:
     """Parse command-line options."""
     parser = argparse.ArgumentParser(
@@ -639,7 +567,7 @@ def parse_arguments() -> argparse.Namespace:
         type=Path,
         default=None,
         help=(
-            "Directory containing raw PCAP and SQLite files. "
+            "Directory containing raw PCAP files. "
             "Defaults to --run-dir."
         ),
     )
@@ -756,7 +684,6 @@ def main() -> int:
 
         custom_result_names = parse_custom_result_names(args.name)
         pcap_inputs = collect_pcap_inputs(args, input_dir)
-        sqlite_inputs = discover_sqlite_inputs(input_dir)
 
         if not pcap_inputs:
             available_roles = ", ".join(PCAP_ROLES)
@@ -764,17 +691,6 @@ def main() -> int:
                 f"No PCAPs were discovered in {input_dir}. "
                 f"Expected role identifiers such as: {available_roles}"
             )
-
-        if sqlite_inputs:
-            logging.info(
-                "Found %d SQLite input file(s), not processed yet.",
-                len(sqlite_inputs),
-            )
-
-            for sqlite_path in sqlite_inputs:
-                logging.info("SQLite input: %s", sqlite_path.name)
-        else:
-            logging.info("No SQLite input files discovered.")
 
         logging.info("PCAP role assignments:")
 
@@ -822,18 +738,6 @@ def main() -> int:
                 "the destination endpoint RX PCAP."
             )
 
-        manifest_path = write_manifest(
-            run_dir=run_dir,
-            input_dir=input_dir,
-            pcap_inputs=pcap_inputs,
-            sqlite_inputs=sqlite_inputs,
-            decoded_logs=decoded_logs,
-            result_dirs=result_dirs,
-            custom_result_names=custom_result_names,
-            decoder_script=decoder_script,
-            plotter_script=plotter_script,
-        )
-
     except subprocess.CalledProcessError as error:
         logging.error(
             "A pipeline command failed with exit code %s.",
@@ -856,7 +760,6 @@ def main() -> int:
     print(f"Input data:    {input_dir}")
     print(f"Decoded logs:  {decoded_dir}")
     print(f"Results:       {results_dir}")
-    print(f"Manifest:      {manifest_path}")
 
     return 0
 
