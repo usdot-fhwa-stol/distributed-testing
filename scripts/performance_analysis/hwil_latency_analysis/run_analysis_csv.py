@@ -5,6 +5,7 @@ import fnmatch
 import logging
 from pathlib import Path
 import re
+import sys
 from typing import Any, Iterable
 
 import matplotlib
@@ -143,9 +144,7 @@ def calculate_statistics(
         "median_ms": round(float(latency.median()), 2),
         "p95_ms": round(float(latency.quantile(0.95)), 2),
         "p99_ms": round(float(latency.quantile(0.99)), 2),
-        "jitter_ms": (
-            round(jitter, 2) if np.isfinite(jitter) else "NA"
-        ),
+        "jitter_ms": round(jitter, 2) if np.isfinite(jitter) else "NA",
         "std_dev": round(standard_deviation, 2),
     }
 
@@ -287,8 +286,7 @@ def read_records(csv_file: Path, msg_type: str) -> list[LogRecord]:
             continue
 
         key_parts = [
-            clean_value(row.get(column))
-            for column in available_id_cols
+            clean_value(row.get(column)) for column in available_id_cols
         ]
         key_parts = [part for part in key_parts if part]
 
@@ -340,6 +338,19 @@ def read_records(csv_file: Path, msg_type: str) -> list[LogRecord]:
     return records
 
 
+def get_cached_records(
+    record_cache: dict[tuple[Path, str], list[LogRecord]],
+    csv_file: Path,
+    msg_type: str,
+) -> list[LogRecord]:
+    cache_key = (csv_file.resolve(), msg_type)
+
+    if cache_key not in record_cache:
+        record_cache[cache_key] = read_records(csv_file, msg_type)
+
+    return record_cache[cache_key]
+
+
 def process_single_site(records: list[LogRecord]) -> pd.DataFrame:
     """Calculate commit-to-receipt latency for a single log."""
     rows = [
@@ -371,7 +382,7 @@ def match_multi_site(
     """
     Match transmissions from one site to receipts at another site.
 
-    Receipts are sorted by receipt timestamp and can be matched once. 
+    Receipts are sorted by receipt timestamp and can be matched once.
     """
     rx_by_key: dict[str, deque[LogRecord]] = defaultdict(deque)
 
@@ -398,10 +409,7 @@ def match_multi_site(
         if not candidates:
             continue
 
-        while (
-            candidates
-            and candidates[0].rx_time_ms < tx_record.tx_time_ms
-        ):
+        while candidates and candidates[0].rx_time_ms < tx_record.tx_time_ms:
             candidates.popleft()
 
         if not candidates:
@@ -452,7 +460,6 @@ def generate_plots(
 
     plots_dir.mkdir(parents=True, exist_ok=True)
 
-    output_prefix = safe_filename(title_prefix)
     clipped = np.clip(latency, 0, max_latency_ms)
     clipped_count = int(np.count_nonzero(latency > max_latency_ms))
     colors = sns.color_palette("muted")
@@ -495,7 +502,7 @@ def generate_plots(
     sns.despine(ax=ax)
     fig.tight_layout()
     fig.savefig(
-        plots_dir / f"{output_prefix}_histogram.png",
+        plots_dir / "latency_histogram.png",
         dpi=150,
         bbox_inches="tight",
     )
@@ -528,7 +535,7 @@ def generate_plots(
     sns.despine(ax=ax)
     fig.tight_layout()
     fig.savefig(
-        plots_dir / f"{output_prefix}_cdf.png",
+        plots_dir / "latency_cdf.png",
         dpi=150,
         bbox_inches="tight",
     )
@@ -592,7 +599,7 @@ def generate_plots(
     sns.despine(ax=ax)
     fig.tight_layout()
     fig.savefig(
-        plots_dir / f"{output_prefix}_timeseries.png",
+        plots_dir / "latency_timeseries.png",
         dpi=150,
         bbox_inches="tight",
     )
@@ -607,15 +614,19 @@ def save_analysis(
     mode: str,
     source: str,
     destination: str,
-    data_out: Path,
-    plots_out: Path,
+    results_dir: Path,
     max_latency_ms: float,
     rolling_window: int,
-) -> dict[str, Any]:
+) -> tuple[dict[str, Any], Path]:
     """Save an analysis CSV and its plots, then return summary statistics."""
-    filename = safe_filename(analysis_name)
+    output_dir = results_dir / safe_filename(analysis_name)
+    data_out = output_dir / "data"
+    plots_out = output_dir / "plots"
 
-    df.to_csv(data_out / f"{filename}.csv", index=False)
+    data_out.mkdir(parents=True, exist_ok=True)
+    plots_out.mkdir(parents=True, exist_ok=True)
+
+    df.to_csv(data_out / "latency_results.csv", index=False)
     generate_plots(
         df,
         plots_out,
@@ -624,13 +635,19 @@ def save_analysis(
         rolling_window=rolling_window,
     )
 
-    return calculate_statistics(
+    summary = calculate_statistics(
         df,
         message_type=message_type,
         mode=mode,
         source=source,
         destination=destination,
     )
+    pd.DataFrame([summary]).to_csv(
+        data_out / "results_summary.csv",
+        index=False,
+    )
+
+    return summary, output_dir.resolve()
 
 
 def parse_arguments() -> argparse.Namespace:
@@ -642,14 +659,23 @@ def parse_arguments() -> argparse.Namespace:
         "--run-dir",
         type=Path,
         required=True,
-        help="Target folder containing CSV files or site subfolders.",
+        help=(
+            "Directory for one analysis run. Outputs are written here. "
+            "CSV files are discovered here unless --input-dir is supplied."
+        ),
+    )
+    parser.add_argument(
+        "--input-dir",
+        type=Path,
+        default=None,
+        help="Directory containing CSV files. Defaults to --run-dir.",
     )
     parser.add_argument(
         "-o",
         "--output-dir",
         type=Path,
-        default=Path("results/Run1_output"),
-        help="Output folder for CSV data and visual plots.",
+        default=None,
+        help="Output folder. Defaults to RUN_DIR/results.",
     )
     parser.add_argument(
         "--max-latency-ms",
@@ -689,178 +715,218 @@ def main() -> int:
         format="%(levelname)s: %(message)s",
     )
 
-    if not args.run_dir.is_dir():
-        logging.error("Run directory does not exist: %s", args.run_dir)
-        return 2
-
-    data_out = args.output_dir / "data"
-    plots_out = args.output_dir / "plots"
-    data_out.mkdir(parents=True, exist_ok=True)
-    plots_out.mkdir(parents=True, exist_ok=True)
-
-    sub_sites = sorted(
-        (
-            directory
-            for directory in args.run_dir.iterdir()
-            if directory.is_dir()
-            and not directory.name.startswith(".")
-            and directory.name not in {"data", "plots"}
-            and directory.resolve() != args.output_dir.resolve()
-        ),
-        key=lambda path: path.name.casefold(),
-    )
-
-    # Cache parsed records so each site/type CSV is read only once.
-    record_cache: dict[tuple[Path, str], list[LogRecord]] = {}
-    summary_records: list[dict[str, Any]] = []
-
-    for msg_type, cfg in DATA_TYPES.items():
-        print()
-        print("=" * 55)
-        print(f"       ANALYZING: {msg_type}")
-        print("=" * 55)
-
-        # Only root-level CSVs select single-site mode. The previous recursive
-        # check could accidentally find a site CSV and disable multi-site mode.
-        root_csv = find_csv_file(
-            args.run_dir,
-            cfg["patterns"],
-            recursive=False,
+    try:
+        run_dir = args.run_dir.expanduser().resolve()
+        input_dir = (
+            run_dir
+            if args.input_dir is None
+            else args.input_dir.expanduser().resolve()
+        )
+        results_dir = (
+            run_dir / "results"
+            if args.output_dir is None
+            else args.output_dir.expanduser().resolve()
         )
 
-        if root_csv is not None or not sub_sites:
-            if root_csv is None:
-                # Preserve support for a single log stored below the run folder.
-                root_csv = find_csv_file(
-                    args.run_dir,
-                    cfg["patterns"],
-                    recursive=True,
-                )
-
-            if root_csv is None:
-                print(f"  [-] No CSV matching {cfg['patterns']} found.")
-                continue
-
-            print(f"  [+] Found log: {root_csv}")
-
-            cache_key = (root_csv, msg_type)
-            records = record_cache.setdefault(
-                cache_key,
-                read_records(root_csv, msg_type),
+        if not run_dir.is_dir():
+            raise FileNotFoundError(
+                f"Run directory does not exist: {run_dir}"
             )
 
-            if not records:
-                print("  [-] No valid records extracted.")
-                continue
-
-            df = process_single_site(records)
-            if df.empty:
-                print("  [-] Could not calculate non-negative latency.")
-                continue
-
-            analysis_name = f"{args.run_dir.name}_{msg_type}"
-            summary = save_analysis(
-                df,
-                analysis_name=analysis_name,
-                message_type=msg_type,
-                mode="Single-Site / Ingestion Latency",
-                source=args.run_dir.name,
-                destination=args.run_dir.name,
-                data_out=data_out,
-                plots_out=plots_out,
-                max_latency_ms=args.max_latency_ms,
-                rolling_window=args.rolling_window,
+        if not input_dir.is_dir():
+            raise FileNotFoundError(
+                f"Input directory does not exist: {input_dir}"
             )
-            summary_records.append(summary)
 
-            print(
-                f"  [✓] Processed {len(df):,} messages | "
-                f"Mean: {summary['mean_ms']:.2f} ms | "
-                f"P95: {summary['p95_ms']:.2f} ms"
-            )
-            continue
+        results_dir.mkdir(parents=True, exist_ok=True)
 
-        # Build the site record map once for this message type.
-        site_records: dict[Path, list[LogRecord]] = {}
+        excluded_directories = {
+            results_dir.resolve(),
+            (run_dir / "decoded").resolve(),
+        }
 
-        for site_dir in sub_sites:
-            csv_path = find_csv_file(
-                site_dir,
+        sub_sites = sorted(
+            (
+                directory
+                for directory in input_dir.iterdir()
+                if directory.is_dir()
+                and not directory.name.startswith(".")
+                and directory.name not in {"data", "plots"}
+                and directory.resolve() not in excluded_directories
+            ),
+            key=lambda path: path.name.casefold(),
+        )
+
+        # Cache parsed records so each site/type CSV is read only once.
+        record_cache: dict[tuple[Path, str], list[LogRecord]] = {}
+        summary_records: list[dict[str, Any]] = []
+        result_directories: list[Path] = []
+
+        for msg_type, cfg in DATA_TYPES.items():
+            print()
+            print("=" * 55)
+            print(f"       ANALYZING: {msg_type}")
+            print("=" * 55)
+
+            # Only root-level CSVs select single-site mode. The previous recursive
+            # check could accidentally find a site CSV and disable multi-site mode.
+            root_csv = find_csv_file(
+                input_dir,
                 cfg["patterns"],
-                recursive=True,
-            )
-            if csv_path is None:
-                continue
-
-            cache_key = (csv_path, msg_type)
-            records = record_cache.setdefault(
-                cache_key,
-                read_records(csv_path, msg_type),
+                recursive=False,
             )
 
-            if records:
-                site_records[site_dir] = records
+            if root_csv is not None or not sub_sites:
+                if root_csv is None:
+                    # Preserve support for a single log stored below the run folder.
+                    root_csv = find_csv_file(
+                        input_dir,
+                        cfg["patterns"],
+                        recursive=True,
+                    )
 
-        if len(site_records) < 2:
-            print("  [-] Fewer than two sites contain valid matching logs.")
-            continue
-
-        for src_dir, tx_records in site_records.items():
-            for dst_dir, rx_records in site_records.items():
-                if src_dir == dst_dir:
-                    continue
-
-                df = match_multi_site(tx_records, rx_records)
-                if df.empty:
-                    logging.info(
-                        "No matches for %s to %s (%s)",
-                        src_dir.name,
-                        dst_dir.name,
-                        msg_type,
+                if root_csv is None:
+                    print(
+                        f"  [-] No CSV matching {cfg['patterns']} found."
                     )
                     continue
 
-                pair_name = (
-                    f"{src_dir.name}_to_{dst_dir.name}_{msg_type}"
+                print(f"  [+] Found log: {root_csv}")
+
+                records = get_cached_records(
+                    record_cache,
+                    root_csv,
+                    msg_type,
                 )
-                summary = save_analysis(
+
+                if not records:
+                    print("  [-] No valid records extracted.")
+                    continue
+
+                df = process_single_site(records)
+                if df.empty:
+                    print("  [-] Could not calculate non-negative latency.")
+                    continue
+
+                analysis_name = f"{input_dir.name}_{msg_type}"
+                summary, output_dir = save_analysis(
                     df,
-                    analysis_name=pair_name,
+                    analysis_name=analysis_name,
                     message_type=msg_type,
-                    mode="Multi-Site E2E",
-                    source=src_dir.name,
-                    destination=dst_dir.name,
-                    data_out=data_out,
-                    plots_out=plots_out,
+                    mode="Single-Site / Ingestion Latency",
+                    source=input_dir.name,
+                    destination=input_dir.name,
+                    results_dir=results_dir,
                     max_latency_ms=args.max_latency_ms,
                     rolling_window=args.rolling_window,
                 )
                 summary_records.append(summary)
+                result_directories.append(output_dir)
 
                 print(
-                    f"  [✓] {pair_name} | "
-                    f"Packets: {len(df):,} | "
+                    f"  [✓] Processed {len(df):,} messages | "
                     f"Mean: {summary['mean_ms']:.2f} ms | "
                     f"P95: {summary['p95_ms']:.2f} ms"
                 )
+                continue
 
-    if not summary_records:
-        print("\n[!] No matching records found.")
+            # Build the site record map once for this message type.
+            site_records: dict[Path, list[LogRecord]] = {}
+
+            for site_dir in sub_sites:
+                csv_path = find_csv_file(
+                    site_dir,
+                    cfg["patterns"],
+                    recursive=True,
+                )
+                if csv_path is None:
+                    continue
+
+                records = get_cached_records(
+                    record_cache,
+                    csv_path,
+                    msg_type,
+                )
+
+                if records:
+                    site_records[site_dir] = records
+
+            if len(site_records) < 2:
+                print(
+                    "  [-] Fewer than two sites contain valid matching logs."
+                )
+                continue
+
+            for src_dir, tx_records in site_records.items():
+                for dst_dir, rx_records in site_records.items():
+                    if src_dir == dst_dir:
+                        continue
+
+                    df = match_multi_site(tx_records, rx_records)
+                    if df.empty:
+                        logging.info(
+                            "No matches for %s to %s (%s)",
+                            src_dir.name,
+                            dst_dir.name,
+                            msg_type,
+                        )
+                        continue
+
+                    pair_name = (
+                        f"{src_dir.name}_to_{dst_dir.name}_{msg_type}"
+                    )
+                    summary, output_dir = save_analysis(
+                        df,
+                        analysis_name=pair_name,
+                        message_type=msg_type,
+                        mode="Multi-Site E2E",
+                        source=src_dir.name,
+                        destination=dst_dir.name,
+                        results_dir=results_dir,
+                        max_latency_ms=args.max_latency_ms,
+                        rolling_window=args.rolling_window,
+                    )
+                    summary_records.append(summary)
+                    result_directories.append(output_dir)
+
+                    print(
+                        f"  [✓] {pair_name} | "
+                        f"Packets: {len(df):,} | "
+                        f"Mean: {summary['mean_ms']:.2f} ms | "
+                        f"P95: {summary['p95_ms']:.2f} ms"
+                    )
+
+        if not summary_records:
+            print("\n[!] No matching records found.")
+            return 1
+
+        summary_df = pd.DataFrame(summary_records)
+        summary_df = summary_df.sort_values(
+            ["message_type", "mode", "source", "destination"],
+            kind="stable",
+        )
+
+        summary_path = results_dir / "results_summary.csv"
+        summary_df.to_csv(summary_path, index=False)
+
+    except (
+        FileNotFoundError,
+        PermissionError,
+        ValueError,
+        OSError,
+    ) as error:
+        logging.error("%s", error)
         return 1
 
-    summary_df = pd.DataFrame(summary_records)
-    summary_df = summary_df.sort_values(
-        ["message_type", "mode", "source", "destination"],
-        kind="stable",
-    )
+    print()
+    print("CSV latency analysis and plot generation complete.")
+    print(f"Run directory: {run_dir}")
+    print(f"Input data:    {input_dir}")
+    print(f"Results:       {results_dir}")
+    print(f"Summary:       {summary_path}")
 
-    summary_path = args.output_dir / "results_summary.csv"
-    summary_df.to_csv(summary_path, index=False)
-
-    print(f"\n[✓] Analysis complete! Summary saved to: {summary_path}")
-    print(f"[✓] Charts saved to: {plots_out}")
     return 0
 
 
 if __name__ == "__main__":
-    raise SystemExit(main())
+    sys.exit(main())
