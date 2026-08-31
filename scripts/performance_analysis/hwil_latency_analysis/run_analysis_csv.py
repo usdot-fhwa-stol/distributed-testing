@@ -1,14 +1,3 @@
-"""
-Unified Performance & Latency Analyzer for VOICES Radio and
-SecureV2XMessage.
-
-Supports:
-- Single-site internal latency calculation.
-- Multi-site end-to-end matching.
-"""
-
-from __future__ import annotations
-
 import argparse
 from collections import defaultdict, deque
 from dataclasses import dataclass
@@ -67,34 +56,20 @@ class LogRecord:
     ip_address: str
 
 
-# =============================================================================
-# GENERAL HELPERS
-# =============================================================================
 def clean_value(value: Any) -> str:
-    """Convert a CSV value to a normalized string without exposing NaN."""
+    """Convert value to string and remove Nan"""
     if value is None or pd.isna(value):
         return ""
     return str(value).strip()
 
 
 def safe_filename(value: str) -> str:
-    """Convert a descriptive analysis name into a portable filename."""
+    """Convert analysis name into a filename."""
     cleaned = re.sub(r"[^A-Za-z0-9._-]+", "_", value.strip())
     return cleaned.strip("._") or "analysis"
 
 
 def normalize_timestamp_ms(value: Any) -> float:
-    """
-    Normalize an epoch timestamp to milliseconds.
-
-    Common epoch magnitudes:
-    - Seconds:      approximately 1e9
-    - Milliseconds: approximately 1e12
-    - Microseconds: approximately 1e15
-    - Nanoseconds:  approximately 1e18
-
-    Smaller values are retained to support relative millisecond timestamps.
-    """
     numeric = float(value)
 
     if not np.isfinite(numeric):
@@ -113,7 +88,7 @@ def normalize_timestamp_ms(value: Any) -> float:
 
 
 def extract_host(value: Any) -> str:
-    """Extract a host from common endpoint representations."""
+    """Extract a host from endpoint patterns."""
     endpoint = clean_value(value)
     if not endpoint:
         return ""
@@ -125,7 +100,6 @@ def extract_host(value: Any) -> str:
         if closing_bracket != -1:
             return endpoint[1:closing_bracket]
 
-    # Remove a port from IPv4 or hostname endpoints, but preserve bare IPv6.
     if endpoint.count(":") == 1:
         return endpoint.rsplit(":", maxsplit=1)[0]
 
@@ -150,7 +124,7 @@ def calculate_statistics(
     source: str,
     destination: str,
 ) -> dict[str, Any]:
-    """Create one results-summary record."""
+    """Create one results-summary."""
     latency = pd.to_numeric(df["Latency (ms)"], errors="coerce")
     latency = latency[np.isfinite(latency)]
 
@@ -176,9 +150,6 @@ def calculate_statistics(
     }
 
 
-# =============================================================================
-# CSV INGESTION AND PARSING
-# =============================================================================
 def find_csv_files(
     directory: Path,
     patterns: Iterable[str],
@@ -209,10 +180,7 @@ def find_csv_file(
     recursive: bool = True,
 ) -> Path | None:
     """
-    Return the first deterministic CSV match.
-
-    A warning is emitted when multiple files match because silently selecting a
-    random filesystem result can make analysis non-reproducible.
+    Return the first CSV match.
     """
     matches = find_csv_files(
         directory,
@@ -235,7 +203,7 @@ def find_csv_file(
 
 
 def read_records(csv_file: Path, msg_type: str) -> list[LogRecord]:
-    """Read and normalize relevant log records from one CSV file."""
+    """Read and normalize logs from one CSV file."""
     cfg = DATA_TYPES[msg_type]
 
     try:
@@ -372,9 +340,6 @@ def read_records(csv_file: Path, msg_type: str) -> list[LogRecord]:
     return records
 
 
-# =============================================================================
-# LATENCY CALCULATION
-# =============================================================================
 def process_single_site(records: list[LogRecord]) -> pd.DataFrame:
     """Calculate commit-to-receipt latency for a single log."""
     rows = [
@@ -406,8 +371,7 @@ def match_multi_site(
     """
     Match transmissions from one site to receipts at another site.
 
-    Candidate receipts are sorted by receipt timestamp. Each receipt can be
-    consumed at most once.
+    Receipts are sorted by receipt timestamp and can be matched once. 
     """
     rx_by_key: dict[str, deque[LogRecord]] = defaultdict(deque)
 
@@ -469,9 +433,6 @@ def match_multi_site(
     return pd.DataFrame(matched)
 
 
-# =============================================================================
-# PLOTTING
-# =============================================================================
 def generate_plots(
     df: pd.DataFrame,
     plots_dir: Path,
@@ -638,9 +599,6 @@ def generate_plots(
     plt.close(fig)
 
 
-# =============================================================================
-# PIPELINE HELPERS
-# =============================================================================
 def save_analysis(
     df: pd.DataFrame,
     *,
@@ -723,9 +681,6 @@ def parse_arguments() -> argparse.Namespace:
     return args
 
 
-# =============================================================================
-# PIPELINE ORCHESTRATOR
-# =============================================================================
 def main() -> int:
     args = parse_arguments()
 

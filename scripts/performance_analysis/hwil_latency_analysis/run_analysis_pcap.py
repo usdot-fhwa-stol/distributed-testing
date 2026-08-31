@@ -130,15 +130,12 @@ def validate_helper_script(path: Path, description: str) -> None:
 def validate_pcap(role: str, path: Path) -> None:
     """Verify a PCAP file exists"""
     if not path.is_file():
-        raise FileNotFoundError(
-            f"PCAP assigned to {role} does not exist: {path}"
-        )
+        raise FileNotFoundError(f"PCAP assigned to {role} does not exist: {path}")
 
     if path.suffix.lower() not in PCAP_SUFFIXES:
         suffixes = ", ".join(sorted(PCAP_SUFFIXES))
         raise ValueError(
-            f"Unsupported PCAP type for {role}: {path}. "
-            f"Expected one of: {suffixes}"
+            f"Unsupported PCAP type for {role}: {path}. Expected one of: {suffixes}"
         )
 
 
@@ -247,14 +244,14 @@ def collect_pcap_inputs(
         if path in assigned_paths:
             other_role = assigned_paths[path]
             raise ValueError(
-                f"The same PCAP is assigned to both {other_role} and {role}: "
-                f"{path}"
+                f"The same PCAP is assigned to both {other_role} and {role}: {path}"
             )
 
         assigned_paths[path] = role
         inputs[role] = path
 
     return inputs
+
 
 def locate_decoder_output(
     decoded_dir: Path,
@@ -353,8 +350,7 @@ def parse_custom_result_names(values: list[str]) -> dict[str, str]:
     for value in values:
         if "=" not in value:
             raise ValueError(
-                f"Invalid --name value {value!r}. "
-                "Expected DIRECTION=FOLDER_NAME."
+                f"Invalid --name value {value!r}. Expected DIRECTION=FOLDER_NAME."
             )
 
         direction, folder_name = value.split("=", maxsplit=1)
@@ -369,14 +365,11 @@ def parse_custom_result_names(values: list[str]) -> dict[str, str]:
             )
 
         if not folder_name:
-            raise ValueError(
-                f"Result folder name cannot be empty for {direction!r}."
-            )
+            raise ValueError(f"Result folder name cannot be empty for {direction!r}.")
 
         if Path(folder_name).name != folder_name:
             raise ValueError(
-                "Result folder name must not contain path separators: "
-                f"{folder_name!r}"
+                f"Result folder name must not contain path separators: {folder_name!r}"
             )
 
         if folder_name in custom_names.values():
@@ -483,12 +476,10 @@ def evaluate_bidirectional(
     debug: bool,
 ) -> list[Path]:
     has_forward = (
-        f"{endpoint_a}_tx" in decoded_logs
-        and f"{endpoint_b}_rx" in decoded_logs
+        f"{endpoint_a}_tx" in decoded_logs and f"{endpoint_b}_rx" in decoded_logs
     )
     has_reverse = (
-        f"{endpoint_b}_tx" in decoded_logs
-        and f"{endpoint_a}_rx" in decoded_logs
+        f"{endpoint_b}_tx" in decoded_logs and f"{endpoint_a}_rx" in decoded_logs
     )
 
     if not has_forward and not has_reverse:
@@ -566,10 +557,7 @@ def parse_arguments() -> argparse.Namespace:
         "--input-dir",
         type=Path,
         default=None,
-        help=(
-            "Directory containing raw PCAP files. "
-            "Defaults to --run-dir."
-        ),
+        help=("Directory containing raw PCAP files. Defaults to --run-dir."),
     )
     parser.add_argument(
         "--decoder-script",
@@ -619,8 +607,7 @@ def parse_arguments() -> argparse.Namespace:
         type=int,
         default=200,
         help=(
-            "Maximum displayed latency value passed to the histogram and CDF "
-            "plotter."
+            "Maximum displayed latency value passed to the histogram and CDF plotter."
         ),
     )
     parser.add_argument(
@@ -655,9 +642,7 @@ def main() -> int:
     try:
         run_dir = args.run_dir.expanduser().resolve()
         input_dir = (
-            run_dir
-            if args.input_dir is None
-            else args.input_dir.expanduser().resolve()
+            run_dir if args.input_dir is None else args.input_dir.expanduser().resolve()
         )
         decoder_script = args.decoder_script.expanduser().resolve()
         plotter_script = args.plotter_script.expanduser().resolve()
@@ -666,9 +651,7 @@ def main() -> int:
             raise FileNotFoundError(f"Run directory does not exist: {run_dir}")
 
         if not input_dir.is_dir():
-            raise FileNotFoundError(
-                f"Input directory does not exist: {input_dir}"
-            )
+            raise FileNotFoundError(f"Input directory does not exist: {input_dir}")
 
         if args.max_latency_ms <= 0:
             raise ValueError("--max-latency-ms must be greater than zero.")
