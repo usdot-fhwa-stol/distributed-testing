@@ -17,5 +17,5 @@ services:
     volumes:
       - /tmp/.X11-unix:/tmp/.X11-unix:rw
       - ${VUG_LOCAL_DT_PATH}:/home/dt_user/distributed-testing
-      - /home/pittslab/tenadev/INSTALL/CARLAtenaAdapter-2.3.3:/home/dt_user/VUG_Adapters/CARLAtenaAdapter-2.3.2
+      - /home/pittslab/tenadev/INSTALL/CARLAtenaAdapter-2.3.4:/home/dt_user/VUG_Adapters/CARLAtenaAdapter-2.3.2
       - /home/pittslab/distributed-testing/docker/build/lib/COPY/start_scripts:/home/dt_user/start_scripts

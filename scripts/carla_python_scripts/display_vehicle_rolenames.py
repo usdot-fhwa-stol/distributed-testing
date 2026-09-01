@@ -129,45 +129,7 @@ try:
                         life_time=label_duration,
                         persistent_lines=True)
 
-                # Get actor information (Pedestrians)
-        walker_list = world.get_actors().filter(args.filterw)
  
-        if len(walker_list) == 0:
- 
-            if args.verbose:
-                print("    NO PEDESTRIANS")
- 
-        else:
-            if args.verbose:
-                print("\nCARLA PEDESTRIANS: ")
- 
-            for index, walker in enumerate(walker_list, start=1):
- 
-                walker_name = str(walker.attributes["role_name"])
- 
-                if args.verbose:
-                    print("    " + str(walker.attributes))
-                if map_string in map_height_dict:
-                    if walker.get_location().z < map_height_dict[map_string]["bottom_line"]:
-                        continue
-                    elif walker.get_location().z > map_height_dict[map_string]["spawn_line"]:
-                        color = carla.Color(r=0, g=0, b=255)
-                    else:
-                        color = carla.Color(r=255, g=0, b=0)
- 
-                    world.debug.draw_string(
-                        walker.get_location() + text_offset,
-                        walker_name,
-                        draw_shadow=False,color=color,
-                        life_time=label_duration,
-                        persistent_lines=True)
-                else:
-                    world.debug.draw_string(
-                        walker.get_location() + text_offset,
-                        walker_name,
-                        draw_shadow=False,color=carla.Color(r=255,g=0,b=0),
-                        life_time=label_duration,
-                        persistent_lines=True)
         
         if args.duration != 0:
             sys.exit()

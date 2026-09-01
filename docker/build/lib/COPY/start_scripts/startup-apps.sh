@@ -119,19 +119,24 @@ if [[ $VUG_DOCKER_START_CARLA == "local" ]] || [[ $VUG_DOCKER_START_CARLA == "re
    fi
 
    # set spectator view
-   if [[ $VUG_CARLA_MAP_NAME == *"mcity"* ]]; then
-      python3 $HOME/distributed-testing/scripts/carla_python_scripts/spectator_view_mcity.py --host $VUG_CARLA_ADDRESS 2>&1 | awk '{ print "SET VIEW: ", $0; fflush(); }'
-   fi
+   # if [[ $VUG_CARLA_MAP_NAME == *"mcity"* ]]; then
+   #    python3 $HOME/distributed-testing/scripts/carla_python_scripts/spectator_view_mcity.py --host $VUG_CARLA_ADDRESS 2>&1 | awk '{ print "SET VIEW: ", $0; fflush(); }'
+   # fi
 
    # # set spectator view
    # if [[ $VUG_CARLA_MAP_NAME == *"Delave"* ]]; then
    #    python3 $HOME/distributed-testing/scripts/carla_python_scripts/spectator_view_delave.py --host $VUG_CARLA_ADDRESS 2>&1 | awk '{ print "SET VIEW: ", $0; fflush(); }'
    # fi
   
+   # set spectator view (skip entirely in VR mode — the headset controls its own view)
+   if [[ $VUG_CARLA_VR_MODE != true ]]; then
+      if [[ $VUG_CARLA_MAP_NAME == *"mcity"* ]]; then
+         python3 $HOME/distributed-testing/scripts/carla_python_scripts/spectator_view_mcity.py --host $VUG_CARLA_ADDRESS 2>&1 | awk '{ print "SET VIEW: ", $0; fflush(); }'
+      fi
 
-   # set spectator view (skip in VR mode — the headset controls its own view)
-   if [[ $VUG_CARLA_MAP_NAME == *"Delave"* ]] && [[ $VUG_CARLA_VR_MODE != true ]]; then
-      python3 $HOME/distributed-testing/scripts/carla_python_scripts/spectator_view_delave.py --host $VUG_CARLA_ADDRESS 2>&1 | awk '{ print "SET VIEW: ", $0; fflush(); }'
+      if [[ $VUG_CARLA_MAP_NAME == *"Delave"* ]]; then
+         python3 $HOME/distributed-testing/scripts/carla_python_scripts/spectator_view_delave.py --host $VUG_CARLA_ADDRESS 2>&1 | awk '{ print "SET VIEW: ", $0; fflush(); }'
+      fi
    fi
 
    if [[ $VUG_DISPLAY_VEHICLE_ROLENAMES == true ]] || [[ $VUG_DISPLAY_TRAFFIC_SIGNAL_STATES == true ]]; then

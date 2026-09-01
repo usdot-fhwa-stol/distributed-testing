@@ -81,28 +81,6 @@
         </initialTSPI>
     </vehicle>
 
-    <vehicle name="PITTS-M-1" bsmid="f03ad631" type="vehicle.ford.mustang" simulationIdentifier="CARLA-PITTS-1" material="Aluminum" lvcIndicator="Constructive" generate_bsms="true" organization="PITT">
-        <initialTSPI>
-            <GeodeticPosition latitudeInDegrees="0.001936" longitudeInDegrees="0.000771" heightAboveEllipsoidInMeters="1"> </GeodeticPosition>
-            <Heading>21.85235</Heading>
-        </initialTSPI>
-    </vehicle>
-
-
-    <vehicle name="PITTS-M-2" bsmid="f03ad632" type="vehicle.ford.mustang" simulationIdentifier="CARLA-PITTS-2" material="Aluminum" lvcIndicator="Constructive" generate_bsms="true" organization="PITT">
-        <initialTSPI>
-            <GeodeticPosition latitudeInDegrees="0.001931" longitudeInDegrees="0.000911" heightAboveEllipsoidInMeters="1"> </GeodeticPosition>
-            <Heading>21.85235</Heading>
-        </initialTSPI>
-    </vehicle>
-
-    <vehicle name="PITTS-M-3" bsmid="f03ad632" type="vehicle.toyota.prius" simulationIdentifier="CARLA-PITTS-2" material="Aluminum" lvcIndicator="Constructive" generate_bsms="true" organization="PITT">
-        <initialTSPI>
-            <GeodeticPosition latitudeInDegrees="0.001931" longitudeInDegrees="0.000911" heightAboveEllipsoidInMeters="1"> </GeodeticPosition>
-            <Heading>21.85235</Heading>
-        </initialTSPI>
-    </vehicle>
-
   </vehicles>
 
   <intersectionSignalControllers>
@@ -373,14 +351,6 @@
   <simulations>
 
     <simulation name="CARLA-FHWA-3" type="CARLA">
-      <WeatherState>ClearNoon</WeatherState>
-    </simulation>
-
-    <simulation name="CARLA-PITTS-1" type="CARLA">
-      <WeatherState>ClearNoon</WeatherState>
-    </simulation>
-
-    <simulation name="CARLA-PITTS-2" type="CARLA">
       <WeatherState>ClearNoon</WeatherState>
     </simulation>
 
