@@ -3,7 +3,7 @@ services:
     container_name: dt-core
     image: harbor.distributedtesting.org/distributed-testing/dt-core:latest
     profiles: ["core"]
-    tty: true 
+    tty: true
     network_mode: "host"
     ipc: "host"
     environment:
@@ -19,7 +19,7 @@ services:
       - /tmp/.X11-unix:/tmp/.X11-unix:rw
       - ${VUG_LOCAL_DT_PATH}:/home/dt_user/distributed-testing
     stop_grace_period: 30s
-  
+
   dt-carla:
     container_name: dt-carla
     image: harbor.distributedtesting.org/distributed-testing/dt-carla:latest
@@ -37,6 +37,8 @@ services:
     volumes:
       - /tmp/.X11-unix:/tmp/.X11-unix:rw
       - ${VUG_LOCAL_DT_PATH}:/home/carla/distributed-testing
+      - ~/distributed-testing/docker/build/lib/COPY/start_scripts:/home/dt_user/start_scripts
+      - ~/tenadev/INSTALL/tena-entity-generator-2.3.3:/home/dt_user/VUG_Adapters/tena-entity-generator-2.3.3
     stop_grace_period: 30s
     deploy:
       resources:
@@ -152,7 +154,7 @@ services:
       timeout: 5s
       retries: 12
       start_period: 30s
-  
+
 secrets:
   mysql_password:
     file: ./build/dt-v2xhub/secrets/mysql_password.txt
