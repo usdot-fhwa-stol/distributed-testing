@@ -1,0 +1,21 @@
+services:
+  dt-core:
+    container_name: dt-core
+    image: harbor.distributedtesting.org/distributed-testing/dt-core:latest
+    tty: true
+    ipc: "host"
+    network_mode: "host"
+    environment:
+      - DISPLAY=$DISPLAY
+      - SDL_VIDEODRIVER=x11
+      - XAUTHORITY=~/.Xauthority
+      - VUG_CONTAINER_IMAGE=dt-core
+      - VUG_SITE_CONFIG_FILE=${VUG_SITE_CONFIG_FILE}
+      - VUG_SCENARIO_CONFIG_FILE=${VUG_SCENARIO_CONFIG_FILE}
+      - VUG_VPN_LOCAL_ADDRESS=${VUG_VPN_LOCAL_ADDRESS}
+      - VUG_VPN_EM_ADDRESS=${VUG_VPN_EM_ADDRESS}
+    volumes:
+      - /tmp/.X11-unix:/tmp/.X11-unix:rw
+      - ${VUG_LOCAL_DT_PATH}:/home/dt_user/distributed-testing
+      - ~/distributed-testing/docker/build/lib/COPY/start_scripts:/home/dt_user/start_scripts
+      - ~/tenadev/INSTALL/tena-entity-generator-2.3.3:/home/dt_user/VUG_Adapters/tena-entity-generator-2.3.3
