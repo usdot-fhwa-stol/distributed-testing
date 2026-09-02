@@ -179,7 +179,7 @@ carlaTenaAdapterGitUrl="git@github.com:usdot-fhwa-stol/vug-carla-adapter.git"
 
 # Build containers. Overridable via the environment so CI can build against the
 # images it just produced (e.g. a dev org / versioned tag) instead of :latest.
-buildGeneralImage="${VUG_BUILD_GENERAL_IMAGE:-harbor.distributedtesting.org/distributed-testing/dt-build-general:latest}"
+buildGeneralImage="${VUG_BUILD_GENERAL_IMAGE:-harbor.distributedtesting.org/dot-ostr-dt/dt-build-general:develop}"
 buildCarlaImage="${VUG_BUILD_CARLA_IMAGE:-harbor.distributedtesting.org/distributed-testing/dt-build-carla:latest}"
 buildV2xImage="${VUG_BUILD_V2X_IMAGE:-usdotfhwaops/v2xhubamd:dt-P-1.1.0}"
 
