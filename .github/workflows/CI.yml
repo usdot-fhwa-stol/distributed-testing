@@ -87,8 +87,27 @@ jobs:
           chmod +x build-image.sh
           ./build-image.sh build-general -v "$DOCKER_TAG"
 
-      # Pushed only after both images in this job built, since build-dt-core and build-dt-v2xhub
-      # pull them back down from the registry. Skipped on pull_request:
+      # Hand this run's images to build-dt-core and build-dt-v2xhub directly, instead of having
+      # them pull from the registry. On pull_request nothing is pushed, so a registry pull would
+      # fetch the *previous* develop images and downstream jobs would never exercise the bases
+      # built from this code.
+      - name: Save base images for downstream jobs
+        run: |
+          docker save \
+            "${DOCKERHUB_NAMESPACE}/${DOCKER_ORG}/dt-base:${DOCKER_TAG}" \
+            "${DOCKERHUB_NAMESPACE}/${DOCKER_ORG}/dt-build-general:${DOCKER_TAG}" \
+            | zstd -T0 -3 -o /tmp/dt-bases.tar.zst
+          ls -lh /tmp/dt-bases.tar.zst
+
+      - name: Upload base images artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: dt-base-images
+          path: /tmp/dt-bases.tar.zst
+          retention-days: 1
+
+      # Publish-only step; downstream jobs consume the artifact above, not the registry.
+      # Skipped on pull_request:
       - name: Push images to DT registry
         if: github.event_name != 'pull_request'
         run: |
@@ -156,14 +175,22 @@ jobs:
           source build-assets.env
           chmod -R a+rX "$BUILD_DIR"
 
-      # dt-core_Dockerfile FROMs dt-base, and this job doesn't have it locally (it was built and
-      # pushed in build-dt-base-general). Pulled with the classic client rather than left for
-      # BuildKit to pull as part of `docker build`: BuildKit's own auth client can't complete
-      # harbor.distributedtesting.org's OAuth exchange, unlike `docker pull` (see the equivalent
-      # note in build-image.sh for dt-v2xhub's dt-build-general pull).
-      - name: Pull dt-base image
+      # dt-core_Dockerfile FROMs dt-base, and buildTenaAdapters.sh builds inside
+      # dt-build-general. Load both from the artifact build-dt-base-general saved so this job
+      # builds against the exact images produced by this run - on pull_request nothing was
+      # pushed, and even on push the mutable :develop tag could have been overwritten by a
+      # concurrent run. This also sidesteps BuildKit's auth client, which can't complete
+      # harbor.distributedtesting.org's OAuth exchange.
+      - name: Download base images artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: dt-base-images
+          path: /tmp
+
+      - name: Load base images built earlier in this run
         run: |
-          docker pull "${DOCKERHUB_NAMESPACE}/${DOCKER_ORG}/dt-base:${DOCKER_TAG}"
+          zstd -dc /tmp/dt-bases.tar.zst | docker load
+          rm -f /tmp/dt-bases.tar.zst
 
       # buildTenaAdapters.sh sources ~/.dt_site_config and ~/.dt_scenario_config for
       # VUG_LOCAL_TENADEV_DIR / VUG_LOCAL_INSTALL_PATH, so they must exist on the runner.
@@ -180,9 +207,11 @@ jobs:
 
       - name: Build all TENA adapters
         env:
-          # Build against the dt-build-general image build-dt-base-general pushed. Not set
-          # locally in this job, so buildTenaAdapters.sh pulls it from the registry.
+          # Build against the dt-build-general image loaded from this run's artifact.
+          # VUG_SKIP_DOCKER_PULL keeps buildTenaAdapters.sh from pulling the registry copy
+          # over top of it.
           VUG_BUILD_GENERAL_IMAGE: harbor.distributedtesting.org/${{ needs.determine_docker_org_and_tag.outputs.docker_org }}/dt-build-general:${{ needs.determine_docker_org_and_tag.outputs.docker_tag }}
+          VUG_SKIP_DOCKER_PULL: "true"
         run: |
           chmod +x scripts/build_tena_adapters/buildAllAdapters.sh scripts/build_tena_adapters/buildTenaAdapters.sh
           export TENA_BUILD_JOBS="$(nproc)"
@@ -231,9 +260,20 @@ jobs:
           username: ${{ secrets.KEYCLOAK_USERNAME }}
           password: ${{ secrets.KEYCLOAK_TOKEN }}
 
-      # build-image.sh pulls dt-build-general itself (with the classic client) when it isn't
-      # already local, which is the case here since build-dt-base-general only pushed it to the
-      # registry.
+      # build-image.sh only pulls dt-build-general when it isn't already local, so loading this
+      # run's images from the artifact means the build uses them instead of the registry copy
+      # (which on pull_request would be the previous develop image, not this run's).
+      - name: Download base images artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: dt-base-images
+          path: /tmp
+
+      - name: Load base images built earlier in this run
+        run: |
+          zstd -dc /tmp/dt-bases.tar.zst | docker load
+          rm -f /tmp/dt-bases.tar.zst
+
       - name: Build dt-v2xhub image
         working-directory: ./docker/build
         env:
