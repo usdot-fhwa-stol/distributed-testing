@@ -28,7 +28,9 @@ jobs:
       docker_org: dot-ostr-dt
       docker_tag: develop
 
-  build-dt-images:
+  # Everything downstream (dt-core, dt-v2xhub) FROMs dt-base and/or builds against
+  # dt-build-general, so both are built and pushed here as one shared prerequisite step.
+  build-dt-base-general:
     runs-on: ubuntu-22.04
     needs: determine_docker_org_and_tag
     env:
@@ -85,6 +87,84 @@ jobs:
           chmod +x build-image.sh
           ./build-image.sh build-general -v "$DOCKER_TAG"
 
+      # Pushed only after both images in this job built, since build-dt-core and build-dt-v2xhub
+      # pull them back down from the registry. Skipped on pull_request:
+      - name: Push images to DT registry
+        if: github.event_name != 'pull_request'
+        run: |
+          fail=0
+
+          for image in dt-base dt-build-general; do
+            repo="${DOCKERHUB_NAMESPACE}/${DOCKER_ORG}/${image}"
+            refs=$(docker images --format '{{.Repository}}:{{.Tag}}' "$repo")
+
+            if [[ -z "$refs" ]]; then
+              echo "No local image found for $image; expected it to have been built earlier in this job" >&2
+              fail=1
+              continue
+            fi
+
+            while IFS= read -r ref; do
+              docker push "$ref" &
+            done <<< "$refs"
+          done
+
+          for pid in $(jobs -p); do
+            wait "$pid" || fail=1
+          done
+
+          exit "$fail"
+
+  build-dt-core:
+    runs-on: ubuntu-22.04
+    needs: [determine_docker_org_and_tag, build-dt-base-general]
+    env:
+      DOCKER_ORG: ${{ needs.determine_docker_org_and_tag.outputs.docker_org }}
+      DOCKER_TAG: ${{ needs.determine_docker_org_and_tag.outputs.docker_tag }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+        with:
+          version: latest
+
+      - name: Log in to DT Docker registry
+        uses: docker/login-action@v3
+        with:
+          registry: harbor.distributedtesting.org
+          username: ${{ secrets.KEYCLOAK_USERNAME }}
+          password: ${{ secrets.KEYCLOAK_TOKEN }}
+
+      # See the equivalent step in build-dt-base-general: without this, BUILD_DIR is wiped every
+      # run and every asset gets re-pulled from the same Drive file IDs, which is what trips
+      # Drive's anonymous-link download quota.
+      - name: Cache downloaded build assets
+        uses: actions/cache@v4
+        with:
+          path: ~/distributed-testing/docker/build/lib/BUILD
+          key: build-assets-${{ hashFiles('docker/build/build-assets.env') }}
+          restore-keys: |
+            build-assets-
+
+      - name: Fetch required assets
+        working-directory: ./docker/build
+        run: |
+          chmod +x fetch-assets.sh
+          ./fetch-assets.sh build-assets.env
+          source build-assets.env
+          chmod -R a+rX "$BUILD_DIR"
+
+      # dt-core_Dockerfile FROMs dt-base, and this job doesn't have it locally (it was built and
+      # pushed in build-dt-base-general). Pulled with the classic client rather than left for
+      # BuildKit to pull as part of `docker build`: BuildKit's own auth client can't complete
+      # harbor.distributedtesting.org's OAuth exchange, unlike `docker pull` (see the equivalent
+      # note in build-image.sh for dt-v2xhub's dt-build-general pull).
+      - name: Pull dt-base image
+        run: |
+          docker pull "${DOCKERHUB_NAMESPACE}/${DOCKER_ORG}/dt-base:${DOCKER_TAG}"
+
       # buildTenaAdapters.sh sources ~/.dt_site_config and ~/.dt_scenario_config for
       # VUG_LOCAL_TENADEV_DIR / VUG_LOCAL_INSTALL_PATH, so they must exist on the runner.
       - name: Set DT site and scenario config
@@ -100,10 +180,9 @@ jobs:
 
       - name: Build all TENA adapters
         env:
-          # Build against the dt-build-general image from above rather than
-          # pulling :latest from harbor over top of it.
+          # Build against the dt-build-general image build-dt-base-general pushed. Not set
+          # locally in this job, so buildTenaAdapters.sh pulls it from the registry.
           VUG_BUILD_GENERAL_IMAGE: harbor.distributedtesting.org/${{ needs.determine_docker_org_and_tag.outputs.docker_org }}/dt-build-general:${{ needs.determine_docker_org_and_tag.outputs.docker_tag }}
-          VUG_SKIP_DOCKER_PULL: "true"
         run: |
           chmod +x scripts/build_tena_adapters/buildAllAdapters.sh scripts/build_tena_adapters/buildTenaAdapters.sh
           export TENA_BUILD_JOBS="$(nproc)"
@@ -125,6 +204,36 @@ jobs:
           chmod +x build-image.sh
           ./build-image.sh core -v "$DOCKER_TAG"
 
+      - name: Push dt-core to DT registry
+        if: github.event_name != 'pull_request'
+        run: |
+          docker push "${DOCKERHUB_NAMESPACE}/${DOCKER_ORG}/dt-core:${DOCKER_TAG}"
+
+  build-dt-v2xhub:
+    runs-on: ubuntu-22.04
+    needs: [determine_docker_org_and_tag, build-dt-base-general]
+    env:
+      DOCKER_ORG: ${{ needs.determine_docker_org_and_tag.outputs.docker_org }}
+      DOCKER_TAG: ${{ needs.determine_docker_org_and_tag.outputs.docker_tag }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+        with:
+          version: latest
+
+      - name: Log in to DT Docker registry
+        uses: docker/login-action@v3
+        with:
+          registry: harbor.distributedtesting.org
+          username: ${{ secrets.KEYCLOAK_USERNAME }}
+          password: ${{ secrets.KEYCLOAK_TOKEN }}
+
+      # build-image.sh pulls dt-build-general itself (with the classic client) when it isn't
+      # already local, which is the case here since build-dt-base-general only pushed it to the
+      # registry.
       - name: Build dt-v2xhub image
         working-directory: ./docker/build
         env:
@@ -135,13 +244,13 @@ jobs:
           ./build-image.sh v2xhub -v "$DOCKER_TAG"
           rm -f usdotfhwastol_token
 
-      # Pushed only after every image in this job built. Skipped on pull_request:
+      # Pushed only after both images in this job built. Skipped on pull_request:
       - name: Push images to DT registry
         if: github.event_name != 'pull_request'
         run: |
           fail=0
 
-          for image in dt-base dt-build-general dt-core dt-v2xhub dt-build-v2xhub; do
+          for image in dt-v2xhub dt-build-v2xhub; do
             repo="${DOCKERHUB_NAMESPACE}/${DOCKER_ORG}/${image}"
             refs=$(docker images --format '{{.Repository}}:{{.Tag}}' "$repo")
 
