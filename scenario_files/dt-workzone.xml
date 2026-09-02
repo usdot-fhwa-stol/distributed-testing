@@ -10,9 +10,9 @@
   </OpenDrive>
 
   <vehicles>
-    <vehicle name="WZ-M-1" bsmid="f03ad658" type="vehicle.toyota.prius" simulationIdentifier="CARLA-WZ-1" material="Aluminum" lvcIndicator="Constructive" generate_bsms="true" organization="WZ">
+    <vehicle name="FHWA-CARMA-Vehicle" bsmid="06000000" type="vehicle.chrysler.pacifica" simulationIdentifier="CARLA-WZ-1" material="Aluminum" lvcIndicator="Live" generate_bsms="true" organization="STOL">
       <initialTSPI>
-        <GeodeticPosition latitudeInDegrees="0.001800" longitudeInDegrees="0.001122" heightAboveEllipsoidInMeters="1"> </GeodeticPosition>
+        <GeodeticPosition latitudeInDegrees="38.956762" longitudeInDegrees="-77.150282" heightAboveEllipsoidInMeters="1"> </GeodeticPosition>
         <Heading>21.85235</Heading>
       </initialTSPI>
     </vehicle>
