@@ -24,12 +24,11 @@ jobs:
       - name: Determine Docker organization and tag
         id: docker-org-and-tag
         uses: usdot-fhwa-stol/actions/docker-org-and-tag@main
-    outputs: # Currently harcoding the docker org and tag since there is only one image repository and  supported base branch is currently only events/hass-dt-develop
+    outputs: # Hardcoded: only one image repo and one supported base branch right now
       docker_org: dot-ostr-dt
       docker_tag: develop
 
-  # Everything downstream (dt-core, dt-v2xhub) FROMs dt-base and/or builds against
-  # dt-build-general, so both are built and pushed here as one shared prerequisite step.
+  # Shared prerequisite: dt-core and dt-v2xhub FROM dt-base and/or build against dt-build-general.
   build-dt-base-general:
     runs-on: ubuntu-22.04
     needs: determine_docker_org_and_tag
@@ -52,11 +51,8 @@ jobs:
           username: ${{ secrets.KEYCLOAK_USERNAME }}
           password: ${{ secrets.KEYCLOAK_TOKEN }}
 
-      # BUILD_DIR (per build-assets.env) is wiped with the rest of the runner after every job,
-      # so without this, every run re-downloads every asset from the same handful of Google
-      # Drive file IDs - which is what trips Drive's anonymous-link download quota. Keyed on the
-      # env file so a version/ID bump busts the cache; restore-keys still gets a partial hit
-      # (fetch-assets.sh downloads only whatever doesn't match) if just one entry changed.
+      # Avoids re-downloading assets from Google Drive every run, which trips its anonymous-link
+      # download quota. Keyed on the env file so a version/ID bump busts the cache.
       - name: Cache downloaded build assets
         uses: actions/cache@v4
         with:
@@ -87,10 +83,8 @@ jobs:
           chmod +x build-image.sh
           ./build-image.sh build-general -v "$DOCKER_TAG"
 
-      # Hand this run's images to build-dt-core and build-dt-v2xhub directly, instead of having
-      # them pull from the registry. On pull_request nothing is pushed, so a registry pull would
-      # fetch the *previous* develop images and downstream jobs would never exercise the bases
-      # built from this code.
+      # Hand this run's images to downstream jobs directly rather than via registry pull, since
+      # on pull_request nothing is pushed and a pull would fetch the previous develop images.
       - name: Save base images for downstream jobs
         run: |
           docker save \
@@ -106,9 +100,8 @@ jobs:
           path: /tmp/dt-bases.tar.zst
           retention-days: 1
 
-  # Split out from build-dt-base-general so the ~7min push doesn't block build-dt-core /
-  # build-dt-v2xhub, which only need the artifact uploaded above, not the registry push.
-  # This runs in parallel with those jobs instead of gating their start.
+  # Split from build-dt-base-general so the ~7min push runs in parallel with the downstream
+  # build jobs instead of blocking them (they only need the artifact, not the push).
   push-dt-base-general:
     runs-on: ubuntu-22.04
     if: github.event_name == 'pull_request'
@@ -160,7 +153,7 @@ jobs:
 
           exit "$fail"
 
-  build-dt-core:
+  build-and-push-dt-core:
     runs-on: ubuntu-22.04
     needs: [determine_docker_org_and_tag, build-dt-base-general]
     env:
@@ -182,9 +175,7 @@ jobs:
           username: ${{ secrets.KEYCLOAK_USERNAME }}
           password: ${{ secrets.KEYCLOAK_TOKEN }}
 
-      # See the equivalent step in build-dt-base-general: without this, BUILD_DIR is wiped every
-      # run and every asset gets re-pulled from the same Drive file IDs, which is what trips
-      # Drive's anonymous-link download quota.
+      # See the equivalent step in build-dt-base-general.
       - name: Cache downloaded build assets
         uses: actions/cache@v4
         with:
@@ -201,12 +192,9 @@ jobs:
           source build-assets.env
           chmod -R a+rX "$BUILD_DIR"
 
-      # dt-core_Dockerfile FROMs dt-base, and buildTenaAdapters.sh builds inside
-      # dt-build-general. Load both from the artifact build-dt-base-general saved so this job
-      # builds against the exact images produced by this run - on pull_request nothing was
-      # pushed, and even on push the mutable :develop tag could have been overwritten by a
-      # concurrent run. This also sidesteps BuildKit's auth client, which can't complete
-      # harbor.distributedtesting.org's OAuth exchange.
+      # Load this run's dt-base/dt-build-general images rather than pulling :develop, which may
+      # be stale (pull_request) or overwritten by a concurrent run; also avoids BuildKit's auth
+      # client, which can't complete harbor.distributedtesting.org's OAuth exchange.
       - name: Download base images artifact
         uses: actions/download-artifact@v4
         with:
@@ -218,24 +206,20 @@ jobs:
           zstd -dc /tmp/dt-bases.tar.zst | docker load
           rm -f /tmp/dt-bases.tar.zst
 
-      # buildTenaAdapters.sh sources ~/.dt_site_config and ~/.dt_scenario_config for
-      # VUG_LOCAL_TENADEV_DIR / VUG_LOCAL_INSTALL_PATH, so they must exist on the runner.
+      # buildTenaAdapters.sh needs these config files to exist on the runner.
       - name: Set DT site and scenario config
         run: |
           chmod +x config/set_dt_config.sh
           ./config/set_dt_config.sh --site default_site.config --scenario default_scenario.config
 
-      # The adapter repos are private and cloned over SSH; rewrite to HTTPS + PAT so
-      # the runner can clone them.
+      # Adapter repos are private and cloned over SSH; rewrite to HTTPS + PAT for the runner.
       - name: Configure git for private adapter repos
         run: |
           git config --global url."https://x-access-token:${{ secrets.GH_PAT }}@github.com/".insteadOf "git@github.com:"
 
       - name: Build all TENA adapters
         env:
-          # Build against the dt-build-general image loaded from this run's artifact.
-          # VUG_SKIP_DOCKER_PULL keeps buildTenaAdapters.sh from pulling the registry copy
-          # over top of it.
+          # VUG_SKIP_DOCKER_PULL stops buildTenaAdapters.sh overwriting the loaded image with a registry pull.
           VUG_BUILD_GENERAL_IMAGE: harbor.distributedtesting.org/${{ needs.determine_docker_org_and_tag.outputs.docker_org }}/dt-build-general:${{ needs.determine_docker_org_and_tag.outputs.docker_tag }}
           VUG_SKIP_DOCKER_PULL: "true"
         run: |
@@ -243,8 +227,7 @@ jobs:
           export TENA_BUILD_JOBS="$(nproc)"
           ./scripts/build_tena_adapters/buildAllAdapters.sh
 
-      # dt-core COPYs lib/COPY into /home/dt_user, and .dt_site_config_docker points
-      # VUG_LOCAL_INSTALL_PATH at $HOME/VUG_Adapters, so the built adapters go there.
+      # dt-core's Dockerfile COPYs adapters from here.
       - name: Stage built adapters for dt-core
         run: |
           source ~/.dt_site_config
@@ -264,7 +247,7 @@ jobs:
         run: |
           docker push "${DOCKERHUB_NAMESPACE}/${DOCKER_ORG}/dt-core:${DOCKER_TAG}"
 
-  build-dt-v2xhub:
+  build-and-push-dt-v2xhub:
     runs-on: ubuntu-22.04
     needs: [determine_docker_org_and_tag, build-dt-base-general]
     env:
@@ -286,9 +269,7 @@ jobs:
           username: ${{ secrets.KEYCLOAK_USERNAME }}
           password: ${{ secrets.KEYCLOAK_TOKEN }}
 
-      # build-image.sh only pulls dt-build-general when it isn't already local, so loading this
-      # run's images from the artifact means the build uses them instead of the registry copy
-      # (which on pull_request would be the previous develop image, not this run's).
+      # Loads this run's images so build-image.sh uses them instead of pulling the registry copy.
       - name: Download base images artifact
         uses: actions/download-artifact@v4
         with:
@@ -310,7 +291,6 @@ jobs:
           ./build-image.sh v2xhub -v "$DOCKER_TAG"
           rm -f usdotfhwastol_token
 
-      # Pushed only after both images in this job built. Skipped on pull_request:
       - name: Push images to DT registry
         if: github.event_name == 'pull_request'
         run: |
@@ -337,7 +317,7 @@ jobs:
 
           exit "$fail"
 
-  build-dt-simdis:
+  build-and-push-dt-simdis:
     runs-on: ubuntu-22.04
     needs: [determine_docker_org_and_tag]
     env:
@@ -358,9 +338,8 @@ jobs:
           registry: harbor.distributedtesting.org
           username: ${{ secrets.KEYCLOAK_USERNAME }}
           password: ${{ secrets.KEYCLOAK_TOKEN }}
-      # See the equivalent step in build-dt-images: without this, BUILD_DIR is wiped every run
-      # and every asset gets re-pulled from the same Drive file IDs, which is what trips
-      # Drive's anonymous-link download quota.
+
+      # See the equivalent step in build-dt-base-general.
       - name: Cache downloaded build assets
         uses: actions/cache@v4
         with:
