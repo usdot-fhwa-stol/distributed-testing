@@ -331,12 +331,26 @@ jobs:
           ./build-image.sh v2xhub -v "$DOCKER_TAG"
           rm -f usdotfhwastol_token
 
+      # dt-build-v2xhub isn't tagged at $DOCKER_TAG - docker-bake.hcl tags it at V2XHUB_REF
+      # (versions.env pins this to a commit SHA)
       - name: Save dt-v2xhub images for push job
         run: |
-          docker save \
-            "${DOCKERHUB_NAMESPACE}/${DOCKER_ORG}/dt-v2xhub:${DOCKER_TAG}" \
-            "${DOCKERHUB_NAMESPACE}/${DOCKER_ORG}/dt-build-v2xhub:${DOCKER_TAG}" \
-            | zstd -T0 -3 -o /tmp/dt-v2xhub.tar.zst
+          set -euo pipefail
+          refs=()
+          for image in dt-v2xhub dt-build-v2xhub; do
+            repo="${DOCKERHUB_NAMESPACE}/${DOCKER_ORG}/${image}"
+            while IFS= read -r ref; do
+              refs+=("$ref")
+            done < <(docker images --format '{{.Repository}}:{{.Tag}}' "$repo")
+          done
+
+          if [[ ${#refs[@]} -eq 0 ]]; then
+            echo "No local dt-v2xhub/dt-build-v2xhub images found; expected them to have been built earlier in this job" >&2
+            exit 1
+          fi
+
+          docker save "${refs[@]}" | zstd -T0 -3 -o /tmp/dt-v2xhub.tar.zst
+          ls -lh /tmp/dt-v2xhub.tar.zst
 
       - name: Upload dt-v2xhub images artifact
         uses: actions/upload-artifact@v4
