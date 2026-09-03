@@ -76,6 +76,7 @@ fi
 
 siteID=$(( $(printf '%s' "$VUG_SHORT_IDENTIFIER" | cksum | awk '{print $1}') & 0xFFFF ))
 applicationID=$(( $(printf '%s' "$VUG_ENTITY_GENERATOR_VERSION" | cksum | awk '{print $1}') & 0xFFFF ))
+staleSdsmThreshMs=$VUG_ENTITY_GENERATOR_STALE_SDSM_THRESH_MS
 
 mkdir -p $VUG_ADAPTER_LOG_PATH
 
@@ -92,5 +93,5 @@ BASH_XTRACEFD=4
 
 set -x
 
-$localadapterPath/bin/tena-entity-generator $useBestEffort -emEndpoints $VUG_EM_ADDRESS:$VUG_EM_PORT -listenEndpoints $VUG_LOCAL_ADDRESS -siteID $siteID -applicationID $applicationID -verbosity $adapterVerbosity | awk -v adapter="[$VUG_ENTITY_GENERATOR_VERSION]" '{ print adapter, $0; fflush(); }'| tee -a $adapterLogFile
+$localadapterPath/bin/tena-entity-generator $useBestEffort -emEndpoints $VUG_EM_ADDRESS:$VUG_EM_PORT -listenEndpoints $VUG_LOCAL_ADDRESS -siteID $siteID -applicationID $applicationID -verbosity $adapterVerbosity -staleSdsmThreshMs $staleSdsmThreshMs | awk -v adapter="[$VUG_ENTITY_GENERATOR_VERSION]" '{ print adapter, $0; fflush(); }'| tee -a $adapterLogFile
 
