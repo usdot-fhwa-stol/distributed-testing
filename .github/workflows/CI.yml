@@ -153,7 +153,10 @@ jobs:
 
           exit "$fail"
 
-  build-dt-core:
+  # Builds and pushes in one job (unlike build-dt-base-general/push-dt-base-general): measured,
+  # splitting this cost more in save/upload/download/load artifact round-trip (~11min) than the
+  # parallel push saved.
+  build-and-push-dt-core:
     runs-on: ubuntu-22.04
     needs: [determine_docker_org_and_tag, build-dt-base-general]
     env:
@@ -242,52 +245,15 @@ jobs:
           chmod +x build-image.sh
           ./build-image.sh core -v "$DOCKER_TAG"
 
-      - name: Save dt-core image for push job
-        run: |
-          docker save "${DOCKERHUB_NAMESPACE}/${DOCKER_ORG}/dt-core:${DOCKER_TAG}" \
-            | zstd -T0 -3 -o /tmp/dt-core.tar.zst
-
-      - name: Upload dt-core image artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: dt-core-image
-          path: /tmp/dt-core.tar.zst
-          retention-days: 1
-
-  # Waits on push-dt-base-general so dt-base's layers are already in the registry by the time
-  # this pushes dt-core, which FROMs dt-base - otherwise this job re-uploads those same
-  # multi-GB layers instead of a fast dedup'd push.
-  push-dt-core:
-    runs-on: ubuntu-22.04
-    if: github.event_name != 'pull_request'
-    needs: [determine_docker_org_and_tag, build-dt-core, push-dt-base-general]
-    env:
-      DOCKER_ORG: ${{ needs.determine_docker_org_and_tag.outputs.docker_org }}
-      DOCKER_TAG: ${{ needs.determine_docker_org_and_tag.outputs.docker_tag }}
-    steps:
-      - name: Log in to DT Docker registry
-        uses: docker/login-action@v3
-        with:
-          registry: harbor.distributedtesting.org
-          username: ${{ secrets.KEYCLOAK_USERNAME }}
-          password: ${{ secrets.KEYCLOAK_TOKEN }}
-
-      - name: Download dt-core image artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: dt-core-image
-          path: /tmp
-
-      - name: Load dt-core image built earlier in this run
-        run: |
-          zstd -dc /tmp/dt-core.tar.zst | docker load
-          rm -f /tmp/dt-core.tar.zst
-
       - name: Push dt-core to DT registry
+        if: github.event_name != 'pull_request'
         run: |
           docker push "${DOCKERHUB_NAMESPACE}/${DOCKER_ORG}/dt-core:${DOCKER_TAG}"
 
-  build-dt-v2xhub:
+  # Builds and pushes in one job (unlike build-dt-base-general/push-dt-base-general): measured,
+  # splitting this cost more in save/upload/download/load artifact round-trip (~5min) than the
+  # parallel push saved.
+  build-and-push-dt-v2xhub:
     runs-on: ubuntu-22.04
     needs: [determine_docker_org_and_tag, build-dt-base-general]
     env:
@@ -331,64 +297,8 @@ jobs:
           ./build-image.sh v2xhub -v "$DOCKER_TAG"
           rm -f usdotfhwastol_token
 
-      # dt-build-v2xhub isn't tagged at $DOCKER_TAG - docker-bake.hcl tags it at V2XHUB_REF
-      # (versions.env pins this to a commit SHA)
-      - name: Save dt-v2xhub images for push job
-        run: |
-          set -euo pipefail
-          refs=()
-          for image in dt-v2xhub dt-build-v2xhub; do
-            repo="${DOCKERHUB_NAMESPACE}/${DOCKER_ORG}/${image}"
-            while IFS= read -r ref; do
-              refs+=("$ref")
-            done < <(docker images --format '{{.Repository}}:{{.Tag}}' "$repo")
-          done
-
-          if [[ ${#refs[@]} -eq 0 ]]; then
-            echo "No local dt-v2xhub/dt-build-v2xhub images found; expected them to have been built earlier in this job" >&2
-            exit 1
-          fi
-
-          docker save "${refs[@]}" | zstd -T0 -3 -o /tmp/dt-v2xhub.tar.zst
-          ls -lh /tmp/dt-v2xhub.tar.zst
-
-      - name: Upload dt-v2xhub images artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: dt-v2xhub-images
-          path: /tmp/dt-v2xhub.tar.zst
-          retention-days: 1
-
-  # Waits on push-dt-base-general so dt-base/dt-build-general's layers are already in the
-  # registry by the time this pushes - otherwise this job re-uploads those same multi-GB
-  # layers instead of a fast dedup'd push.
-  push-dt-v2xhub:
-    runs-on: ubuntu-22.04
-    if: github.event_name != 'pull_request'
-    needs: [determine_docker_org_and_tag, build-dt-v2xhub, push-dt-base-general]
-    env:
-      DOCKER_ORG: ${{ needs.determine_docker_org_and_tag.outputs.docker_org }}
-      DOCKER_TAG: ${{ needs.determine_docker_org_and_tag.outputs.docker_tag }}
-    steps:
-      - name: Log in to DT Docker registry
-        uses: docker/login-action@v3
-        with:
-          registry: harbor.distributedtesting.org
-          username: ${{ secrets.KEYCLOAK_USERNAME }}
-          password: ${{ secrets.KEYCLOAK_TOKEN }}
-
-      - name: Download dt-v2xhub images artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: dt-v2xhub-images
-          path: /tmp
-
-      - name: Load dt-v2xhub images built earlier in this run
-        run: |
-          zstd -dc /tmp/dt-v2xhub.tar.zst | docker load
-          rm -f /tmp/dt-v2xhub.tar.zst
-
       - name: Push images to DT registry
+        if: github.event_name != 'pull_request'
         run: |
           fail=0
 
