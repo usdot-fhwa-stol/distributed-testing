@@ -104,7 +104,7 @@ jobs:
   # build jobs instead of blocking them (they only need the artifact, not the push).
   push-dt-base-general:
     runs-on: ubuntu-22.04
-    if: github.event_name == 'pull_request'
+    if: github.event_name != 'pull_request'
     needs: [determine_docker_org_and_tag, build-dt-base-general]
     env:
       DOCKER_ORG: ${{ needs.determine_docker_org_and_tag.outputs.docker_org }}
@@ -243,7 +243,7 @@ jobs:
           ./build-image.sh core -v "$DOCKER_TAG"
 
       - name: Push dt-core to DT registry
-        if: github.event_name == 'pull_request'
+        if: github.event_name != 'pull_request'
         run: |
           docker push "${DOCKERHUB_NAMESPACE}/${DOCKER_ORG}/dt-core:${DOCKER_TAG}"
 
@@ -292,7 +292,7 @@ jobs:
           rm -f usdotfhwastol_token
 
       - name: Push images to DT registry
-        if: github.event_name == 'pull_request'
+        if: github.event_name != 'pull_request'
         run: |
           fail=0
 
@@ -363,6 +363,6 @@ jobs:
           ./build-image.sh simdis -v "$DOCKER_TAG"
 
       - name: Push dt-simdis to DT registry
-        if: github.event_name == 'pull_request'
+        if: github.event_name != 'pull_request'
         run: |
           docker push "${DOCKERHUB_NAMESPACE}/${DOCKER_ORG}/dt-simdis:${DOCKER_TAG}"
