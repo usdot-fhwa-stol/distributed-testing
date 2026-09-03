@@ -109,7 +109,7 @@ jobs:
       # Publish-only step; downstream jobs consume the artifact above, not the registry.
       # Skipped on pull_request:
       - name: Push images to DT registry
-        if: github.event_name != 'pull_request'
+        if: github.event_name == 'pull_request'
         run: |
           fail=0
 
@@ -234,7 +234,7 @@ jobs:
           ./build-image.sh core -v "$DOCKER_TAG"
 
       - name: Push dt-core to DT registry
-        if: github.event_name != 'pull_request'
+        if: github.event_name == 'pull_request'
         run: |
           docker push "${DOCKERHUB_NAMESPACE}/${DOCKER_ORG}/dt-core:${DOCKER_TAG}"
 
@@ -286,7 +286,7 @@ jobs:
 
       # Pushed only after both images in this job built. Skipped on pull_request:
       - name: Push images to DT registry
-        if: github.event_name != 'pull_request'
+        if: github.event_name == 'pull_request'
         run: |
           fail=0
 
@@ -358,6 +358,6 @@ jobs:
           ./build-image.sh simdis -v "$DOCKER_TAG"
 
       - name: Push dt-simdis to DT registry
-        if: github.event_name != 'pull_request'
+        if: github.event_name == 'pull_request'
         run: |
           docker push "${DOCKERHUB_NAMESPACE}/${DOCKER_ORG}/dt-simdis:${DOCKER_TAG}"
