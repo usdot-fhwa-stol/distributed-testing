@@ -106,10 +106,36 @@ jobs:
           path: /tmp/dt-bases.tar.zst
           retention-days: 1
 
-      # Publish-only step; downstream jobs consume the artifact above, not the registry.
-      # Skipped on pull_request:
+  # Split out from build-dt-base-general so the ~7min push doesn't block build-dt-core /
+  # build-dt-v2xhub, which only need the artifact uploaded above, not the registry push.
+  # This runs in parallel with those jobs instead of gating their start.
+  push-dt-base-general:
+    runs-on: ubuntu-22.04
+    if: github.event_name == 'pull_request'
+    needs: [determine_docker_org_and_tag, build-dt-base-general]
+    env:
+      DOCKER_ORG: ${{ needs.determine_docker_org_and_tag.outputs.docker_org }}
+      DOCKER_TAG: ${{ needs.determine_docker_org_and_tag.outputs.docker_tag }}
+    steps:
+      - name: Log in to DT Docker registry
+        uses: docker/login-action@v3
+        with:
+          registry: harbor.distributedtesting.org
+          username: ${{ secrets.KEYCLOAK_USERNAME }}
+          password: ${{ secrets.KEYCLOAK_TOKEN }}
+
+      - name: Download base images artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: dt-base-images
+          path: /tmp
+
+      - name: Load base images built earlier in this run
+        run: |
+          zstd -dc /tmp/dt-bases.tar.zst | docker load
+          rm -f /tmp/dt-bases.tar.zst
+
       - name: Push images to DT registry
-        if: github.event_name == 'pull_request'
         run: |
           fail=0
 
@@ -118,7 +144,7 @@ jobs:
             refs=$(docker images --format '{{.Repository}}:{{.Tag}}' "$repo")
 
             if [[ -z "$refs" ]]; then
-              echo "No local image found for $image; expected it to have been built earlier in this job" >&2
+              echo "No local image found for $image; expected it to have been loaded earlier in this job" >&2
               fail=1
               continue
             fi
