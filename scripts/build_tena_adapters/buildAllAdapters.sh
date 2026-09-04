@@ -21,10 +21,10 @@ BUILD_MODE="release"
 ADAPTER_BRANCH="${ADAPTER_BRANCH:-event/hass_dt_develop}"
 
 # [1] vug-threads-library
-BRANCH_APP_1="${BRANCH_APP_1:-develop}"
+BRANCH_APP_1="${BRANCH_APP_1:-$ADAPTER_BRANCH}"
 
 # [2] vug-udp-protocolio
-BRANCH_APP_2="${BRANCH_APP_2:-develop}"
+BRANCH_APP_2="${BRANCH_APP_2:-$ADAPTER_BRANCH}"
 
 # [3] scenario-publisher
 BRANCH_APP_3="${BRANCH_APP_3:-$ADAPTER_BRANCH}"
