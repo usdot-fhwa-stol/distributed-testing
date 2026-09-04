@@ -1,0 +1,174 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<scenario>
+
+    <identifier>
+        <name>Cohort 2 - ERV</name>
+    </identifier>
+
+    <OpenDrive>
+        <MapFileName name="RFS.xodr">
+            <MapOrigin latitudeInDegrees="0" longitudeInDegrees="0" heightAboveEllipsoidInMeters="0"> </MapOrigin>
+        </MapFileName>
+    </OpenDrive>
+
+    <vehicles>
+
+        <vehicle name="VW-M-1" bsmid="00000000" type="vehicle.audi.tt" simulationIdentifier="CARLA-VW-1" material="Aluminum" lvcIndicator="Constructive" generate_bsms="true" organization="VW">
+            <initialTSPI>
+                <GeodeticPosition latitudeInDegrees="0.002902" longitudeInDegrees="0.001816" heightAboveEllipsoidInMeters="1.014072">
+                </GeodeticPosition>
+                <Heading>90.446060</Heading>
+            </initialTSPI>
+        </vehicle>
+
+        <vehicle name="PATH-M-1" bsmid="11111110" type="vehicle.ambulance.ford" simulationIdentifier="CARLA-PATH-1" material="Aluminum" lvcIndicator="Constructive" generate_bsms="true" organization="PATH">
+            <initialTSPI>
+                <GeodeticPosition latitudeInDegrees="0.002791" longitudeInDegrees="0.002422" heightAboveEllipsoidInMeters="1.001166">
+                </GeodeticPosition>
+                <Heading>180.546768</Heading>
+            </initialTSPI>
+        </vehicle>
+
+        <vehicle name="PATH-BG-1" bsmid="11111111" type="vehicle.ford.mustang" simulationIdentifier="CARLA-PATH-1" material="Aluminum" lvcIndicator="Virtual" generate_bsms="true" organization="PATH">
+            <initialTSPI>
+                <GeodeticPosition latitudeInDegrees="0.001452" longitudeInDegrees="0.001815" heightAboveEllipsoidInMeters="1.014136">
+                </GeodeticPosition>
+                <Heading>270.078583</Heading>
+            </initialTSPI>
+        </vehicle>
+
+        <vehicle name="PATH-BG-2" bsmid="11111112" type="vehicle.ford.mustang" simulationIdentifier="CARLA-PATH-1" material="Aluminum" lvcIndicator="Virtual" generate_bsms="true" organization="PATH">
+            <initialTSPI>
+                <GeodeticPosition latitudeInDegrees="0.001452" longitudeInDegrees="0.001815" heightAboveEllipsoidInMeters="1.014136">
+                </GeodeticPosition>
+                <Heading>270.078583</Heading>
+            </initialTSPI>
+        </vehicle>
+
+        <vehicle name="PATH-BG-3" bsmid="11111113" type="vehicle.ford.mustang" simulationIdentifier="CARLA-PATH-1" material="Aluminum" lvcIndicator="Virtual" generate_bsms="true" organization="PATH">
+            <initialTSPI>
+                <GeodeticPosition latitudeInDegrees="0.001452" longitudeInDegrees="0.001815" heightAboveEllipsoidInMeters="1.014136">
+                </GeodeticPosition>
+                <Heading>270.078583</Heading>
+            </initialTSPI>
+        </vehicle>
+
+        <vehicle name="PATH-BG-4" bsmid="11111114" type="vehicle.ford.mustang" simulationIdentifier="CARLA-PATH-1" material="Aluminum" lvcIndicator="Virtual" generate_bsms="true" organization="PATH">
+            <initialTSPI>
+                <GeodeticPosition latitudeInDegrees="0.001452" longitudeInDegrees="0.001815" heightAboveEllipsoidInMeters="1.014136">
+                </GeodeticPosition>
+                <Heading>270.078583</Heading>
+            </initialTSPI>
+        </vehicle>
+
+        <vehicle name="PATH-BG-5" bsmid="11111115" type="vehicle.ford.mustang" simulationIdentifier="CARLA-PATH-1" material="Aluminum" lvcIndicator="Virtual" generate_bsms="true" organization="PATH">
+            <initialTSPI>
+                <GeodeticPosition latitudeInDegrees="0.001452" longitudeInDegrees="0.001815" heightAboveEllipsoidInMeters="1.014136">
+                </GeodeticPosition>
+                <Heading>270.078583</Heading>
+            </initialTSPI>
+        </vehicle>
+
+        <vehicle name="AMG-BG-1" bsmid="22222221" type="vehicle.ford.mustang" simulationIdentifier="CARLA-AMG-1" material="Aluminum" lvcIndicator="Virtual" generate_bsms="true" organization="AMG">
+            <initialTSPI>
+                <GeodeticPosition latitudeInDegrees="0.001452" longitudeInDegrees="0.001815" heightAboveEllipsoidInMeters="1.014136">
+                </GeodeticPosition>
+                <Heading>270.078583</Heading>
+            </initialTSPI>
+        </vehicle>
+
+        <vehicle name="AMG-BG-2" bsmid="22222222" type="vehicle.ford.mustang" simulationIdentifier="CARLA-AMG-1" material="Aluminum" lvcIndicator="Virtual" generate_bsms="true" organization="AMG">
+            <initialTSPI>
+                <GeodeticPosition latitudeInDegrees="0.001452" longitudeInDegrees="0.001815" heightAboveEllipsoidInMeters="1.014136">
+                </GeodeticPosition>
+                <Heading>270.078583</Heading>
+            </initialTSPI>
+        </vehicle>
+
+        <vehicle name="AMG-BG-3" bsmid="22222223" type="vehicle.ford.mustang" simulationIdentifier="CARLA-AMG-1" material="Aluminum" lvcIndicator="Virtual" generate_bsms="true" organization="AMG">
+            <initialTSPI>
+                <GeodeticPosition latitudeInDegrees="0.001452" longitudeInDegrees="0.001815" heightAboveEllipsoidInMeters="1.014136">
+                </GeodeticPosition>
+                <Heading>270.078583</Heading>
+            </initialTSPI>
+        </vehicle>
+
+        <vehicle name="AMG-BG-4" bsmid="22222224" type="vehicle.ford.mustang" simulationIdentifier="CARLA-AMG-1" material="Aluminum" lvcIndicator="Virtual" generate_bsms="true" organization="AMG">
+            <initialTSPI>
+                <GeodeticPosition latitudeInDegrees="0.001452" longitudeInDegrees="0.001815" heightAboveEllipsoidInMeters="1.014136">
+                </GeodeticPosition>
+                <Heading>270.078583</Heading>
+            </initialTSPI>
+        </vehicle>
+
+        <vehicle name="AMG-BG-5" bsmid="22222225" type="vehicle.ford.mustang" simulationIdentifier="CARLA-AMG-1" material="Aluminum" lvcIndicator="Virtual" generate_bsms="true" organization="AMG">
+            <initialTSPI>
+                <GeodeticPosition latitudeInDegrees="0.001452" longitudeInDegrees="0.001815" heightAboveEllipsoidInMeters="1.014136">
+                </GeodeticPosition>
+                <Heading>270.078583</Heading>
+            </initialTSPI>
+        </vehicle>
+
+        <vehicle name="UTC-BG-1" bsmid="33333331" type="vehicle.ford.mustang" simulationIdentifier="CARLA-UTC-1" material="Aluminum" lvcIndicator="Constructive" generate_bsms="true" organization="UTC">
+            <initialTSPI>
+                <GeodeticPosition latitudeInDegrees="0.001525" longitudeInDegrees="0.001061" heightAboveEllipsoidInMeters="1.190417">
+                </GeodeticPosition>
+                <Heading>0.449317</Heading>
+            </initialTSPI>
+        </vehicle>
+
+        <vehicle name="UTC-BG-2" bsmid="33333332" type="vehicle.ford.mustang" simulationIdentifier="CARLA-UTC-1" material="Aluminum" lvcIndicator="Constructive" generate_bsms="true" organization="UTC">
+            <initialTSPI>
+                <GeodeticPosition latitudeInDegrees="0.001525" longitudeInDegrees="0.001061" heightAboveEllipsoidInMeters="1.190417">
+                </GeodeticPosition>
+                <Heading>0.449317</Heading>
+            </initialTSPI>
+        </vehicle>
+
+        <vehicle name="UTC-BG-3" bsmid="33333333" type="vehicle.ford.mustang" simulationIdentifier="CARLA-UTC-1" material="Aluminum" lvcIndicator="Constructive" generate_bsms="true" organization="UTC">
+            <initialTSPI>
+                <GeodeticPosition latitudeInDegrees="0.001525" longitudeInDegrees="0.001061" heightAboveEllipsoidInMeters="1.190417">
+                </GeodeticPosition>
+                <Heading>0.449317</Heading>
+            </initialTSPI>
+        </vehicle>
+
+        <vehicle name="UTC-BG-4" bsmid="33333334" type="vehicle.ford.mustang" simulationIdentifier="CARLA-UTC-1" material="Aluminum" lvcIndicator="Constructive" generate_bsms="true" organization="UTC">
+            <initialTSPI>
+                <GeodeticPosition latitudeInDegrees="0.001525" longitudeInDegrees="0.001061" heightAboveEllipsoidInMeters="1.190417">
+                </GeodeticPosition>
+                <Heading>0.449317</Heading>
+            </initialTSPI>
+        </vehicle>
+
+        <vehicle name="UTC-BG-5" bsmid="33333335" type="vehicle.ford.mustang" simulationIdentifier="CARLA-UTC-1" material="Aluminum" lvcIndicator="Constructive" generate_bsms="true" organization="UTC">
+            <initialTSPI>
+                <GeodeticPosition latitudeInDegrees="0.001525" longitudeInDegrees="0.001061" heightAboveEllipsoidInMeters="1.190417">
+                </GeodeticPosition>
+                <Heading>0.449317</Heading>
+            </initialTSPI>
+        </vehicle>
+
+    </vehicles>
+
+    <simulations>
+
+        <simulation name="CARLA-AMG-1" type="CARLA">
+            <WeatherState>ClearNoon</WeatherState>
+        </simulation>
+
+        <simulation name="CARLA-VW-1" type="CARLA">
+            <WeatherState>ClearNoon</WeatherState>
+        </simulation>
+
+        <simulation name="CARLA-UTC-1" type="CARLA">
+            <WeatherState>ClearNoon</WeatherState>
+        </simulation>
+
+        <simulation name="CARLA-PATH-1" type="CARLA">
+            <WeatherState>ClearNoon</WeatherState>
+        </simulation>
+
+    </simulations>
+
+</scenario>
