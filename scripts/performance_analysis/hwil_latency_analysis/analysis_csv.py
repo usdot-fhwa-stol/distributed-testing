@@ -1,9 +1,7 @@
-"""Run-level Latency Analysis for Radio & SecureV2XMessage CSVs."""
+"""Analyze Radio and SecureV2XMessage CSV latency data."""
 
-import argparse
 import logging
 import re
-import sys
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Iterable
@@ -12,29 +10,36 @@ import numpy as np
 import pandas as pd
 from plots_and_summaries import save_latency_report
 
+# Plot and threshold settings are constants instead of command-line options.
+MAX_LATENCY_MS = 200.0
+ROLLING_WINDOW = 20
 LATENCY_THRESHOLD_MS = 10.0
 
-
-# "patterns" = what the filename looks like.
-# "id_cols" = columns that help us match up rows.
-# "skip_events" = rows we want to throw away and not use.
 DATA_TYPES: dict[str, dict[str, Any]] = {
     "Radio": {
-        "patterns": ["*Entities-Radio*.csv", "*Radio*.csv"],
-        "id_cols": ["const^identifier,String", "Metadata,StateVersion"],
+        "patterns": (
+            "*Entities-Radio*.csv",
+            "*Radio*.csv",
+            "*.csv",
+        ),
+        "id_cols": (
+            "const^identifier,String",
+            "Metadata,StateVersion",
+        ),
         "skip_events": {"Discovery", "Destruction"},
     },
     "SecureV2XMessage": {
-        "patterns": [
+        "patterns": (
             "*TV2XMsg-SecureV2XMsg*.csv",
             "*SecureV2XMsg*.csv",
             "*SecureV2X*.csv",
-        ],
-        "id_cols": [
+            "*.csv",
+        ),
+        "id_cols": (
             "Metadata,MessageCount",
             "senderIdentifier,String",
             "uuid,String",
-        ],
+        ),
         "skip_events": set(),
     },
 }
@@ -42,6 +47,8 @@ DATA_TYPES: dict[str, dict[str, Any]] = {
 
 @dataclass(frozen=True, slots=True)
 class LogRecord:
+    """One usable CSV message and its calculated latency."""
+
     tx_time_ms: float
     rx_time_ms: float
     latency_ms: float
@@ -51,25 +58,33 @@ class LogRecord:
 
 
 def clean_value(value: Any) -> str:
-    """Turn an empty/missing value into "", and everything else into plain text."""
+    """Convert a missing value to an empty string and trim other values."""
     if value is None or pd.isna(value):
         return ""
+
     return str(value).strip()
 
 
 def normalize_timestamp_ms(value: Any) -> float:
     """
-    Makes sure timestamp values are in milliseconds.
+    Convert a timestamp to milliseconds.
+
+    The source CSVs may contain timestamps in seconds, milliseconds,
+    microseconds, or nanoseconds. Their size is used to determine the unit.
     """
     numeric = float(value)
+
     if not np.isfinite(numeric):
         raise ValueError("Timestamp is not finite")
 
     magnitude = abs(numeric)
+
     if magnitude >= 1e17:
         return numeric / 1e6
+
     if magnitude >= 1e14:
         return numeric / 1e3
+
     if 1e8 <= magnitude < 1e11:
         return numeric * 1e3
 
@@ -77,25 +92,30 @@ def normalize_timestamp_ms(value: Any) -> float:
 
 
 def extract_host(value: Any) -> str:
-    """Pull just the address part out of something like 'http://1.2.3.4:8080' -> '1.2.3.4'."""
+    """
+    Extract the hostname or IP address from an endpoint value.
+
+    Examples:
+        http://1.2.3.4:8080 -> 1.2.3.4
+        [2001:db8::1]:8080 -> 2001:db8::1
+    """
     endpoint = clean_value(value)
+
     if not endpoint:
         return ""
 
-    # Remove any "http://" or similar bit at the front.
     endpoint = re.sub(
         r"^[A-Za-z][A-Za-z0-9+.-]*://",
         "",
         endpoint,
     )
 
-    # Remove brackets
     if endpoint.startswith("["):
         closing_bracket = endpoint.find("]")
+
         if closing_bracket != -1:
             return endpoint[1:closing_bracket]
 
-    # Remove port
     if endpoint.count(":") == 1:
         return endpoint.rsplit(":", maxsplit=1)[0]
 
@@ -106,126 +126,161 @@ def find_csv_file(
     directory: Path,
     patterns: Iterable[str],
 ) -> Path | None:
-    """Look inside a folder (and its subfolders) for a file matching one of the given name patterns."""
+    """
+    Find one CSV using the configured filename patterns.
+
+    Patterns are checked from most specific to least specific. If a pattern
+    matches multiple files, the first alphabetically sorted file is used and
+    a warning is logged.
+    """
     if not directory.is_dir():
+        logging.info("CSV directory is missing; skipping: %s", directory)
         return None
 
     for pattern in patterns:
-        matches = list(directory.rglob(pattern))
-        if matches:
-            return sorted(matches)[0]
+        matches = sorted(
+            (
+                path.resolve()
+                for path in directory.glob(pattern)
+                if path.is_file()
+            ),
+            key=lambda path: path.name.lower(),
+        )
+
+        if not matches:
+            continue
+
+        if len(matches) > 1:
+            logging.warning(
+                "Multiple CSV files matched %r in %s; using %s",
+                pattern,
+                directory,
+                matches[0].name,
+            )
+
+        return matches[0]
 
     return None
 
 
+def find_first_column(
+    df: pd.DataFrame,
+    candidates: Iterable[str],
+) -> str | None:
+    """Return the first candidate column that exists in the DataFrame."""
+    return next(
+        (column for column in candidates if column in df.columns),
+        None,
+    )
+
+
 def read_records(
     csv_file: Path,
-    msg_type: str,
+    message_type: str,
 ) -> list[LogRecord]:
-    """Open a CSV file and turn each usable row into a LogRecord."""
-    cfg = DATA_TYPES[msg_type]
+    """Read usable latency records from one CSV."""
+    config = DATA_TYPES[message_type]
 
     try:
-        df = pd.read_csv(csv_file, dtype=str, low_memory=False)
+        df = pd.read_csv(
+            csv_file,
+            dtype=str,
+            low_memory=False,
+        )
     except (
         OSError,
+        pd.errors.EmptyDataError,
         pd.errors.ParserError,
         UnicodeDecodeError,
     ) as error:
         logging.error("Failed to read %s: %s", csv_file, error)
         return []
 
-    # Figure out which column tells us "when it was sent".
-    tx_col = next(
+    tx_column = find_first_column(
+        df,
         (
-            column
-            for column in (
-                "Metadata,TimeOfTransmission",
-                "Metadata,TimeOfCommit",
-                "const^Metadata,TimeOfCreation",
-            )
-            if column in df.columns
+            "Metadata,TimeOfTransmission",
+            "Metadata,TimeOfCommit",
+            "const^Metadata,TimeOfCreation",
         ),
-        None,
     )
-    # Figure out which column tells us "when it arrived".
-    rx_col = next(
+    rx_column = find_first_column(
+        df,
         (
-            column
-            for column in (
-                "Metadata,TimeOfReceipt",
-                "packetTimestamp",
-            )
-            if column in df.columns
+            "Metadata,TimeOfReceipt",
+            "packetTimestamp",
         ),
-        None,
     )
 
-    # If we can't find both times, skip this file.
-    if tx_col is None or rx_col is None:
-        logging.warning("Missing timing columns in %s", csv_file)
+    if tx_column is None or rx_column is None:
+        logging.warning(
+            "Skipping %s because its TX or RX timestamp column is missing",
+            csv_file,
+        )
         return []
 
-    # Throw away rows that are the "skip" kind of event (like Discovery/Destruction), if any.
-    event_col = "Metadata,Enum,Middleware::EventType"
-    skip_events = cfg["skip_events"]
-    if event_col in df.columns and skip_events:
-        df = df.loc[~df[event_col].isin(skip_events)]
+    event_column = "Metadata,Enum,Middleware::EventType"
+    skip_events = config["skip_events"]
 
-    # Figure out which column (if any) holds the sender's IP address.
-    ip_col = next(
+    if event_column in df.columns and skip_events:
+        df = df.loc[~df[event_column].isin(skip_events)]
+
+    ip_column = find_first_column(
+        df,
         (
-            column
-            for column in (
-                "const^Metadata,SDOid.hostIPaddress",
-                "Metadata,Endpoint",
-                "const^Metadata,Endpoint",
-            )
-            if column in df.columns
+            "const^Metadata,SDOid.hostIPaddress",
+            "Metadata,Endpoint",
+            "const^Metadata,Endpoint",
         ),
-        None,
     )
 
-    # Only keep the ID columns that actually exist in this file.
-    available_id_cols = [column for column in cfg["id_cols"] if column in df.columns]
+    available_id_columns = [
+        column
+        for column in config["id_cols"]
+        if column in df.columns
+    ]
 
     records: list[LogRecord] = []
+
     for row_index, row in df.iterrows():
-        
         try:
-            tx_ms = normalize_timestamp_ms(row[tx_col])
-            rx_ms = normalize_timestamp_ms(row[rx_col])
+            tx_time_ms = normalize_timestamp_ms(row[tx_column])
+            rx_time_ms = normalize_timestamp_ms(row[rx_column])
         except (TypeError, ValueError, OverflowError):
+            # A malformed timestamp only invalidates this row, not the whole
+            # file, so continue processing the remaining rows.
             continue
 
-        # Build a "key" out of the ID columns so we can match rows to each other later.
-        key_parts = []
-        for column in available_id_cols:
-            value = clean_value(row.get(column))
-            if value:
-                key_parts.append(value)
+        key_parts = [
+            value
+            for column in available_id_columns
+            if (value := clean_value(row.get(column)))
+        ]
 
         row_id = clean_value(row.get("rowID")) or str(row_index)
 
-        match_key = (
-            f"{msg_type}::{'::'.join(key_parts)}"
-            if key_parts
-            else f"{msg_type}::row::{row_id}"
+        if key_parts:
+            match_key = f"{message_type}::{'::'.join(key_parts)}"
+        else:
+            match_key = f"{message_type}::row::{row_id}"
+
+        ip_address = (
+            extract_host(row.get(ip_column))
+            if ip_column is not None
+            else ""
         )
-        ip_address = extract_host(row.get(ip_col)) if ip_col else ""
 
         records.append(
             LogRecord(
-                tx_time_ms=tx_ms,
-                rx_time_ms=rx_ms,
-                latency_ms=rx_ms - tx_ms,
+                tx_time_ms=tx_time_ms,
+                rx_time_ms=rx_time_ms,
+                latency_ms=rx_time_ms - tx_time_ms,
                 match_key=match_key,
                 row_id=row_id,
                 ip_address=ip_address,
             )
         )
 
-    # Put the records in time order, earliest first.
     return sorted(
         records,
         key=lambda record: (
@@ -235,178 +290,151 @@ def read_records(
     )
 
 
-def process_csv(records: list[LogRecord]) -> pd.DataFrame:
-    """
-    Turn our list of LogRecords into a dataframe.
-    """
-    rows = [
-        {
-            "Tx Timestamp (ms)": record.tx_time_ms,
-            "Rx Timestamp (ms)": record.rx_time_ms,
-            "Latency (ms)": record.latency_ms,
-            "Match Key": record.match_key,
-            "Row ID": record.row_id,
-            "IP Address": record.ip_address,
-            "Datetime": pd.to_datetime(
-                record.tx_time_ms,
-                unit="ms",
-                utc=True,
-                errors="coerce",
-            ),
-        }
-        for record in records
-        if (np.isfinite(record.latency_ms) and record.latency_ms >= 0)
-    ]
+def records_to_dataframe(records: list[LogRecord]) -> pd.DataFrame:
+    """Convert valid, non-negative latency records into a DataFrame."""
+    rows = []
+
+    for record in records:
+        if not np.isfinite(record.latency_ms):
+            continue
+
+        if record.latency_ms < 0:
+            continue
+
+        rows.append(
+            {
+                "Tx Timestamp (ms)": record.tx_time_ms,
+                "Rx Timestamp (ms)": record.rx_time_ms,
+                "Latency (ms)": record.latency_ms,
+                "Match Key": record.match_key,
+                "Row ID": record.row_id,
+                "IP Address": record.ip_address,
+                "Datetime": pd.to_datetime(
+                    record.tx_time_ms,
+                    unit="ms",
+                    utc=True,
+                    errors="coerce",
+                ),
+            }
+        )
+
     return pd.DataFrame(rows)
 
 
-def save_analysis(
-    df: pd.DataFrame,
-    *,
-    message_type: str,
-    run_name: str,
+def analyze_csv_type(
+    csv_root: Path,
     results_dir: Path,
-    max_latency_ms: float,
-    rolling_window: int,
-) -> tuple[dict[str, Any], Path]:
-    """Save the table to a CSV file, create plots and data summary."""
-    output_dir = results_dir / message_type
+    run_name: str,
+    message_type: str,
+) -> bool:
+    """
+    Analyze one configured CSV type.
+
+    Returns True when a report was generated and False when the input was
+    missing or did not contain usable records.
+    """
+    config = DATA_TYPES[message_type]
+    input_directory = csv_root / message_type
+
+    csv_file = find_csv_file(
+        input_directory,
+        config["patterns"],
+    )
+
+    if csv_file is None:
+        logging.info(
+            "Skipping %s CSV analysis because no CSV was found in %s",
+            message_type,
+            input_directory,
+        )
+        return False
+
+    logging.info("Processing %s CSV: %s", message_type, csv_file)
+
+    records = read_records(csv_file, message_type)
+
+    if not records:
+        logging.warning("No usable records found in %s", csv_file)
+        return False
+
+    dataframe = records_to_dataframe(records)
+
+    if dataframe.empty:
+        logging.warning(
+            "No valid non-negative latency values found in %s",
+            csv_file,
+        )
+        return False
+
+    output_directory = results_dir / "csv" / message_type
+
+    
+    endpoint_and_direction = "v2xhub->dt_plugin"
+    
 
     summary = save_latency_report(
-        df,
-        output_dir,
-        message_type=message_type,
+        dataframe,
+        output_directory,
+        message_type=endpoint_and_direction,
         run_name=run_name,
-        max_latency_ms=max_latency_ms,
-        rolling_window=rolling_window,
+        max_latency_ms=MAX_LATENCY_MS,
+        rolling_window=ROLLING_WINDOW,
         threshold=LATENCY_THRESHOLD_MS,
     )
 
     logging.info(
-        "Threshold result for %s: %s (%d/%d samples below %.2f ms, %.2f%%)",
+        "%s threshold: %s (%d/%d below %.2f ms, %.2f%%)",
         message_type,
         summary["threshold_result"],
         summary["passed_samples"],
-        len(df),
+        len(dataframe),
         LATENCY_THRESHOLD_MS,
         summary["pass_percent"],
     )
 
-    return summary, output_dir.resolve()
+    return True
 
 
-def run_csv_analysis(args: argparse.Namespace) -> int:
-    """
-    For each type of data we know about
-    (Radio, SecureV2XMessage), find its CSV file, read, clean,
-    and save the results and plots.
-    """
-    run_dir = args.run_dir.expanduser().resolve()
-    input_dir = (
-        run_dir if args.input_dir is None else args.input_dir.expanduser().resolve()
-    )
-    results_dir = run_dir / "results"
+def run_csv_analysis(
+    input_dir: Path,
+    results_dir: Path,
+) -> int:
+    """Analyze all supported CSV types in one run directory."""
+    csv_root = input_dir / "csv"
 
-    # Stop early if the folders we need don't actually exist.
-    if not run_dir.is_dir() or not input_dir.is_dir():
-        logging.error(
-            "Directory not found. Run: %s, Input: %s",
-            run_dir,
-            input_dir,
-        )
-        return 1
-
-    results_dir.mkdir(parents=True, exist_ok=True)
-    summary_records: list[dict[str, Any]] = []
-
-    # Go through each data type one at a time (Radio, then SecureV2XMessage).
-    for msg_type, cfg in DATA_TYPES.items():
-        csv_file = find_csv_file(
-            input_dir,
-            cfg["patterns"],
-        )
-
-        if not csv_file:
-            logging.info(
-                "[-] No CSV file found for %s in %s",
-                msg_type,
-                input_dir,
-            )
-            continue
-
+    if not csv_root.is_dir():
         logging.info(
-            "[+] Processing %s: %s",
-            msg_type,
-            csv_file.name,
+            "Skipping CSV analysis because the directory is missing: %s",
+            csv_root,
         )
-        records = read_records(csv_file, msg_type)
-
-        if not records:
-            logging.warning(
-                "  [-] No valid records in %s",
-                csv_file.name,
-            )
-            continue
-
-        df = process_csv(records)
-        if df.empty:
-            logging.warning("  [-] No valid non-negative latency calculated.")
-            continue
-
-        # Save the results, charts, and summary for this data type.
-        summary, out_path = save_analysis(
-            df,
-            message_type=msg_type,
-            run_name=run_dir.name,
-            results_dir=results_dir,
-            max_latency_ms=args.max_latency_ms,
-            rolling_window=args.rolling_window,
-        )
-        summary_records.append(summary)
-        print(
-            f"  [✓] Processed {len(df):,} records | "
-            f"Mean: {summary['mean_ms']:.2f} ms | "
-            f"P95: {summary['p95_ms']:.2f} ms | "
-            f"Threshold: {summary['threshold_result']} "
-            f"({summary['pass_percent']:.2f}% below "
-            f"{LATENCY_THRESHOLD_MS:g} ms)"
-        )
-
-    if not summary_records:
-        logging.info("[-] No matching CSV data was processed.")
         return 0
 
+    processed_count = 0
+
+    for message_type in DATA_TYPES:
+        try:
+            if analyze_csv_type(
+                csv_root=csv_root,
+                results_dir=results_dir,
+                run_name=input_dir.name,
+                message_type=message_type,
+            ):
+                processed_count += 1
+        except Exception:
+            logging.exception(
+                "CSV analysis failed for %s in run %s",
+                message_type,
+                input_dir.name,
+            )
+            return 1
+
+    if processed_count == 0:
+        logging.info("No CSV data was processed for run %s", input_dir.name)
+    else:
+        logging.info(
+            "Completed %d CSV analysis type(s) for run %s",
+            processed_count,
+            input_dir.name,
+        )
+
     return 0
-
-
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Run-level Latency Analysis for CSVs.")
-    parser.add_argument(
-        "-r",
-        "--run-dir",
-        type=Path,
-        required=True,
-    )
-    parser.add_argument(
-        "--input-dir",
-        type=Path,
-        default=None,
-    )
-    parser.add_argument(
-        "--max-latency-ms",
-        type=float,
-        default=200.0,
-    )
-    parser.add_argument(
-        "--rolling-window",
-        type=int,
-        default=20,
-    )
-    parser.add_argument(
-        "--debug",
-        action="store_true",
-    )
-
-    cli_args = parser.parse_args()
-    logging.basicConfig(level=logging.DEBUG if cli_args.debug else logging.INFO)
-    sys.exit(run_csv_analysis(cli_args))
