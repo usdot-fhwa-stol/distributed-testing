@@ -149,7 +149,7 @@ def decode_pcap(
 ) -> Path:
     """Decode one PCAP into its own output directory."""
     output_directory = decoded_root / pcap_name
-    decoded_log = output_directory / "decoded.log"
+    decoded_log = output_directory / ("decoded_" + pcap_name.split("_")[2] + ".log")
 
     # Remove the previous output so every PCAP is decoded from scratch.
     if output_directory.exists():
@@ -283,7 +283,7 @@ def run_pcap_analysis(
             try:
                 decoded_logs[capture_name] = decode_pcap(
                     pcap_name=capture_name,
-                    pcap_file_path=capture_path,
+                    pcap_path=capture_path,
                     decoded_root=decoded_root,
                 )
             except Exception:

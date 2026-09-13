@@ -117,9 +117,15 @@ def read_run_summary_files(results_dir: Path) -> pd.DataFrame:
         # run directory
         relative_parent = summary_file_path.parent.relative_to(results_dir)
 
-        summary_df.insert(0, "summary_file", str(relative_file))
-        summary_df.insert(0, "test_name", str(relative_parent))
-        summary_df.insert(0, "run_name", results_dir.name)
+        # Overwrite/assign metadata columns to avoid "already exists" errors
+        summary_df["summary_file"] = str(relative_file)
+        summary_df["test_name"] = str(relative_parent)
+        summary_df["run_name"] = results_dir.name
+
+        # Reorder DataFrame so context columns appear as the first columns
+        metadata_cols = ["run_name", "test_name", "summary_file"]
+        other_cols = [c for c in summary_df.columns if c not in metadata_cols]
+        summary_df = summary_df[metadata_cols + other_cols]
 
         summary_dfs.append(summary_df)
 

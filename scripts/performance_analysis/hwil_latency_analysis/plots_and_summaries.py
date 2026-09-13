@@ -311,7 +311,6 @@ def add_threshold_summary(
     df: pd.DataFrame,
     *,
     threshold: float | None,
-    latency_column: str = "Latency (ms)",
 ) -> dict[str, Any]:
     """Add latency threshold counts, percentage, and result to a summary.
 
@@ -331,7 +330,7 @@ def add_threshold_summary(
         return summary
 
     latencies = pd.to_numeric(
-        df[latency_column],
+        df["Latency (ms)"],
         errors="coerce",
     ).dropna()
 
@@ -355,7 +354,7 @@ def add_threshold_summary(
     return summary
 
 
-def save_latency_report(
+def create_plots_and_report(
     df: pd.DataFrame,
     output_dir: Path,
     *,
@@ -364,7 +363,6 @@ def save_latency_report(
     max_latency_ms: float,
     rolling_window: int,
     threshold: float | None,
-    latency_column: str = "Latency (ms)",
 ) -> dict[str, Any]:
     """
     Persist a latency DataFrame as the standard report: the raw results CSV,
@@ -391,7 +389,6 @@ def save_latency_report(
         summary,
         df,
         threshold=threshold,
-        latency_column=latency_column,
     )
 
     pd.DataFrame([summary]).to_csv(
