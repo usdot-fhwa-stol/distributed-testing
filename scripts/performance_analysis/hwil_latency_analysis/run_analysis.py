@@ -6,7 +6,6 @@ import argparse
 import logging
 import sys
 from pathlib import Path
-from typing import Any
 
 import analysis_csv
 import analysis_pcap
@@ -20,7 +19,7 @@ def parse_arguments() -> argparse.Namespace:
     """Read the command-line arguments."""
     parser = argparse.ArgumentParser(
         description=(
-            "Run V2X PCAP and CSV latency analysis for every run under an "
+            "Run PCAP and CSV latency analysis for every run under an "
             "input directory."
         )
     )
@@ -45,11 +44,13 @@ def discover_runs(input_dir: Path) -> tuple[list[Path], Path]:
             f"Input directory does not exist: {input_dir}"
         )
 
+    # Ignore folders that dont contain run data
     ignored_names = {
         "decoded",
         "__pycache__",
     }
 
+    # Sort file paths to process runs in order
     run_directories = sorted(
         (
             path.resolve()
@@ -58,7 +59,7 @@ def discover_runs(input_dir: Path) -> tuple[list[Path], Path]:
             and path.name not in ignored_names
             and not path.name.startswith(".")
         ),
-        key=lambda path: path.name.lower(),
+        key=lambda path: path.name.casefold(),
     )
 
     if not run_directories:
@@ -66,17 +67,9 @@ def discover_runs(input_dir: Path) -> tuple[list[Path], Path]:
             f"No run directories found inside {input_dir}"
         )
 
+    # Create the results folder under the same parent as the input directory.
     results_root = (input_dir.parent / "results").resolve()
     return run_directories, results_root
-
-
-def normalize_threshold_result(value: Any) -> str:
-    """Convert a threshold result to a consistent uppercase value."""
-    if value is None or pd.isna(value):
-        return "NOT_CONFIGURED"
-
-    normalized = str(value).strip().upper()
-    return normalized or "NOT_CONFIGURED"
 
 
 def read_run_summary_files(results_dir: Path) -> pd.DataFrame:
@@ -84,20 +77,22 @@ def read_run_summary_files(results_dir: Path) -> pd.DataFrame:
     if not results_dir.is_dir():
         return pd.DataFrame()
 
-    summary_files = sorted(
+    # Search for summary files based on file name, and process in sorted order
+    summary_file_paths = sorted(
         (
             path
             for path in results_dir.rglob("results_summary.csv")
             if path.is_file()
         ),
-        key=lambda path: str(path).lower(),
+        key=lambda path: str(path).casefold(),
     )
 
-    summary_frames: list[pd.DataFrame] = []
+    summary_dfs: list[pd.DataFrame] = []
 
-    for summary_file in summary_files:
+    # Read in data from summary csv
+    for summary_file_path in summary_file_paths:
         try:
-            summary = pd.read_csv(summary_file)
+            summary_df = pd.read_csv(summary_file_path)
         except (
             OSError,
             pd.errors.EmptyDataError,
@@ -106,104 +101,65 @@ def read_run_summary_files(results_dir: Path) -> pd.DataFrame:
         ) as error:
             logging.error(
                 "Failed to read summary %s: %s",
-                summary_file,
+                summary_file_path,
                 error,
             )
             continue
 
-        if summary.empty:
-            logging.warning("Summary file is empty: %s", summary_file)
+        if summary_df.empty:
+            logging.warning("Summary file is empty: %s", summary_file_path)
             continue
 
-        relative_file = summary_file.relative_to(results_dir)
-        relative_parent = summary_file.parent.relative_to(results_dir)
+        # Get the relative path of the summary file from the results directory
+        # /results/run_001/summary.csv -> /run_001/summary.csv
+        relative_file = summary_file_path.relative_to(results_dir)
 
-        # This keeps enough context to show where each result came from.
-        summary["run_name"] = results_dir.name
-        summary["test_name"] = str(relative_parent)
-        summary["summary_file"] = str(relative_file)
+        # run directory
+        relative_parent = summary_file_path.parent.relative_to(results_dir)
 
-        metadata_columns = [
-            "run_name",
-            "test_name",
-            "summary_file",
-        ]
-        remaining_columns = [
-            column
-            for column in summary.columns
-            if column not in metadata_columns
-        ]
+        summary_df.insert(0, "summary_file", str(relative_file))
+        summary_df.insert(0, "test_name", str(relative_parent))
+        summary_df.insert(0, "run_name", results_dir.name)
 
-        summary_frames.append(
-            summary[metadata_columns + remaining_columns]
-        )
+        summary_dfs.append(summary_df)
 
-    if not summary_frames:
+    if not summary_dfs:
         return pd.DataFrame()
 
-    return pd.concat(
-        summary_frames,
-        ignore_index=True,
-        sort=False,
-    )
+    return pd.concat(summary_dfs, ignore_index=True)
 
 
-def add_run_result(
+def get_run_result(
     summary: pd.DataFrame,
-    analysis_status: int,
-) -> pd.DataFrame:
-    """Add the overall run result to every summary row."""
-    result = summary.copy()
-
-    if "threshold_result" in result.columns:
-        normalized_results = result["threshold_result"].map(
-            normalize_threshold_result
-        )
-        result["threshold_result"] = normalized_results
-        threshold_failed = normalized_results.isin(
-            FAILURE_RESULTS
-        ).any()
-    else:
-        threshold_failed = False
-
-    if analysis_status != 0:
-        run_result = "FAIL"
-        failure_reason = "ANALYSIS_ERROR"
-    elif threshold_failed:
-        run_result = "FAIL"
-        failure_reason = "THRESHOLD_FAILURE"
-    elif result.empty:
-        run_result = "NO_RESULTS"
-        failure_reason = "NO_RESULTS"
-    else:
-        run_result = "PASS"
-        failure_reason = ""
-
-    result["run_result"] = run_result
-    result["run_failed"] = run_result == "FAIL"
-    result["failure_reason"] = failure_reason
-    result["analysis_status"] = analysis_status
-
-    return result
-
-
-def write_run_summary(
-    run_dir: Path,
-    results_dir: Path,
-    analysis_status: int,
-) -> pd.DataFrame:
-    """Write the combined summary for one run."""
-    summary = read_run_summary_files(results_dir)
-    summary = add_run_result(summary, analysis_status)
+    analysis_failed: bool,
+) -> tuple[str, str]:
+    """Return the overall result and failure reason for one run."""
+    if analysis_failed:
+        return "FAIL", "ANALYSIS_ERROR"
 
     if summary.empty:
-        run_result = "FAIL" if analysis_status != 0 else "NO_RESULTS"
-        failure_reason = (
-            "ANALYSIS_ERROR"
-            if analysis_status != 0
-            else "NO_RESULTS"
-        )
+        return "FAIL", "NO_RESULTS"
 
+    if "threshold_result" not in summary.columns:
+        return "PASS", ""
+
+    if summary["threshold_result"].isin(FAILURE_RESULTS).any():
+        return "FAIL", "THRESHOLD_FAILURE"
+
+    return "PASS", ""
+
+
+def save_run_summary(
+    run_dir: Path,
+    results_dir: Path,
+    run_result: str,
+    failure_reason: str,
+) -> Path:
+    """Write the combined detailed summary for one run."""
+    summary = read_run_summary_files(results_dir)
+
+    # Write a blank summary if any failure prevent finishing analysis
+    if summary.empty:
         summary = pd.DataFrame(
             [
                 {
@@ -212,46 +168,34 @@ def write_run_summary(
                     "summary_file": "",
                     "threshold_result": "",
                     "run_result": run_result,
-                    "run_failed": run_result == "FAIL",
                     "failure_reason": failure_reason,
-                    "analysis_status": analysis_status,
                 }
             ]
         )
+    else:
+        summary["run_result"] = run_result
+        summary["failure_reason"] = failure_reason
 
+    # Save summary to results/run folder
     results_dir.mkdir(parents=True, exist_ok=True)
-    output_file = results_dir / (run_dir.name + "_summary.csv")
+    output_file = results_dir / f"{run_dir.name}_summary.csv"
     summary.to_csv(output_file, index=False)
 
     logging.info("Run summary written to %s", output_file)
-    return summary
+    return output_file.resolve()
 
 
 def write_total_summary(
     results_root: Path,
-    run_summaries: list[pd.DataFrame],
+    run_results: list[dict[str, str]],
 ) -> Path:
-    """Combine all run summaries into one final summary."""
-    if run_summaries:
-        total_summary = pd.concat(
-            run_summaries,
-            ignore_index=True,
-            sort=False,
-        )
-    else:
-        total_summary = pd.DataFrame(
-            columns=[
-                "run_name",
-                "test_name",
-                "summary_file",
-                "threshold_result",
-                "run_result",
-                "run_failed",
-                "failure_reason",
-                "analysis_status",
-            ]
-        )
+    """Write one simple PASS or FAIL result for each run."""
+    total_summary = pd.DataFrame(
+        run_results,
+        columns=["run_name", "run_result", "failure_reason"],
+    )
 
+    # Keep the final summary at the top of the results folder
     results_root.mkdir(parents=True, exist_ok=True)
     output_file = results_root / "total_data_summary.csv"
     total_summary.to_csv(output_file, index=False)
@@ -263,43 +207,45 @@ def write_total_summary(
 def analyze_run(
     input_dir: Path,
     results_dir: Path,
-) -> int:
+) -> bool:
     """Run the PCAP and CSV analysis for one run."""
     logging.info("============================================================")
     logging.info("Processing run: %s", input_dir.name)
     logging.info("Input: %s", input_dir)
     logging.info("Output: %s", results_dir)
 
+    # Create reults directory
     results_dir.mkdir(parents=True, exist_ok=True)
-    statuses: list[int] = []
+    analysis_failed = False
 
+    # Run pcap then csv analysis_csv and mark status as failed if either produces an error
     try:
         status = analysis_pcap.run_pcap_analysis(
             input_dir=input_dir,
             results_dir=results_dir,
         )
-        statuses.append(status)
+        analysis_failed = analysis_failed or status != 0
     except Exception:
         logging.exception(
-            "Unhandled PCAP analysis error for %s",
+            "PCAP analysis error for %s",
             input_dir.name,
         )
-        statuses.append(1)
+        analysis_failed = True
 
     try:
         status = analysis_csv.run_csv_analysis(
             input_dir=input_dir,
             results_dir=results_dir,
         )
-        statuses.append(status)
+        analysis_failed = analysis_failed or status != 0
     except Exception:
         logging.exception(
             "Unhandled CSV analysis error for %s",
             input_dir.name,
         )
-        statuses.append(1)
+        analysis_failed = True
 
-    return max(statuses, default=0)
+    return analysis_failed
 
 
 def main() -> int:
@@ -311,42 +257,61 @@ def main() -> int:
         format="%(asctime)s [%(levelname)s] %(message)s",
     )
 
+    # Find run folders
     try:
         run_directories, results_root = discover_runs(args.input_dir)
     except (FileNotFoundError, OSError) as error:
         logging.error("Unable to find input runs: %s", error)
         return 1
 
-    statuses: list[int] = []
-    run_summaries: list[pd.DataFrame] = []
+    run_results: list[dict[str, str]] = []
+    any_run_failed = False
 
+    # Analyze and write summary for each run
     for run_dir in run_directories:
         run_results_dir = results_root / run_dir.name
 
-        run_status = analyze_run(
+        analysis_failed = analyze_run(
             input_dir=run_dir,
             results_dir=run_results_dir,
         )
-        statuses.append(run_status)
+
+        summary = read_run_summary_files(run_results_dir)
+        run_result, failure_reason = get_run_result(
+            summary=summary,
+            analysis_failed=analysis_failed,
+        )
 
         try:
-            run_summary = write_run_summary(
+            save_run_summary(
                 run_dir=run_dir,
                 results_dir=run_results_dir,
-                analysis_status=run_status,
+                run_result=run_result,
+                failure_reason=failure_reason,
             )
-            run_summaries.append(run_summary)
         except Exception:
             logging.exception(
                 "Failed to write summary for %s",
                 run_dir.name,
             )
-            statuses.append(1)
+            run_result = "FAIL"
+            failure_reason = "SUMMARY_ERROR"
+
+        run_results.append(
+            {
+                "run_name": run_dir.name,
+                "run_result": run_result,
+                "failure_reason": failure_reason,
+            }
+        )
+
+        if run_result == "FAIL":
+            any_run_failed = True
 
     try:
         summary_file = write_total_summary(
             results_root=results_root,
-            run_summaries=run_summaries,
+            run_results=run_results,
         )
         print(
             "[✓] Analysis complete. "
@@ -354,13 +319,11 @@ def main() -> int:
         )
     except Exception:
         logging.exception("Failed to write the total summary")
-        statuses.append(1)
+        return 1
 
     failed_runs = sum(
-        1
-        for summary in run_summaries
-        if "run_failed" in summary.columns
-        and summary["run_failed"].fillna(False).astype(bool).any()
+        result["run_result"] == "FAIL"
+        for result in run_results
     )
 
     if failed_runs:
@@ -370,7 +333,7 @@ def main() -> int:
             len(run_directories),
         )
 
-    return max(statuses, default=0)
+    return 1 if any_run_failed else 0
 
 
 if __name__ == "__main__":
