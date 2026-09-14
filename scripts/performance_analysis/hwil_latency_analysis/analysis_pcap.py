@@ -73,7 +73,7 @@ def get_pcap(
     endpoint: str,
     direction: str,
 ) -> Path | None:
-    """Find a TX or RX PCAP in an endpoint directory."""
+    """Find a PCAP in an endpoint directory."""
     endpoint_directory = pcap_root / endpoint
 
     if not endpoint_directory.is_dir():

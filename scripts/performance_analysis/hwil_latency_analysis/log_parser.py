@@ -1,4 +1,4 @@
-"""Read timestamped JSON messages and calculate TX-to-RX latency."""
+"""Read timestamped JSON messages and calculate message latency."""
 
 import json
 from collections import defaultdict, deque
@@ -35,7 +35,7 @@ def read_log_entries(log_file: Path) -> list[tuple[int, dict[str, Any]]]:
 
 
 def message_key(payload: dict[str, Any]) -> str:
-    """Create a consistent string for comparing two JSON payloads."""
+    """Create a string for comparing two JSON payloads."""
     return json.dumps(
         payload,
         sort_keys=True,
@@ -47,7 +47,7 @@ def calculate_latency(
     tx_entries: list[tuple[int, dict[str, Any]]],
     rx_entries: list[tuple[int, dict[str, Any]]],
 ) -> pd.DataFrame:
-    """Match identical TX/RX payloads and calculate their latency."""
+    """Match identical message payloads and calculate their latency."""
     rx_messages = defaultdict(deque)
 
     # Sort by the timestamp.

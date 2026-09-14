@@ -1,4 +1,4 @@
-"""Create plots and summary reports from normalized latency data."""
+"""Create plots and summary reports from latency data."""
 
 from pathlib import Path
 from typing import Any
@@ -16,7 +16,7 @@ HISTOGRAM_BINS = 20
 
 
 def format_route(route: str) -> str:
-    """Format an endpoint route for display."""
+    """Format an endpoint route string for plot title."""
     endpoints = [endpoint.strip() for endpoint in route.split("->")]
 
     if len(endpoints) == 2:
