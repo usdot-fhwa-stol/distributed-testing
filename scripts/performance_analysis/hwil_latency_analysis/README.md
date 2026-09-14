@@ -3,7 +3,7 @@
 ## Input Folder Setup
 
 ```text
-runs/
+event/
 └── run_001/
     ├── pcap/
     │   ├── dut_1/
@@ -18,6 +18,15 @@ runs/
     └── csv/
         ├── Entities-Radio.csv
         └── TV2XMsg-SecureV2XMsg.csv
+```
+
+## Running the analysis
+
+Run both PCAP and CSV analysis:
+
+```bash
+# event/run_001/csv/radio.csv
+python run_analysis.py --input-dir event/
 ```
 
 ### PCAP filename discovery
@@ -91,14 +100,6 @@ v2xhub_rx.pcap
 
 If multiple files match, the first sorted match is used.
 
-## Running the analysis
-
-Run both PCAP and CSV analysis:
-
-```bash
-# event/run_001/csv/radio.csv
-python run_analysis.py --input-dir event/
-```
 
 ### Output
 
