@@ -4,12 +4,13 @@ import logging
 import shutil
 from pathlib import Path
 
-import pcapDecode
-from plots_and_summaries import (
+import pcap_decoder
+from log_parser import (
     calculate_latency,
-    create_plots_and_report,
     read_log_entries,
-    results_to_dataframe,
+)
+from plots_and_summaries import (
+    create_plots_and_report,
 )
 
 MAX_LATENCY_MS = 200.0
@@ -158,7 +159,7 @@ def decode_pcap(
     output_directory.mkdir(parents=True)
 
     logging.info("Decoding %s", pcap_name)
-    pcapDecode.decode_pcap(pcap_path, output_directory)
+    pcap_decoder.decode_pcap(pcap_path, output_directory)
 
     return decoded_log.resolve()
 
@@ -189,18 +190,17 @@ def analyze_direction(
 
     tx_entries = read_log_entries(decoded_logs[tx_capture_name])
     rx_entries = read_log_entries(decoded_logs[rx_capture_name])
-
+    
     logging.info(
         "Loaded %d TX messages and %d RX messages",
         len(tx_entries),
         len(rx_entries),
     )
 
-    latency_results = calculate_latency(
+    latency_data = calculate_latency(
         tx_entries,
         rx_entries,
     )
-    latency_data = results_to_dataframe(latency_results)
 
     if latency_data.empty:
         logging.warning(
