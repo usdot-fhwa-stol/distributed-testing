@@ -222,7 +222,6 @@ def get_stop_waypoint_heading(tl: "carla.TrafficLight") -> float:
 
 def extract_map_data(
     world: carla.World,
-    num_waypoints: int = 6,
     main_headings: Optional[Dict[int, float]] = None,
     name_prefix: str = "J",
     junction_order: str = "junction_id",
