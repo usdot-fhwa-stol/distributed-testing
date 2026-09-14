@@ -32,7 +32,9 @@ def bearing_deg(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
     y = math.cos(phi1) * math.sin(phi2) - math.sin(phi1) * math.cos(phi2) * math.cos(dlon)
     return (math.degrees(math.atan2(x, y)) + 360) % 360
 
-
+# TODO: Modify logic in this script so that if multiple branches are returned for a junction it evaluates all
+# instead of taking the first and ignoring the rest (line 59: cur=nxts[0])
+# Logic was satisfactory for initial creation of Town10 scenario.xml, although not complete
 def get_turn_type(tl: "carla.TrafficLight") -> str:
     """Classify the movement a signal controls as 'left', 'through', or
     'right' by comparing the lane's heading before the junction to its
