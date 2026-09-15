@@ -1,0 +1,29 @@
+{
+  "intersections": [
+    {
+      "id": 1,
+      "signal_groups": [2, 6, 8],
+      "ip": "1.2.3.4"
+    },
+    {
+      "id": 2,
+      "signal_groups": [2, 4, 6, 8],
+      "ip": "1.2.3.4"
+    },
+    {
+      "id": 3,
+      "signal_groups": [2, 8],
+      "ip": "1.2.3.4"
+    },
+    {
+      "id": 4,
+      "signal_groups": [2, 4, 8],
+      "ip": "1.2.3.4"
+    },
+    {
+      "id": 5,
+      "signal_groups": [2, 4, 8],
+      "ip": "1.2.3.4"
+    }
+  ]
+}
