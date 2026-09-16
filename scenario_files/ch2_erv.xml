@@ -6,7 +6,7 @@
     </identifier>
 
     <OpenDrive>
-        <MapFileName name="RFS.xodr">
+        <MapFileName name="Richmond_Field_Station_richmond_CA.umap">
             <MapOrigin latitudeInDegrees="0" longitudeInDegrees="0" heightAboveEllipsoidInMeters="0"> </MapOrigin>
         </MapFileName>
     </OpenDrive>
@@ -29,7 +29,7 @@
             </initialTSPI>
         </vehicle>
 
-        <vehicle name="PATH-BG-1" bsmid="11111111" type="vehicle.ford.mustang" simulationIdentifier="CARLA-PATH-1" material="Aluminum" lvcIndicator="Virtual" generate_bsms="true" organization="PATH">
+        <vehicle name="PATH-BG-1" bsmid="11111111" type="vehicle.lincoln.mkz" simulationIdentifier="CARLA-PATH-1" material="Aluminum" lvcIndicator="Virtual" generate_bsms="true" organization="PATH">
             <initialTSPI>
                 <GeodeticPosition latitudeInDegrees="0.001452" longitudeInDegrees="0.001815" heightAboveEllipsoidInMeters="1.014136">
                 </GeodeticPosition>
@@ -37,7 +37,7 @@
             </initialTSPI>
         </vehicle>
 
-        <vehicle name="PATH-BG-2" bsmid="11111112" type="vehicle.ford.mustang" simulationIdentifier="CARLA-PATH-1" material="Aluminum" lvcIndicator="Virtual" generate_bsms="true" organization="PATH">
+        <vehicle name="PATH-BG-2" bsmid="11111112" type="vehicle.lincoln.mkz" simulationIdentifier="CARLA-PATH-1" material="Aluminum" lvcIndicator="Virtual" generate_bsms="true" organization="PATH">
             <initialTSPI>
                 <GeodeticPosition latitudeInDegrees="0.001452" longitudeInDegrees="0.001815" heightAboveEllipsoidInMeters="1.014136">
                 </GeodeticPosition>
@@ -45,7 +45,7 @@
             </initialTSPI>
         </vehicle>
 
-        <vehicle name="PATH-BG-3" bsmid="11111113" type="vehicle.ford.mustang" simulationIdentifier="CARLA-PATH-1" material="Aluminum" lvcIndicator="Virtual" generate_bsms="true" organization="PATH">
+        <vehicle name="PATH-BG-3" bsmid="11111113" type="vehicle.lincoln.mkz" simulationIdentifier="CARLA-PATH-1" material="Aluminum" lvcIndicator="Virtual" generate_bsms="true" organization="PATH">
             <initialTSPI>
                 <GeodeticPosition latitudeInDegrees="0.001452" longitudeInDegrees="0.001815" heightAboveEllipsoidInMeters="1.014136">
                 </GeodeticPosition>
@@ -53,7 +53,7 @@
             </initialTSPI>
         </vehicle>
 
-        <vehicle name="PATH-BG-4" bsmid="11111114" type="vehicle.ford.mustang" simulationIdentifier="CARLA-PATH-1" material="Aluminum" lvcIndicator="Virtual" generate_bsms="true" organization="PATH">
+        <vehicle name="PATH-BG-4" bsmid="11111114" type="vehicle.lincoln.mkz" simulationIdentifier="CARLA-PATH-1" material="Aluminum" lvcIndicator="Virtual" generate_bsms="true" organization="PATH">
             <initialTSPI>
                 <GeodeticPosition latitudeInDegrees="0.001452" longitudeInDegrees="0.001815" heightAboveEllipsoidInMeters="1.014136">
                 </GeodeticPosition>
@@ -61,7 +61,7 @@
             </initialTSPI>
         </vehicle>
 
-        <vehicle name="PATH-BG-5" bsmid="11111115" type="vehicle.ford.mustang" simulationIdentifier="CARLA-PATH-1" material="Aluminum" lvcIndicator="Virtual" generate_bsms="true" organization="PATH">
+        <vehicle name="PATH-BG-5" bsmid="11111115" type="vehicle.lincoln.mkz" simulationIdentifier="CARLA-PATH-1" material="Aluminum" lvcIndicator="Virtual" generate_bsms="true" organization="PATH">
             <initialTSPI>
                 <GeodeticPosition latitudeInDegrees="0.001452" longitudeInDegrees="0.001815" heightAboveEllipsoidInMeters="1.014136">
                 </GeodeticPosition>
@@ -69,7 +69,7 @@
             </initialTSPI>
         </vehicle>
 
-        <vehicle name="AMG-BG-1" bsmid="22222221" type="vehicle.ford.mustang" simulationIdentifier="CARLA-AMG-1" material="Aluminum" lvcIndicator="Virtual" generate_bsms="true" organization="AMG">
+        <vehicle name="AMG-BG-1" bsmid="22222221" type="vehicle.lincoln.mkz" simulationIdentifier="CARLA-AMG-1" material="Aluminum" lvcIndicator="Virtual" generate_bsms="true" organization="AMG">
             <initialTSPI>
                 <GeodeticPosition latitudeInDegrees="0.001452" longitudeInDegrees="0.001815" heightAboveEllipsoidInMeters="1.014136">
                 </GeodeticPosition>
@@ -77,7 +77,7 @@
             </initialTSPI>
         </vehicle>
 
-        <vehicle name="AMG-BG-2" bsmid="22222222" type="vehicle.ford.mustang" simulationIdentifier="CARLA-AMG-1" material="Aluminum" lvcIndicator="Virtual" generate_bsms="true" organization="AMG">
+        <vehicle name="AMG-BG-2" bsmid="22222222" type="vehicle.lincoln.mkz" simulationIdentifier="CARLA-AMG-1" material="Aluminum" lvcIndicator="Virtual" generate_bsms="true" organization="AMG">
             <initialTSPI>
                 <GeodeticPosition latitudeInDegrees="0.001452" longitudeInDegrees="0.001815" heightAboveEllipsoidInMeters="1.014136">
                 </GeodeticPosition>
@@ -85,7 +85,7 @@
             </initialTSPI>
         </vehicle>
 
-        <vehicle name="AMG-BG-3" bsmid="22222223" type="vehicle.ford.mustang" simulationIdentifier="CARLA-AMG-1" material="Aluminum" lvcIndicator="Virtual" generate_bsms="true" organization="AMG">
+        <vehicle name="AMG-BG-3" bsmid="22222223" type="vehicle.lincoln.mkz" simulationIdentifier="CARLA-AMG-1" material="Aluminum" lvcIndicator="Virtual" generate_bsms="true" organization="AMG">
             <initialTSPI>
                 <GeodeticPosition latitudeInDegrees="0.001452" longitudeInDegrees="0.001815" heightAboveEllipsoidInMeters="1.014136">
                 </GeodeticPosition>
@@ -93,7 +93,7 @@
             </initialTSPI>
         </vehicle>
 
-        <vehicle name="AMG-BG-4" bsmid="22222224" type="vehicle.ford.mustang" simulationIdentifier="CARLA-AMG-1" material="Aluminum" lvcIndicator="Virtual" generate_bsms="true" organization="AMG">
+        <vehicle name="AMG-BG-4" bsmid="22222224" type="vehicle.lincoln.mkz" simulationIdentifier="CARLA-AMG-1" material="Aluminum" lvcIndicator="Virtual" generate_bsms="true" organization="AMG">
             <initialTSPI>
                 <GeodeticPosition latitudeInDegrees="0.001452" longitudeInDegrees="0.001815" heightAboveEllipsoidInMeters="1.014136">
                 </GeodeticPosition>
@@ -101,7 +101,7 @@
             </initialTSPI>
         </vehicle>
 
-        <vehicle name="AMG-BG-5" bsmid="22222225" type="vehicle.ford.mustang" simulationIdentifier="CARLA-AMG-1" material="Aluminum" lvcIndicator="Virtual" generate_bsms="true" organization="AMG">
+        <vehicle name="AMG-BG-5" bsmid="22222225" type="vehicle.lincoln.mkz" simulationIdentifier="CARLA-AMG-1" material="Aluminum" lvcIndicator="Virtual" generate_bsms="true" organization="AMG">
             <initialTSPI>
                 <GeodeticPosition latitudeInDegrees="0.001452" longitudeInDegrees="0.001815" heightAboveEllipsoidInMeters="1.014136">
                 </GeodeticPosition>
@@ -109,7 +109,7 @@
             </initialTSPI>
         </vehicle>
 
-        <vehicle name="UTC-BG-1" bsmid="33333331" type="vehicle.ford.mustang" simulationIdentifier="CARLA-UTC-1" material="Aluminum" lvcIndicator="Constructive" generate_bsms="true" organization="UTC">
+        <vehicle name="UTC-BG-1" bsmid="33333331" type="vehicle.lincoln.mkz" simulationIdentifier="CARLA-UTC-1" material="Aluminum" lvcIndicator="Constructive" generate_bsms="true" organization="UTC">
             <initialTSPI>
                 <GeodeticPosition latitudeInDegrees="0.001525" longitudeInDegrees="0.001061" heightAboveEllipsoidInMeters="1.190417">
                 </GeodeticPosition>
@@ -117,7 +117,7 @@
             </initialTSPI>
         </vehicle>
 
-        <vehicle name="UTC-BG-2" bsmid="33333332" type="vehicle.ford.mustang" simulationIdentifier="CARLA-UTC-1" material="Aluminum" lvcIndicator="Constructive" generate_bsms="true" organization="UTC">
+        <vehicle name="UTC-BG-2" bsmid="33333332" type="vehicle.lincoln.mkz" simulationIdentifier="CARLA-UTC-1" material="Aluminum" lvcIndicator="Constructive" generate_bsms="true" organization="UTC">
             <initialTSPI>
                 <GeodeticPosition latitudeInDegrees="0.001525" longitudeInDegrees="0.001061" heightAboveEllipsoidInMeters="1.190417">
                 </GeodeticPosition>
@@ -125,7 +125,7 @@
             </initialTSPI>
         </vehicle>
 
-        <vehicle name="UTC-BG-3" bsmid="33333333" type="vehicle.ford.mustang" simulationIdentifier="CARLA-UTC-1" material="Aluminum" lvcIndicator="Constructive" generate_bsms="true" organization="UTC">
+        <vehicle name="UTC-BG-3" bsmid="33333333" type="vehicle.lincoln.mkz" simulationIdentifier="CARLA-UTC-1" material="Aluminum" lvcIndicator="Constructive" generate_bsms="true" organization="UTC">
             <initialTSPI>
                 <GeodeticPosition latitudeInDegrees="0.001525" longitudeInDegrees="0.001061" heightAboveEllipsoidInMeters="1.190417">
                 </GeodeticPosition>
@@ -133,7 +133,7 @@
             </initialTSPI>
         </vehicle>
 
-        <vehicle name="UTC-BG-4" bsmid="33333334" type="vehicle.ford.mustang" simulationIdentifier="CARLA-UTC-1" material="Aluminum" lvcIndicator="Constructive" generate_bsms="true" organization="UTC">
+        <vehicle name="UTC-BG-4" bsmid="33333334" type="vehicle.lincoln.mkz" simulationIdentifier="CARLA-UTC-1" material="Aluminum" lvcIndicator="Constructive" generate_bsms="true" organization="UTC">
             <initialTSPI>
                 <GeodeticPosition latitudeInDegrees="0.001525" longitudeInDegrees="0.001061" heightAboveEllipsoidInMeters="1.190417">
                 </GeodeticPosition>
@@ -141,7 +141,7 @@
             </initialTSPI>
         </vehicle>
 
-        <vehicle name="UTC-BG-5" bsmid="33333335" type="vehicle.ford.mustang" simulationIdentifier="CARLA-UTC-1" material="Aluminum" lvcIndicator="Constructive" generate_bsms="true" organization="UTC">
+        <vehicle name="UTC-BG-5" bsmid="33333335" type="vehicle.lincoln.mkz" simulationIdentifier="CARLA-UTC-1" material="Aluminum" lvcIndicator="Constructive" generate_bsms="true" organization="UTC">
             <initialTSPI>
                 <GeodeticPosition latitudeInDegrees="0.001525" longitudeInDegrees="0.001061" heightAboveEllipsoidInMeters="1.190417">
                 </GeodeticPosition>
