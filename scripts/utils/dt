@@ -31,23 +31,35 @@
 ##
 echoerr() { echo "$@" 1>&2; }
 
-# dt-config__edit() {
-#     if ! docker container inspect carma-config > /dev/null 2>&1; then
-#         echo "No existing CARMA configuration found, nothing to edit. Please set a config."
-#         echo "Done."
-#         exit 1
-#     fi
+##
+# Populates the global array COMPOSE_PROFILE_ARGS with --profile flags matching
+# VUG_DOCKER_START_CARLA / VUG_DOCKER_START_V2XHUB / the dt-core-needing flags below,
+# mirroring the selection logic in docker/start-docker.sh. There's a single
+# docker-compose.yml with dt-core/dt-carla/dt-v2xhub gated behind Compose profiles, so 
+# stop/ps/download need the same --profile flags "dt start" used in order to see/manage
+# those services (docker compose only operates on the default, unprofiled services unless
+# matching --profile flags are passed).
+#
+# dt-core has no single dedicated "start dt-core" flag. It hosts a set of TENA apps that
+# are each started inside the container by docker/build/lib/COPY/start_scripts/startup-apps.sh
+# based on their own individual VUG_DOCKER_START_* flags, so dt-core is only needed if at
+# least one of those flags in enabled.
+##
+_dt_set_compose_profile_args(){
+    COMPOSE_PROFILE_ARGS=()
 
-#     echo "Opening shell inside carma-config container with read/write privileges..."
+    if [[ $VUG_DOCKER_START_EM == true || $VUG_DOCKER_START_CONSOLE == true || $VUG_DOCKER_START_CANARY == true || \
+          $VUG_DOCKER_START_TDCS == true || $VUG_DOCKER_START_TENA_PLAYBACK == true || $VUG_DOCKER_START_DATAVIEW == true || \
+          $VUG_DOCKER_START_SCENARIO_PUBLISHER == true || $VUG_DOCKER_START_V2X_ADAPTER == true || $VUG_DOCKER_START_TENA_CARLA_ADAPTER == true || \
+          $VUG_DOCKER_START_JSON_STREAMER == true || $VUG_DOCKER_START_JSON_PUBLISHER == true || $VUG_DOCKER_START_ENTITY_GENERATOR == true || \
+          $VUG_DOCKER_START_MANUAL_CARLA_VEHICLE == true || $VUG_DOCKER_START_SUMO == true || \
+          $VUG_DOCKER_START_CARLA == 'local' || $VUG_DOCKER_START_CARLA == 'remote' ]]; then
+        COMPOSE_PROFILE_ARGS+=(--profile core)
+    fi
 
-#     local carma_base=$(__get_image_from_config carma-base)
-#     if [[ -z $carma_base ]]; then
-#         __pull_newest_carma_base
-#         carma_base=$(__get_most_recent_carma_base)
-#     fi
-
-#     docker run -it --rm --volumes-from carma-config $carma_base bash
-# }
+    [[ $VUG_DOCKER_START_CARLA == 'local' ]] && COMPOSE_PROFILE_ARGS+=(--profile carla)
+    [[ $VUG_DOCKER_START_V2XHUB == true ]] && COMPOSE_PROFILE_ARGS+=(--profile v2xhub)
+}
 
 dt__connect() {
     # Usage: dt connect <path-to-openvpn-config>
@@ -329,23 +341,20 @@ dt__download() {
         return 1
     fi
 
-    if [[ $VUG_DOCKER_START_CARLA == 'local' ]]; then 
-        COMPOSE_FILE="$VUG_LOCAL_DT_PATH/docker/docker-compose.yml"
-    else
-        COMPOSE_FILE="$VUG_LOCAL_DT_PATH/docker/no-carla_docker-compose.yml"
-    fi
+    COMPOSE_FILE="$VUG_LOCAL_DT_PATH/docker/docker-compose.yml"
+    _dt_set_compose_profile_args
 
     if [[ ! -f "$COMPOSE_FILE" ]]; then
         echo "Error: Cannot find docker compose file at $COMPOSE_FILE"
         return 1
     fi
 
-    echo "Stopping DT Containers:"
+    echo "Pulling DT Containers:"
     echo ""
     # run the docker compose pull, pass any extra args
     # using script to simulate a TTY to get the proper formatting
     # grep -v out the warning lines for env vars not set, we dont care on shutdown
-    script -q -c "docker compose -f \"$COMPOSE_FILE\" pull ${EXTRA_ARGS[@]}" /dev/null | grep -v 'variable is not set. Defaulting to a blank string'
+    script -q -c "docker compose -f \"$COMPOSE_FILE\" ${COMPOSE_PROFILE_ARGS[*]} pull ${EXTRA_ARGS[@]}" /dev/null | grep -v 'variable is not set. Defaulting to a blank string'
 }
 
 dt__start() {
@@ -369,6 +378,7 @@ dt__stop() {
     fi
 
     COMPOSE_FILE="$VUG_LOCAL_DT_PATH/docker/docker-compose.yml"
+    _dt_set_compose_profile_args
 
     if [[ ! -f "$COMPOSE_FILE" ]]; then
         echo "Error: Cannot find docker-compose.yml at $COMPOSE_FILE"
@@ -380,7 +390,7 @@ dt__stop() {
     # run the docker compose down, pass any extra args
     # using script to simulate a TTY to get the proper formatting
     # grep -v out the warning lines for env vars not set, we dont care on shutdown
-    script -q -c "docker compose -f \"$COMPOSE_FILE\" down ${EXTRA_ARGS[@]}" /dev/null | grep -v 'variable is not set. Defaulting to a blank string'
+    script -q -c "docker compose -f \"$COMPOSE_FILE\" ${COMPOSE_PROFILE_ARGS[*]} down ${EXTRA_ARGS[@]}" /dev/null | grep -v 'variable is not set. Defaulting to a blank string'
 }
 
 dt__ps() {
@@ -395,6 +405,7 @@ dt__ps() {
     fi
 
     COMPOSE_FILE="$VUG_LOCAL_DT_PATH/docker/docker-compose.yml"
+    _dt_set_compose_profile_args
 
     if [[ ! -f "$COMPOSE_FILE" ]]; then
         echo "Error: Cannot find docker-compose.yml at $COMPOSE_FILE"
@@ -406,7 +417,7 @@ dt__ps() {
     # run the docker compose ps, pass any extra args
     # using script to simulate a TTY to get the proper formatting
     # grep -v out the warning lines for env vars not set, we dont care on shutdown
-    script -q -c "docker compose -f \"$COMPOSE_FILE\" ps ${EXTRA_ARGS[@]}" /dev/null | grep -v 'variable is not set. Defaulting to a blank string'
+    script -q -c "docker compose -f \"$COMPOSE_FILE\" ${COMPOSE_PROFILE__ARGS[*]} ps ${EXTRA_ARGS[@]}" /dev/null | grep -v 'variable is not set. Defaulting to a blank string'
 }
 
 dt__exec() {

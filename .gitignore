@@ -69,3 +69,6 @@ config/*.log
 
 # ignore generated png files
 scripts/utils/*.png
+
+# ignore v2xhub secrets
+docker/build/dt-v2xhub/secrets
