@@ -2,11 +2,10 @@
 # BUILD COMMAND: VERSION=0.0.1 && source build-assets.env && DOCKER_BUILDKIT=1 docker build --build-arg version=$VERSION --build-context assets="$BUILD_DIR" -t harbor.distributedtesting.org/distributed-testing/dt-core:$VERSION . --progress=plain -f dt-core_Dockerfile
 #
 
-# ----------------------- BUILD STAGE ----------------------- #
+# ===================== BUILD STAGE ===================== #
 FROM harbor.distributedtesting.org/distributed-testing/dt-base:latest AS build
 
 SHELL ["/bin/bash", "-ec"]
-
 ARG DEBIAN_FRONTEND="noninteractive"
 ARG TZ="America/New_York"
 
@@ -17,191 +16,165 @@ WORKDIR /home/$USER
 
 USER root
 
-RUN apt update && \
-    apt install -y python3-pip rsync zstd unzip
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+        apt-utils \
+        rsync \
+        zstd \
+        unzip \
+        binutils && \
+    rm -rf /var/lib/apt/lists/*
 
-USER dt_user
+USER $USER
 
-RUN mkdir /home/$USER/INSTALL && mkdir /home/$USER/INSTALL/TDCS && mkdir /home/$USER/INSTALL/DV && mkdir /home/$USER/INSTALL/JSON
-
+# Install TENA DataView
 ARG DV_VERSION="v1.5.4"
-# INSTALL TENA DataView
 WORKDIR /home/$USER/INSTALL/DV
 RUN --mount=type=bind,from=assets,source=.,target=/mnt/build,readonly \
-    set -euo pipefail; \
+    set -euo pipefail && \
     dpkg -x --force-overwrite /mnt/build/TDCS-DataView-${DV_VERSION}@Product@u2204-gcc11-64*.deb . && \
     ar -x /mnt/build/TDCS-DataView-${DV_VERSION}@Product@u2204-gcc11-64*.deb && \
     tar xf control.tar.* && \
-    # move the postinst script into TENA dir to make it easier to copy and run later on final container
     mv ./postinst ./opt/TENA/postinst-DV
 
-# INSTALL TENA Data Collection System
+#Install TENA Data Collection System
 ARG TDCS_VERSION="VUG-Combined-DataCollectionDistribution-v1.3.3"
 WORKDIR /home/$USER/INSTALL/TDCS
 RUN --mount=type=bind,from=assets,source=.,target=/mnt/build,readonly \
-    set -euo pipefail; \
+    set -euo pipefail && \
     dpkg -x --force-overwrite /mnt/build/${TDCS_VERSION}@Product@u2204-gcc11-64*.deb . && \
     ar -x /mnt/build/${TDCS_VERSION}@Product@u2204-gcc11-64*.deb && \
     tar xf control.tar.* && \
-    # move the postinst script into TENA dir to make it easier to copy and run later on final container
     mv ./postinst ./opt/TENA/postinst-TDCS
 
-# INSTALL TENA JSON Tools
+# Install TENA JSON Tools
 ARG JSON_VERSION="VUG-Combined-JSONtoolsDistribution-v1.3.3"
 WORKDIR /home/$USER/INSTALL/JSON
 RUN --mount=type=bind,from=assets,source=.,target=/mnt/build,readonly \
-    export ; \    
-    set -euo pipefail; \
+    set -euo pipefail && \
     dpkg -x --force-overwrite /mnt/build/${JSON_VERSION}@Product@u2204-gcc11-64*.deb . && \
     ar -x /mnt/build/${JSON_VERSION}@Product@u2204-gcc11-64*.deb && \
     tar xf control.tar.* && \
-    # move the postinst script into TENA dir to make it easier to copy and run later on final container
     mv ./postinst ./opt/TENA/postinst-JSON
 
 WORKDIR /home/$USER
 
 USER root
-RUN rsync -a /home/$USER/INSTALL/TDCS/opt/TENA/ /home/$USER/INSTALL/DV/opt/TENA/ /home/$USER/INSTALL/JSON/opt/TENA/ /home/$USER/TENA
 
-RUN chown -R root:root /home/$USER/TENA
+RUN rsync -a \
+        INSTALL/DV/opt/TENA/ \
+        INSTALL/TDCS/opt/TENA/ \
+        INSTALL/JSON/opt/TENA/ \
+        TENA/ && \
+    chown -R root:root TENA
 
-RUN DSTROOT=/home/dt_user bash /home/$USER/TENA/postinst-DV || true && \
-    DSTROOT=/home/dt_user bash /home/$USER/TENA/postinst-TDCS || true && \
+RUN DSTROOT=/home/$USER bash /home/$USER/TENA/postinst-DV || true && \
+    DSTROOT=/home/$USER bash /home/$USER/TENA/postinst-TDCS || true && \
     sed -i '/^chown -R root/d;/^chgrp -R root/d' /home/$USER/TENA/postinst-JSON && \
-    DSTROOT=/home/dt_user bash /home/$USER/TENA/postinst-JSON || true
+    DSTROOT=/home/$USER bash /home/$USER/TENA/postinst-JSON || true
 
 RUN find /home/$USER/TENA -type d -exec chmod 755 {} + && \
     find /home/$USER/TENA -type f -exec chmod a+r {} + && \
     find /home/$USER/TENA -type f -name "*.sh" -exec chmod a+x {} + && \
     find /home/$USER/TENA -type f -perm /111 -exec chmod a+x {} + && \
-    chown -R dt_user:dt_user /home/$USER/TENA
+    chown -R $USER:$USER /home/$USER/TENA
 
-USER dt_user
+USER $USER
 
-# CARLA_0.9.15 (contains just the PythonAPI folder for CARLA PythonAPI capabilities)
 RUN --mount=type=bind,from=assets,source=.,target=/mnt/build,readonly \
-    unzip /mnt/build/CARLA_0.9.15.zip && \
-    mv CARLA_0.9.15 $HOME/CARLA
+    set -euo pipefail && \
+    unzip -j /mnt/build/CARLA_0.10.0.zip \
+        '*/carla-0.10.0-cp310-cp310-linux_x86_64.whl' \
+        -d /home/$USER/carla_wheels && \
+    chown -R $USER:$USER /home/$USER/carla_wheels
 
-# ----------------------- RUNTIME STAGE ----------------------- #
+
+# ===================== RUNTIME STAGE ===================== #
 FROM harbor.distributedtesting.org/distributed-testing/dt-base:latest
 
-ARG VERSION=dev
-LABEL version=${VERSION}
-LABEL description="Docker image for interoperability test"
+SHELL ["/bin/bash", "-ec"]
 
-ARG DEBIAN_FRONTEND="noninteractive" 
+ARG VERSION=dev
+ARG DEBIAN_FRONTEND="noninteractive"
 ARG TZ="America/New_York"
 
-USER dt_user
-ENV USER="dt_user"
+LABEL version=${VERSION} \
+      description="Docker image for interoperability test"
 
-WORKDIR /home/$USER
+ENV USER="dt_user" \
+    LANG=en_US.UTF-8 \
+    LC_ALL=en_US.UTF-8 \
+    PATH="/home/dt_user/.local/bin:$PATH"
+
+WORKDIR /home/dt_user
 
 USER root
 
-RUN apt update && apt install -y software-properties-common
-
-
-# INSTALL apt packages 
-RUN apt clean && \
-    apt-get update && \
-    # add sumo repo 
-    apt install -y software-properties-common && \
-    add-apt-repository ppa:sumo/stable && apt-get update && \
-    apt install -y \
-    # install apt utils for installing packages (mostly for TENA console)
-    apt-utils \
-    # install git
-    git \
-    # install qt packages
-    libxcb-xinerama0 libfreetype6 libfontconfig libsm6 libxi6 libx11-xcb1 libxcb-cursor0 libxcb-icccm4 libxcb-image0 libxcb-keysyms1 libxcb-randr0 libxcb-render-util0 libxcb-shape0 libxcb-sync1 libxcb-xfixes0 libxcb-xkb1 libxkbcommon-x11-0 libjpeg8 libtiff5 \
-    # install debug tools
-    iputils-ping nano tshark git tcpdump nethogs rsync \
-    # install sumo tools
-    sumo sumo-tools sumo-doc \
-    # install iproute2
-    iproute2 \
-    # install dumb init to enable gracefully stopping container processes
-    dumb-init \
-    # install locales and set to UTF-8 for JSON Streamer 
-    locales && \
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+        build-essential \
+        # qt packages
+        libxcb-xinerama0 libfreetype6 libfontconfig1 libsm6 libxi6 libx11-xcb1 \
+        libxcb-cursor0 libxcb-icccm4 libxcb-image0 libxcb-keysyms1 libxcb-randr0 \
+        libxcb-render-util0 libxcb-shape0 libxcb-sync1 libxcb-xfixes0 libxcb-xkb1 \
+        libxkbcommon-x11-0 libjpeg8 libtiff5 libevdev-dev fontconfig \
+        # debug tools
+        iputils-ping nano tshark git tcpdump nethogs curl \
+        # iproute2
+        iproute2 \
+        # dub init to enable gracefully stopping container processes
+        dumb-init \
+        # python
+        python3-dev python3-pip \
+        # sumo tools
+        sumo sumo-tools sumo-doc \
+        # locales and set to UTF-8 for JSON Streamer
+        locales && \
     locale-gen en_US.UTF-8 && \
     update-locale LANG=en_US.UTF-8 && \
-    # cleanup apt lists
     rm -rf /var/lib/apt/lists/*
 
-# Set ENV for locales to UTF-8
-ENV LANG=en_US.UTF-8 LC_ALL=en_US.UTF-8
-
-# Install Python 3.7 and clean NumPy
-RUN apt-get clean && \
-    add-apt-repository -y ppa:deadsnakes/ppa && \
-    apt-get update && \
-    apt-get purge -y python3-numpy && \
-    rm -rf /usr/lib/python3*/dist-packages/numpy* && \
-    apt-get install -y \
-        python3.7 \
-        python3.7-dev \
-        python3.7-distutils \
-        python3.10 \
-        python3.10-dev \
-        python3.10-distutils \
-        libevdev-dev gcc g++\
-        curl && \
-    update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.7 100 && \
-    update-alternatives --set python3 /usr/bin/python3.7 && \
-    curl -sS https://bootstrap.pypa.io/pip/3.7/get-pip.py | python3.7 && \
-    python3.7 -m pip install --upgrade "pip<23.1" "setuptools<68" "wheel<0.41" && \
-    # Python3.10 already exists in image from dt-base, install packages to 3.10 for j2735_202409
-    curl -sS https://bootstrap.pypa.io/get-pip.py | python3.10 && \
-    python3.10 -m pip install --upgrade pip setuptools wheel requests
-
-# Switch to non-root user
 USER dt_user
-ENV PATH="/home/dt_user/.local/bin:$PATH"
 
-# Install Python packages as dt_user
-RUN python3 -m pip install --no-cache-dir --user --force-reinstall "numpy<=1.21.6" && \
-    python3 -m pip install --no-cache-dir --user \
-        "pygame==2.1.3" \
-        pycrate \
-        traci \
-        pynput \
+RUN pip3 install --no-cache-dir --user --upgrade pip setuptools wheel && \
+    pip3 install --no-cache-dir --user \
         requests \
+        networkx \
         scapy \
+        numpy \
+        pandas \
+        matplotlib \
         shapely \
-        "lxml==4.9.4" \
-        "networkx==2.6.3" \
-        "matplotlib<=3.5.3" && \
-    python3 -m pip install --no-cache-dir --user "pandas==1.3.5" && \
-    rm -rf /home/dt_user/.cache
+        pygame-ce \
+        pycrate \
+        pynput \
+        lxml \
+        traci
 
-# Install J2735_202409 package
-RUN git clone https://github.com/usdot-fhwa-stol/j2735_202409.git \
-    && cd j2735_202409 \
-    && python3.10 -m pip install dist/j2735_202409-0.1.0-py3-none-any.whl \
-    && cd .. \
-    && rm -rf j2735_202409
+# Install the CARLA API .whl
+COPY --chown=dt_user:dt_user --from=build /home/dt_user/carla_wheels /tmp/carla_wheels
+RUN pip3 install --no-cache-dir /tmp/carla_wheels/carla-*cp310*.whl && \
+    rm -rf /tmp/carla_wheels
+
+# Install J2735_202409 python package
+RUN git clone https://github.com/usdot-fhwa-stol/j2735_202409.git && \
+    cd j2735_202409 && \
+    pip3 install dist/j2735_202409-0.1.0-py3-none-any.whl && \
+    cd .. && \
+    rm -rf j2735_202409
 
 USER root
+
 RUN rm -rf /home/$USER/TENA
 
 COPY --chown=dt_user:dt_user --from=build /home/$USER/TENA /home/$USER/TENA
-
-COPY --chown=dt_user:dt_user --from=build /home/$USER/CARLA /home/$USER/CARLA
-
 COPY --chown=dt_user:dt_user ./lib/COPY /home/$USER
 
-# Make Start Scripts executable
+# Make start scripts executable
+RUN chmod +x /home/dt_user/start_scripts/*
 
-USER root
-RUN chmod a+x -R /home/$USER/start_scripts/
 USER dt_user
 
-# CLEANUP
+RUN echo 'source /home/dt_user/start_scripts/setup-docker.sh' >> /home/dt_user/.bashrc
 
-RUN echo 'source /home/$USER/start_scripts/setup-docker.sh' >> /home/$USER/.bashrc
-
-
-CMD ["/usr/bin/dumb-init","-v","--","/bin/bash","-l","-c","/home/$USER/start_scripts/startup-apps.sh"]
+CMD ["/usr/bin/dumb-init", "-v", "--", "/bin/bash", "-l", "-c", "/home/dt_user/start_scripts/startup-apps.sh"]

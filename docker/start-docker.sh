@@ -5,7 +5,7 @@ stopDocker()
 
 echo
 echo STOPPING AND REMOVING VUG CONTAINERS
-$docker_compose_cmd -f $docker_compose_file down
+$docker_compose_cmd "${compose_env_args[@]}" -f "$docker_compose_file" "${compose_profile_args[@]}" down -v
 if [ $VUG_FORMAL_EVENT = true ]; then 
     source $VUG_LOCAL_DT_PATH/scripts/utils/stop_current_vpn_connection.sh
 fi
@@ -21,8 +21,8 @@ EXTRA_ARGS=("$@")
 dt_site_config=$HOME/.dt_site_config
 dt_scenario_config=$HOME/.dt_scenario_config
 
-if [ -L ${dt_site_config} ] && [ -L ${dt_scenario_config} ]; then
-    if [ -e ${dt_site_config} ] && [ -e ${dt_scenario_config} ]; then
+if [ -L "${dt_site_config}" ] && [ -L "${dt_scenario_config}" ]; then
+    if [ -e "${dt_site_config}" ] && [ -e "${dt_scenario_config}" ]; then
         site_config_link_dest=$(readlink -f $dt_site_config)
         site_link_base_name=$(basename ${site_config_link_dest})
 
@@ -54,7 +54,7 @@ if [ -L ${dt_site_config} ] && [ -L ${dt_scenario_config} ]; then
         echo "Scenario Config: "$(readlink -f $dt_scenario_config)
         exit 1
    fi
-elif [ -e ${dt_site_config} ] || [ -e ${dt_site_config} ]; then
+elif [ -e "${dt_site_config}" ] || [ -e "${dt_scenario_config}" ]; then
     echo
     echo "[!!!] .dt_site_config or .dt_scenario_config file is not a symbolic link"
     echo "Site Config: "$(readlink -f $dt_site_config)
@@ -336,18 +336,52 @@ else
 
 fi
 
+docker_compose_file='docker-compose.yml'
+
+compose_profile_args=()
+compose_env_args=()
+
 echo
-if [[ $VUG_DOCKER_START_CARLA == 'local' ]]; then
-    echo "Using CARLA docker-compose"
-    docker_compose_file='docker-compose.yml'
+# dt-core hosts a set of TENA apps that are each started inside the container by
+# start_scripts/startup-apps.sh based on their own individual VUG_DOCKER_START_* flags,
+# so dt-core is only needed if at least one of those flags is enabled.
+if [[ $VUG_DOCKER_START_EM == true || $VUG_DOCKER_START_CONSOLE == true || $VUG_DOCKER_START_CANARY == true || \
+        $VUG_DOCKER_START_TDCS == true || $VUG_DOCKER_START_TENA_PLAYBACK == true || $VUG_DOCKER_START_DATAVIEW == true || \
+        $VUG_DOCKER_START_SCENARIO_PUBLIHSER == true || $VUG_DOCKER_START_V2X_ADAPTER == true || $VUG_DOCKER_START_TENA_CARLA_ADAPTER == true || \
+        $VUG_DOCKER_START_JSON_STREAMER == true || $VUG_DOCKER_START_JSON_PUBLISHER == true || $VUG_DOCKER_START_ENTITY_GENERATOR == true || \
+        $VUG_DOCKER_START_GNSS_EMULATOR == true || $VUG_DOCKER_START_MANUAL_CARLA_VEHICLE == true || $VUG_DOCKER_START_SUMO == true ]]; 
+then
+    echo "Enabling dt-core profile"
+    compose_profile_args+=(--profile core)
 else
-    echo "Using NO CARLA docker-compose"
-    docker_compose_file='no-carla_docker-compose.yml'
+    echo "dt-core profile not enabled"
+fi
+
+if [[ $VUG_DOCKER_START_CARLA == 'local' ]]; then
+    echo "Enabling CARLA profile"
+    compose_profile_args+=(--profile carla)
+else
+    echo "CARLA profile not enabled"
+fi
+
+if [[ $VUG_DOCKER_START_V2XHUB == true ]]; then
+    echo "Enabling V2XHub profile"
+
+    source "$SCRIPT_DIR/build/dt-v2xhub/v2xhub.env"
+
+    compose_profile_args+=(--profile v2xhub)
+    compose_env_args+=(--env-file "$SCRIPT_DIR/build/dt-v2xhub/v2xhub.env")
+
+    mkdir -p "$V2XHUB_VOLUME_PATH/ssl"
+    mkdir -p "$V2XHUB_VOLUME_PATH/download"
+    mkdir -p "$V2XHUB_VOLUME_PATH/logs"
+
+    echo "V2XHub Volume Path: $V2XHUB_VOLUME_PATH"
+else
+    echo "V2XHub profile not enabled"
 fi
 
 
 trap stopDocker SIGINT
 
-# $docker_compose_cmd -f $docker_compose_file pull
-
-$docker_compose_cmd -f $docker_compose_file up "${EXTRA_ARGS[@]}"
+$docker_compose_cmd "${compose_env_args[@]}" -f "$docker_compose_file" "${compose_profile_args[@]}" up "${EXTRA_ARGS[@]}"

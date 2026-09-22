@@ -82,3 +82,6 @@ scripts/performance_analysis/**/*.log
 
 # ignore virtual environments
 *.venv/
+
+# ignore v2xhub secrets
+docker/build/dt-v2xhub/secrets

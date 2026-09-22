@@ -71,7 +71,7 @@ run_build 3 "$BRANCH_APP_3" "scenario-publisher"
 run_build 4 "$BRANCH_APP_4" "vug-carla-adapter"
 run_build 5 "$BRANCH_APP_5" "tena-v2x-adapter"
 run_build 6 "$BRANCH_APP_6" "tena-entity-generator"
-# run_build 7 "$BRANCH_APP_7" "v2xhub-tena-v2x-plugin"
+# run_build 7 "$BRANCH_APP_7" "v2xhub-tena-v2x-plugin" # BUILD MOVED TO DIFFERENT SCRIPT, see dt-v2xhub_Dockerfile
 run_build 8 "$BRANCH_APP_8" "hwil-gnss-emulator"
 
 echo "================================================================================"
