@@ -1,3 +1,5 @@
+import logging
+
 import contextlib
 import io
 import os
@@ -23,6 +25,8 @@ class MsgID(Enum):
 
 
 def decode_pcap(input_file, output_dir):
+    logging.disable(logging.INFO)
+    
     # Initialize the message frame and ID tracking
     frame = j2735_202409.MessageFrame.MessageFrame
     msgIds = list(MsgID)  # All message ID types from Enum

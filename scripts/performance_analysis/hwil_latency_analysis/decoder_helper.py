@@ -169,13 +169,13 @@ def writeIds(w: TextIOWrapper, msgId_count: defaultdict[int, int]) -> None:
         msgId_count (defaultdict[int, int]): The message ID counts.
     """
     from enum import Enum
-    output('\nDecoded Message ID Counts:', w)
-    for msgId, count in msgId_count.items():
+    #output('\nDecoded Message ID Counts:', w)
+    #for msgId, count in msgId_count.items():
         # Format Enum members as "NAME (value)", otherwise just the value
-        if isinstance(msgId, Enum):
-            output(f'{msgId.name} ({msgId.value}): {count}', w)
-        else:
-            output(f'{msgId}: {count}', w)
+        #if isinstance(msgId, Enum):
+            #output(f'{msgId.name} ({msgId.value}): {count}', w)
+            #else:
+            #output(f'{msgId}: {count}', w)
 
 def writeIpgStats(w: TextIOWrapper, msgId_timestamps: defaultdict[str, list[float]]) -> None:
     """Calculate and write inter-packet gap statistics for each message ID.
@@ -187,8 +187,8 @@ def writeIpgStats(w: TextIOWrapper, msgId_timestamps: defaultdict[str, list[floa
     import statistics
     
     from enum import Enum
-    output('\nInter-Packet Gap Statistics (milliseconds):', w)
-    output('-' * 60, w)
+    #output('\nInter-Packet Gap Statistics (milliseconds):', w)
+    #output('-' * 60, w)
     
     # Sort by Enum name if available, otherwise by string representation
     sorted_keys = sorted(msgId_timestamps.keys(), 
@@ -219,11 +219,11 @@ def writeIpgStats(w: TextIOWrapper, msgId_timestamps: defaultdict[str, list[floa
                 p99_ipg = sorted_gaps[p99_idx]
 
             label = f'{msgId.name} ({msgId.value})' if isinstance(msgId, Enum) else str(msgId)
-            output(f'{label}:', w)
-            output(f'  Packets: {len(timestamps)}', w)
-            output(f'  Average IPG: {avg_ipg:.2f} ms', w)
-            output(f'  95th percentile: {p95_ipg:.2f} ms', w)
-            output(f'  99th percentile: {p99_ipg:.2f} ms', w)
+            #output(f'{label}:', w)
+            #output(f'  Packets: {len(timestamps)}', w)
+            #output(f'  Average IPG: {avg_ipg:.2f} ms', w)
+            #output(f'  95th percentile: {p95_ipg:.2f} ms', w)
+            #output(f'  99th percentile: {p99_ipg:.2f} ms', w)
 
 def decode(data: str, frame, w: TextIOWrapper, msgId_count: defaultdict, id: str, timestamp: float, msgId_timestamps: defaultdict) -> None:
     """
