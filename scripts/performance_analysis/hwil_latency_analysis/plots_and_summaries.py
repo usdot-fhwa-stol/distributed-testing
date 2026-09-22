@@ -32,22 +32,45 @@ def plot_latency_histogram(
     max_latency_ms: float,
     threshold: float | None,
 ) -> None:
-    """Create a latency histogram."""
+    """Create a latency histogram"""
     latencies = latency_data[LATENCY_COLUMN]
-    display_latencies = latencies.clip(
-        lower=0.0,
-        upper=max_latency_ms,
-    )
+
+    n_overflow = (latencies > max_latency_ms).sum()
+
+    bin_edges = np.linspace(0.0, max_latency_ms, HISTOGRAM_BINS + 1)
+
+    if n_overflow > 0:
+        # Add one extra bin at the end to catch everything above max_latency_ms
+        bin_width = bin_edges[1] - bin_edges[0]
+        overflow_edge = bin_edges[-1] + bin_width
+        bin_edges = np.append(bin_edges, overflow_edge)
+        display_latencies = latencies.clip(lower=0.0, upper=overflow_edge - 1e-6)
+    else:
+        display_latencies = latencies.clip(lower=0.0, upper=max_latency_ms)
 
     figure, axis = plt.subplots(figsize=(12, 7))
 
     sns.histplot(
         display_latencies,
-        bins=HISTOGRAM_BINS,
-        binrange=(0.0, max_latency_ms),
+        bins=bin_edges,
         edgecolor="white",
         ax=axis,
     )
+
+    if n_overflow > 0:
+        patches = axis.patches
+        patches[-1].set_facecolor("orange")
+    
+        xticks = list(bin_edges[:-1])
+        axis.set_xticks(xticks)
+        axis.set_xticklabels(
+            [
+                f"{max_latency_ms:.0f}+" if abs(t - max_latency_ms) < 1e-6 else f"{t:.0f}"
+                for t in xticks
+            ],
+            rotation=45,
+            ha="right",
+        )
 
     if threshold is not None:
         axis.axvline(
