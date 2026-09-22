@@ -16,8 +16,10 @@ event/
     │       ├── tx.pcap
     │       └── rx.pcap
     └── csv/
-        ├── Entities-Radio.csv
-        └── TV2XMsg-SecureV2XMsg.csv
+        Radio/
+          ├── Entities-Radio.csv
+        SecureV2XMessage/
+          └── TV2XMsg-SecureV2XMsg.csv
 ```
 
 ## Running the analysis

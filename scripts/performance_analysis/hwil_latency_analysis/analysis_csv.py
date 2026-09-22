@@ -14,7 +14,6 @@ ROLLING_WINDOW = 20
 LATENCY_THRESHOLD_MS = 10.0
 MESSAGE_ROUTE = "v2xhub->dt_plugin"
 
-COMMIT_COLUMN = "Metadata,TimeOfCommit"
 RECEIPT_COLUMN = "Metadata,TimeOfReceipt"
 
 DATA_TYPES: dict[str, dict[str, Any]] = {
@@ -27,6 +26,10 @@ DATA_TYPES: dict[str, dict[str, Any]] = {
         "id_cols": (
             "const^identifier,String",
             "Metadata,StateVersion",
+        ),
+        "data_cols": (
+            "Metadata,TimeOfCommit",
+            "Metadata,TimeOfReceipt",
         ),
         "skip_events": {"Discovery", "Destruction"},
     },
@@ -41,6 +44,10 @@ DATA_TYPES: dict[str, dict[str, Any]] = {
             "Metadata,MessageCount",
             "senderIdentifier,String",
             "uuid,String",
+        ),
+        "data_cols": (
+            "Metadata,TimeOfTransmission",
+            "Metadata,TimeOfReceipt",
         ),
         "skip_events": set(),
     },
@@ -124,9 +131,10 @@ def read_latency_data(
     )
 
     # Check if TimeOfCommit or TimeOfRecipt are missing
+    outbound_col = DATA_TYPES[message_type]["data_cols"][0]
     missing_columns = [
         column
-        for column in (COMMIT_COLUMN, RECEIPT_COLUMN)
+        for column in (outbound_col, RECEIPT_COLUMN)
         if column not in csv_data.columns
     ]
 
@@ -157,34 +165,34 @@ def read_latency_data(
         csv_data = csv_data.loc[~skipped_events].copy()
 
     # Filter out messages where the host sent messages to itself
-    host_ip_column = "const^Metadata,SDOid.hostIPaddress"
-    endpoint_column = "const^Metadata,Endpoint"
+    # host_ip_column = "const^Metadata,SDOid.hostIPaddress"
+    # endpoint_column = "const^Metadata,Endpoint"
 
-    if (
-        host_ip_column in csv_data.columns
-        and endpoint_column in csv_data.columns
-    ):
-        # Extract and clean ips
-        host_ips = csv_data[host_ip_column].map(clean_text)
-        endpoint_hosts = csv_data[endpoint_column].map(extract_host)
+    # if (
+    #     host_ip_column in csv_data.columns
+    #     and endpoint_column in csv_data.columns
+    # ):
+    #     # Extract and clean ips
+    #     host_ips = csv_data[host_ip_column].map(clean_text)
+    #     endpoint_hosts = csv_data[endpoint_column].map(extract_host)
 
-        # Check if ips match
-        self_messages = host_ips.eq(endpoint_hosts) & host_ips.ne("")
-        skipped_count = int(self_messages.sum())
+    #     # Check if ips match
+    #     self_messages = host_ips.eq(endpoint_hosts) & host_ips.ne("")
+    #     skipped_count = int(self_messages.sum())
 
-        if skipped_count:
-            logging.info(
-                "Skipped %d self-message row(s) in %s",
-                skipped_count,
-                csv_file.name,
-            )
+    #     if skipped_count:
+    #         logging.info(
+    #             "Skipped %d self-message row(s) in %s",
+    #             skipped_count,
+    #             csv_file.name,
+    #         )
 
-        # Remove rows that are self messages
-        csv_data = csv_data.loc[~self_messages].copy()
+    #     # Remove rows that are self messages
+    #     csv_data = csv_data.loc[~self_messages].copy()
 
     # Convert int time values to float, set to Nan if error
     tx_timestamps = pd.to_numeric(
-        csv_data[COMMIT_COLUMN],
+        csv_data[outbound_col],
         errors="coerce",
     )
     rx_timestamps = pd.to_numeric(
@@ -210,6 +218,11 @@ def read_latency_data(
     # Calcualte latency for each row, remove latency values that dont make sense (negative)
     tx_timestamps = tx_timestamps.loc[valid_timestamps]
     rx_timestamps = rx_timestamps.loc[valid_timestamps]
+
+    # Convert to ms
+    tx_timestamps = tx_timestamps / 1e6
+    rx_timestamps = rx_timestamps / 1e6
+    
     latency_ms = rx_timestamps - tx_timestamps
 
     valid_latency = latency_ms >= 0
@@ -234,7 +247,7 @@ def read_latency_data(
             "Latency (ms)": latency_ms.to_numpy(),
             "Datetime": pd.to_datetime(
                 tx_timestamps.to_numpy(),
-                unit="ms",
+                unit="ns",
                 utc=True,
             ),
         }
