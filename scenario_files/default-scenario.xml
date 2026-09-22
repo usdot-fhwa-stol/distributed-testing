@@ -11,23 +11,13 @@
 
   <vehicles>
 
-    <vehicle name="DEFAULT-M-1" bsmid="f03ad610" type="vehicle.toyota.prius" simulationIdentifier="CARLA-DEFAULT-1" material="Aluminum" lvcIndicator="Constructive" generate_bsms="true" organization="DEFAULT">
+    <vehicle name="DEFAULT-M-1" bsmid="f03ad610" type="vehicle.ford.ambulance" simulationIdentifier="CARLA-DEFAULT-1" material="Aluminum" lvcIndicator="Constructive" generate_bsms="true" organization="DEFAULT">
         <initialTSPI>
             <GeodeticPosition latitudeInDegrees="0.001936" longitudeInDegrees="0.000771" heightAboveEllipsoidInMeters="1"> </GeodeticPosition>
             <Heading>21.85235</Heading>
         </initialTSPI>
     </vehicle>
-
-
-    <vehicle name="FHWA-M-1" bsmid="00000000" type="vehicle.ford.ambulance" simulationIdentifier="CARLA-FHWA-1" material="Aluminum" lvcIndicator="Live" generate_bsms="false" organization="FHWA">
-        <initialTSPI>
-            <GeodeticPosition latitudeInDegrees="0.002902" longitudeInDegrees="0.001816" heightAboveEllipsoidInMeters="1.014072">
-            </GeodeticPosition>
-            <Heading>90.446060</Heading>
-        </initialTSPI>
-    </vehicle>
   </vehicles>
-  
   <pedestrians>
     <pedestrian name="DEFAULT-P-1" safetyid="12345678" type="walker.pedestrian.0001" cosimulationIdentifier="CARLA-DEFAULT-1" identifierType="psm" organization="DEFAULT" lvcIndicator="Live">
       <initialTSPI>

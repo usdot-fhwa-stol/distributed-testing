@@ -91,7 +91,7 @@ no_tick_enabled=false
 timeSyncEnabled=false
 low_quality_flag=""
 next_flag_is_map=false
-carla_map=""
+carla_map="Town04"
 
 
 for arg in "$@"
