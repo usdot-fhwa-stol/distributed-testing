@@ -7,16 +7,6 @@ import sys
 
 import pygame  # for keyboard input
 
-from find_carla_egg import find_carla_egg
-
-# -------------------------------------------------------------------------
-# Locate CARLA egg and add CARLA to sys.path
-# -------------------------------------------------------------------------
-
-carla_egg_file = find_carla_egg()
-
-# Add egg so `import carla` works
-sys.path.append(carla_egg_file)
 
 import carla
 

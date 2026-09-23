@@ -3,7 +3,7 @@ trap cleanup SIGINT
 
 function cleanup {
 	echo "Stopping CARLA Simulation"
-	pkill -9 CarlaUE4
+	pkill -9 CarlaUnreal
 	exit
 }
 
@@ -100,26 +100,26 @@ do
 
 		carla_map=$arg
 		next_flag_is_map=false
-	
+
 	elif [[ $arg == "--no_tick" ]]; then
-		
+
 		no_tick_enabled=true
 
 	elif [[ $arg == "--low_quality" ]]; then
-		
+
 		low_quality_flag="-quality-level=Low"
 
 	elif [[ $arg == "--map" ]]; then
-		
+
 		next_flag_is_map=true
 
 	elif [[ $arg == "--help" ]]; then
-		
+
 		print_help
 		exit
 
 	elif [[ $arg != "" ]]; then
-		
+
 		echo
 		echo "Invalid argument: $arg"
 		print_help
@@ -174,7 +174,7 @@ else
 	echo "Map not supported: $carla_map"
 	echo
 	cleanup
-	
+
 fi
 
 python3 $VUG_LOCAL_DT_PATH/scripts/carla_python_scripts/blank_traffic_signals.py

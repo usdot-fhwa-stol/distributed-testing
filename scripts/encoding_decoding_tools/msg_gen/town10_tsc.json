@@ -1,0 +1,9 @@
+{
+  "intersections": [
+    { "id": 1, "main_phase_groups": [ 2, 6 ], "side_phase_groups": [ 4 ] },
+    { "id": 2, "main_phase_groups": [ 2, 5 ], "side_phase_groups": [ 4, 7 ] },
+    { "id": 3, "main_phase_groups": [ 6 ], "side_phase_groups": [ 4 ] },
+    { "id": 4, "main_phase_groups": [ 2, 6 ], "side_phase_groups": [ 3 ] },
+    { "id": 5, "main_phase_groups": [ 1, 6 ], "side_phase_groups": [ 4 ] }
+  ]
+}

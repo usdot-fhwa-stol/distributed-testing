@@ -19,11 +19,19 @@ services:
       - /tmp/.X11-unix:/tmp/.X11-unix:rw
       - ${VUG_LOCAL_DT_PATH}:/home/dt_user/distributed-testing
     stop_grace_period: 30s
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
   
   dt-carla:
     container_name: dt-carla
     image: harbor.distributedtesting.org/distributed-testing/dt-carla:latest
     profiles: ["carla"]
+    privileged: true
     network_mode: "host"
     environment:
       - DISPLAY=$DISPLAY
