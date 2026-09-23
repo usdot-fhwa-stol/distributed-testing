@@ -129,6 +129,58 @@ def get_label_lifetime(args: argparse.Namespace) -> float:
 
     return args.duration
 
+def display_pedestrian_rolenames():
+
+    text_offset = carla.Location(x=5, y=0, z=2)
+
+    walker_list = world.get_actors().filter(args.filterw)
+
+    if args.duration == 0:
+        label_duration = 0.5
+    else:
+        label_duration = args.duration
+
+    if len(walker_list) == 0:
+
+        if args.verbose:
+            print("    NO PEDESTRIANS")
+
+    else:
+        if args.verbose:
+            print("\nCARLA PEDESTRIANS: ")
+
+        for index, walker in enumerate(walker_list, start=1):
+
+            walker_name = str(walker.attributes["role_name"])
+
+            if args.verbose:
+                print("    " + str(walker.attributes))
+            if map_string in map_height_dict:
+                if walker.get_location().z < map_height_dict[map_string]["bottom_line"]:
+                    continue
+                elif walker.get_location().z > map_height_dict[map_string]["spawn_line"]:
+                    color = carla.Color(r=0, g=0, b=255)
+                else:
+                    color = carla.Color(r=255, g=0, b=0)
+
+                world.debug.draw_string(
+                    walker.get_location() + text_offset,
+                    walker_name,
+                    draw_shadow=False,color=color,
+                    life_time=label_duration,
+                    persistent_lines=True)
+            else:
+                world.debug.draw_string(
+                    walker.get_location() + text_offset,
+                    walker_name,
+                    draw_shadow=False,color=carla.Color(r=255,g=0,b=0),
+                    life_time=label_duration,
+                    persistent_lines=True)
+
+
+def display_traffic_signal_state():
+    signal_list = world.get_actors().filter('traffic.traffic_light')
+    # Print all index corresponding to all traffic signals in scene (CarlaUE4)
 
 def clean_role_name(role_name: str) -> str:
     cleaned_name = (
@@ -283,51 +335,9 @@ def display_walker_rolenames(
             prefix="P: ",
         )
 
-        if args.verbose:
-            print(
-                f"    Walker ID {walker.id}: "
-                f"role_name={role_name!r}, "
-                f"location=({walker_location.x:.2f}, "
-                f"{walker_location.y:.2f}, {walker_location.z:.2f})"
-            )
-
-        draw_actor_label(
-            world=world,
-            actor=walker,
-            text=label,
-            color=WALKER_COLOR,
-            height_offset=args.walker_label_height,
-            label_lifetime=label_lifetime,
-        )
-
-
-def traffic_signal_display(
-    signal_state: carla.TrafficLightState,
-) -> tuple[str, carla.Color]:
-    match signal_state:
-        case carla.TrafficLightState.Green:
-            return "[GREEN]", TRAFFIC_GREEN_COLOR
-        case carla.TrafficLightState.Red:
-            return "[RED]", TRAFFIC_RED_COLOR
-        case carla.TrafficLightState.Yellow:
-            return "[YELLOW]", TRAFFIC_YELLOW_COLOR
-        case carla.TrafficLightState.Off:
-            return "[OFF]", TRAFFIC_UNKNOWN_COLOR
-        case _:
-            return f"[{str(signal_state).upper()}]", TRAFFIC_UNKNOWN_COLOR
-
-
-def display_traffic_signal_state(
-    world: carla.World,
-    args: argparse.Namespace,
-) -> None:
-    signal_list = world.get_actors().filter("traffic.traffic_light*")
-    label_lifetime = get_label_lifetime(args)
-
-    if not signal_list:
-        if args.verbose:
-            print("    NO TRAFFIC SIGNALS FOUND")
-        return
+        if display_vehicle_rolenames_env:
+            display_vehicle_rolenames()
+            display_pedestrian_rolenames()                        
 
     if args.verbose:
         print("\nTRAFFIC SIGNALS:")
@@ -459,8 +469,6 @@ def main() -> None:
         sys.exit(1)
 
 
-if __name__ == "__main__":
-    try:
-        main()
-    except KeyboardInterrupt:
-        print("\nCancelled by user. Bye!")
+    ################################################################################################
+    # Once you see all index number, you can manually change its states and timimg.
+    # Your signal control scripts.

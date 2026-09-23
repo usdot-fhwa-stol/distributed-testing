@@ -81,18 +81,23 @@ import argparse
 # Current used DataTypes (at least through TENA/DT) are LandVehicle, V2XMessage (captures all J2735), and TrafficSignalController
 # This dictionary should be updated as more OMs and data types are introduced to future DT's
 data_types = {
-    "LandVehicle": {
-        "pcap_file_pattern" : "LandVehicle-THIS-DOES-NOT-EXIST",
-        "sdo_file_pattern"   : ["Entities-LandVehicle"]
-    },
-    # "V2XMessage":{
-    #     "pcap_file_pattern" : "V2XMessage-UNKNOWN",
-    #     "sdo_file_pattern" : ["TV2XMsg-V2X"]
+    # "LandVehicle": {
+    #     "pcap_file_pattern" : "LandVehicle-THIS-DOES-NOT-EXIST",
+    #     "sdo_file_pattern"   : ["Entities-LandVehicle"]
     # },
+    "V2XMessage":{
+        "pcap_file_pattern" : "V2XMessage-UNKNOWN",
+        "sdo_file_pattern" : ["VUG-TV2XMsg-V2X"]
+    },
     # "TrafficSignalController": {
     #     "pcap_file_pattern" : "SPAT",
     #     "sdo_file_pattern"   : ["Entities-TrafficSignalController"]
     # },
+    "VulnerableRoadUser": {
+        "pcap_file_pattern" : "VulnerableRoadUser-THIS-DOES-NOT-EXIST",
+        "sdo_file_pattern"   : ["VUG-Entities-VulnerableRoadUser"]
+    },
+
 }
 
 ################################################## FUNCTIONS ##################################################
@@ -374,6 +379,23 @@ argparser.add_argument(
     '--plot_only',
     action='store_true',
     help='skip data analysis and only regenerate plots')
+argparser.add_argument(
+    '--clock-offset-ms',
+    metavar='<offset ms>',
+    dest='clock_offset_ms',
+    type=float,
+    default=None,
+    help='manual clock offset (destination minus source) in ms, forwarded to '
+         'calculate_e2e_perf.py and subtracted from every latency. If omitted, '
+         'the per-site clock_offset_ns from the metadata is used instead (or 0).')
+argparser.add_argument(
+    '--offset-negative-from',
+    metavar='<site name>',
+    dest='offset_negative_from',
+    type=str,
+    default=None,
+    help='Site whose OUTBOUND direction measures negative; that direction gets '
+         '-offset and all others get +offset. Get this from compute_clock_offset.py')
 args = argparser.parse_args()
 
 ################################################## MAIN ##################################################
@@ -394,6 +416,11 @@ if args.plot_only:
     plot_only_arg = " --plot_only"
 else:
     plot_only_arg = ""
+
+if args.clock_offset_ms is not None:
+    clock_offset_arg = " --clock-offset-ms " + str(args.clock_offset_ms)
+else:
+    clock_offset_arg = ""
 
 with open(metadata_file_path, 'r') as metadata_file:
     # Reading from json file
@@ -487,7 +514,15 @@ if not args.plot_only:
                     source_site = os.path.basename(loader_file_to_run_abs).split("_to_")[0]
 
                     #Run analysis for site to site e2e performance
-                    analysis_command =  "python3 calculate_e2e_perf.py -i " + loader_file_to_run_abs + " -t " + data_type + " -o " + filename + "_performance_results.csv -r " + test_name + plot_only_arg + " -m " + metadata_file_path + " -s " + source_site
+                    offset_arg = ""
+                    if args.clock_offset_ms is not None:
+                        signed = abs(args.clock_offset_ms)
+                        if args.offset_negative_from and \
+                           source_site.lower() == args.offset_negative_from.lower():
+                            signed = -signed
+                        offset_arg = " --clock-offset-ms " + str(signed)
+                        print(f"\tClock offset for {source_site} outbound: {signed:+.3f} ms")                    
+                    analysis_command =  "python3 calculate_e2e_perf.py -i " + loader_file_to_run_abs + " -t " + data_type + " -o " + filename + "_performance_results.csv -r " + test_name + plot_only_arg + offset_arg + " -m " + metadata_file_path + " -s " + source_site
                     print("\nExecuting analysis: " + analysis_command)
                     exit_status = os.system(analysis_command)
                     if exit_status != 0:

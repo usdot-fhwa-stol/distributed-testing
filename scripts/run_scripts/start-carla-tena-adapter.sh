@@ -64,6 +64,8 @@ else
     exit 1
 fi
 
+
+
 localadapterPath=$VUG_LOCAL_INSTALL_PATH/$VUG_CARLA_ADAPTER_VERSION
 
 adapterVerbosity='1'

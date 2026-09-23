@@ -2,6 +2,7 @@
 ## Includes functions to extract site names from filenames, load individual CSVs into DataFrames, and summarize imported data.
 
 from pathlib import Path
+from typing import Dict, List, Optional, Set, Tuple
 import time
 import re
 
@@ -9,15 +10,19 @@ import pandas as pd
 
 _YEAR_PATTERN = re.compile(r"2\d{3}")
 
-_DATA_TYPE_FOLDER_ABBREV: dict[str, str] = {
+_DATA_TYPE_FOLDER_ABBREV = {
     "landvehicle": "LV",
     "v2xmessage": "V2X",
     "trafficsignalcontroller": "TSC",
+    "vulnerableroaduser": "VRU",
+    "vehicle": "VEH",
+    "j2735-psm": "PSM",
+    "j2735-bsm": "BSM",
 }
 
 _RUN_NUMBER_PATTERN = re.compile(r"R(\d+)", re.IGNORECASE)
 
-RunDataFrames = dict[str, dict[str, dict[str, list[tuple[str, pd.DataFrame]]]]]
+RunDataFrames = Dict[str, Dict[str, Dict[str, List[Tuple[str, pd.DataFrame]]]]]
 
 
 def _extract_site_name(raw: str) -> str:
@@ -78,7 +83,7 @@ def load_and_parse_csv_data(
     root_dir: Path,
     folder_prefix: str,
     data_type: str,
-) -> tuple[RunDataFrames, set[str], set[str]] | None:
+) -> Optional[Tuple[RunDataFrames, Set[str], Set[str]]]:
     """Loads and parses CSV data from run directories matching a folder prefix.
 
     Args:
@@ -99,7 +104,7 @@ def load_and_parse_csv_data(
     run_dirs = [
         d
         for d in root_dir.glob(f"*{folder_prefix}*")
-        if d.is_dir() and folder_abbrev in d.name.upper()
+        if d.is_dir()
     ]
 
     if not run_dirs:
@@ -110,13 +115,13 @@ def load_and_parse_csv_data(
         return None
 
     run_data_frames: RunDataFrames = {}
-    all_source_sites: set[str] = set()
-    all_destination_sites: set[str] = set()
+    all_source_sites = set()
+    all_destination_sites = set()
 
     for run_dir in run_dirs:
         match = _RUN_NUMBER_PATTERN.search(run_dir.name)
         run_number = match.group(1) if match else run_dir.name
-        data_frames: dict[str, dict[str, list[tuple[str, pd.DataFrame]]]] = {}
+        data_frames = {}
 
         for csv_file in run_dir.glob("*.csv"):
             print(f"csv_file: {csv_file}")

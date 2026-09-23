@@ -1037,6 +1037,18 @@ def calculate_performance_metrics():
                         # current_row_data[ all_data[dataset_i]["dataset_name"] + "_tdcs_commit_to_receipt"] = tdcs_commit_to_receipt
 
                         dataset_total_latency = (tdcs_time_of_receipt - float(source_packet_timestamp)) * 1000
+                        # subtract clock offset between this dataset's site and the source site
+                        if clock_offset_override_ms is not None:
+                            dataset_total_latency -= clock_offset_override_ms
+                        else:
+                            dest_offset_ns = _site_offset_ns(
+                                metadata_site_list[
+                                    get_obj_by_key_value(metadata_site_list, "ip_address",
+                                        all_data[dataset_i].get("site_ip", ""))
+                                ] if get_obj_by_key_value(metadata_site_list, "ip_address",
+                                        all_data[dataset_i].get("site_ip", "")) is not None else {}
+                            ) if all_data[dataset_i].get("site_ip") else 0.0
+                            dataset_total_latency -= (dest_offset_ns - source_clock_offset_ns) / 1e6
                         logging.debug("dataset_total_latency: " + str(dataset_total_latency))
                         current_row_data[ all_data[dataset_i]["dataset_name"] + "_total_latency"] = dataset_total_latency
 
@@ -1190,26 +1202,26 @@ def performance_post_processing(results_file):
             src_name_and_type = column_split[0]
             src_name_and_type_split = src_name_and_type.split("_")
             src_name = src_name_and_type_split[0]
-            src_type = src_name_and_type_split[1]
+            src_type = src_name_and_type_split[1] if len(src_name_and_type_split) > 1 else ""
 
             # print("src_name: " + src_name)
 
-            dst_name_type_step_split = column_split[1].split("_")
+            dst_name_type_step_split = column_split[1].split("_") if len(column_split) > 1 else [""]
             dst_name = dst_name_type_step_split[0]
-            dst_type = dst_name_type_step_split[1]
+            dst_type = dst_name_type_step_split[1] if len(dst_name_type_step_split) > 1 else ""
             # print("dst_name: " + dst_name)
 
 
             if column.endswith("total_latency_e2e"):
                 src_name = args.source_site.lower()
                 step_type = "total_latency"
-            elif "_transmit" in column_split[1]:
+            elif len(column_split) > 1 and "_transmit" in column_split[1]:
                 step_type = "sdo_transmit"
-            elif "_commit" in column_split[1]:
+            elif len(column_split) > 1 and "_commit" in column_split[1]:
                 step_type = "sdo_commit"
-            elif "_pcap_in" in column_split[1]:
+            elif len(column_split) > 1 and "_pcap_in" in column_split[1]:
                 step_type = "pcap_in"
-            elif "_pcap_out" in column_split[1]:
+            elif len(column_split) > 1 and "_pcap_out" in column_split[1]:
                 step_type = "pcap_out"
 
             results_summary_outfile_writer.writerow([J2735_message_subtype_name,src_name,src_type,dst_name,dst_type,step_type,column_min,column_max,column_mean,column_mean_diff,column_std_dev])
@@ -1388,7 +1400,7 @@ def plot_latency(file_path, results_base_dir):
             # If end_of_shortest_data is out of bounds, set the limit to the maximum timestamp
             plt.gca().set_xlim(right=max_timestamp)
     plt.ylabel('Latency (ms)')
-    plt.axhline(0, color='black', linestyle='--', linewidth=3)
+    plt.axhline(0, color='black', linestyle='--', linewidth=1)
     plt.legend()
     plt.grid(True)
     combined_plot_path = os.path.join(results_base_dir, f'{base_name}_combined_plot.png')
@@ -1470,7 +1482,7 @@ def plot_latency(file_path, results_base_dir):
     if first_occurrence != None:
         plt.gca().set_xlim(right=first_occurrence)
     plt.ylabel('Latency (ms)')
-    plt.axhline(0, color='black', linestyle='--', linewidth=3)
+    plt.axhline(0, color='black', linestyle='--', linewidth=1)
     plt.legend()
     plt.grid(True)
     last_total_plot_path = os.path.join(results_base_dir, f'{base_name}_last_total_latency_plot.png')
@@ -1653,12 +1665,13 @@ def select_message_type_user_input():
 # specifies the number of match_keys defined in the params for each data source
 num_match_keys = 5
 
-J2735_message_types = ["J2735","J3224","J2735-BSM","J2735-SPAT","J2735-MAP","LandVehicle","MAP","TrafficLight","BSM","Mobility_Request","Mobility_Response","Mobility_Path","Mobility_Operations-STATUS","Mobility_Operations-INFO","Traffic_Control_Request","Traffic_Control_Message", "V2XMessage", "TrafficSignalController"]
+J2735_message_types = ["J2735","J3224","J2735-BSM","J2735-SPAT","J2735-MAP","J2735-PSM","VulnerableRoadUser","LandVehicle","MAP","TrafficLight","BSM","Mobility_Request","Mobility_Response","Mobility_Path","Mobility_Operations-STATUS","Mobility_Operations-INFO","Traffic_Control_Request","Traffic_Control_Message","V2XMessage","TrafficSignalController"]
 
 J2735_message_type_ids = {
-    "BSM"   : "0014",
-    "SPAT"  : "0013",
-    "MAP"   : "0012"
+    "BSM"  : "0014",
+    "SPAT" : "0013",
+    "MAP"  : "0012",
+    "PSM"  : "0020",
 }
 
 # list of J2735 messages that become TENA Messages (as opposed to SDOs)
@@ -1688,7 +1701,7 @@ argparser.add_argument(
     dest='data_type',
     type=str,
     default=None,
-    help='Data type to be analyzed OPTIONS: [J2725,MAP,SPAT,BSM,LandVehicle,Mobility_Request,Mobility_Response,Mobility_Path,Mobility_Operations-STATUS,Mobility_Operations-INFO,Traffic_Control_Request,Traffic_Control_Message]')
+     help='Data type to be analyzed OPTIONS: [J2725,MAP,SPAT,BSM,PSM,LandVehicle,VulnerableRoadUser,Mobility_Request,Mobility_Response,Mobility_Path,Mobility_Operations-STATUS,Mobility_Operations-INFO,Traffic_Control_Request,Traffic_Control_Message]')
 argparser.add_argument(
     '-s', '--source_site',
     metavar='<source_site>',
@@ -1728,6 +1741,12 @@ argparser.add_argument(
     type=str,
     default=None,
     help='metadata file containing site details and file locations')
+argparser.add_argument(
+    '--clock-offset-ms',
+    dest='clock_offset_ms',
+    type=float,
+    default=None,
+    help='Manual clock offset (dest minus source) in ms, subtracted from all latencies. Overrides metadata clock_offset_ns.')
 args = argparser.parse_args()
 
 log_level = getattr(logging, args.log_level)
@@ -1827,6 +1846,22 @@ desired_host_static_id = ""
 desired_traffic_control_ip_address = source_vehicle_metadata["ip_address"]
 
 source_ip_address = source_vehicle_metadata["ip_address"]
+
+# ---- clock offset correction ----
+# Offset is (dest_clock - source_clock). We subtract it from measured latency:
+#   corrected = measured - (dest_offset - source_offset)
+# Sourced from metadata per-site "clock_offset_ns" (relative to a common reference),
+# or overridden wholesale by --clock-offset-ms. Defaults to 0 => no change.
+def _site_offset_ns(site_obj):
+    try:
+        return float(site_obj.get("clock_offset_ns", 0.0))
+    except (TypeError, ValueError):
+        return 0.0
+
+source_clock_offset_ns = _site_offset_ns(source_vehicle_metadata)
+# dest offset is looked up per-dataset at calc time (we may compare against multiple sites),
+# so stash the whole metadata list and source offset globally.
+clock_offset_override_ms = args.clock_offset_ms
 
 
 # velocity is not set for constructive vehicles, so do not check it
@@ -2316,34 +2351,6 @@ data_params = {
                 }
             ]
         },
-        "V2XMessage" : {
-            "skip_if_neqs" : [
-                {
-                    "key" : "Metadata,Endpoint",
-                    "value" : source_ip_address,
-                }
-            ],
-            "skip_if_eqs" : [
-                
-            ],
-            "match_keys" : [
-                {
-                    "key" : "Metadata,MessageCount",
-                },
-                {
-                    "key" : "senderIdentifier,String",
-                },
-                {
-                    "key" : "uuid,String"
-                },
-                {
-                    "key"       : None,
-                },
-                {
-                    "key"       : None,
-                },
-            ]
-        },
         "LandVehicle" : {
             "skip_if_neqs"      : [
                 {
@@ -2363,6 +2370,8 @@ data_params = {
                 },
                 
             ],
+
+
 
             "match_keys"        : [
                 # {
@@ -2394,6 +2403,35 @@ data_params = {
                 },
             ]
         },
+        "V2XMessage" : {
+            "skip_if_neqs" : [
+                {
+                    "key" : "Metadata,Endpoint",
+                    "value" : source_ip_address,
+                }
+            ],
+            "skip_if_eqs" : [
+                
+            ],
+            "match_keys" : [
+                {
+                    "key" : "Metadata,MessageCount",
+                },
+                {
+                    "key" : "senderIdentifier,String",
+                },
+                {
+                    "key" : "uuid,String"
+                },
+                {
+                    "key"       : None,
+                },
+                {
+                    "key"       : None,
+                },
+            ]
+        },
+        
         "TrafficSignalController" : {
             "skip_if_neqs" : [
                 {
@@ -2429,6 +2467,22 @@ data_params = {
                 },
             ]
         },
+
+        "VulnerableRoadUser" : {
+            "skip_if_neqs" : [
+                { "key": "const^Metadata,SDOid.hostIPaddress", "value": source_ip_address },
+            ],
+            "skip_if_eqs" : [
+                { "key": "Metadata,Enum,Middleware::EventType", "value": "Discovery" },
+                { "key": "Metadata,Enum,Middleware::EventType", "value": "Destruction" },
+            ],
+            "match_keys" : [
+                { "key": "const^identifier,String" },
+                { "key": "Metadata,StateVersion" },
+                { "key": None }, { "key": None }, { "key": None },
+            ]
+        },
+
         "TrafficLight" : {
             "skip_if_neqs"      : [
                 # {
@@ -2771,8 +2825,7 @@ data_params = {
 
             "match_keys"        : [
                 {
-                    "key"       : "binaryContent^UInt8",
-                    "j2735_vector": True, # !!!! - there is a big assumption in here that J2735 SPaT are less than 255 hex bytes
+                    "key"       : "uuid,String",
                 },
                 {
                     "key"       : None,
