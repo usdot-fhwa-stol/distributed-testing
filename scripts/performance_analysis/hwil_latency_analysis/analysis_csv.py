@@ -62,27 +62,6 @@ def clean_text(value: Any) -> str:
     return str(value).strip()
 
 
-def extract_host(value: Any) -> str:
-    """Extract the host from an endpoint value."""
-    endpoint = clean_text(value)
-
-    if not endpoint:
-        return ""
-
-    # removes the protocol from the endpoint
-    endpoint = re.sub(
-        r"^[A-Za-z][A-Za-z0-9+.-]*://",
-        "",
-        endpoint,
-    )
-
-    # remove the port from the endpoint 
-    if endpoint.count(":") == 1:
-        return endpoint.rsplit(":", maxsplit=1)[0]
-
-    return endpoint
-
-
 def get_csv_file(
     directory: Path,
     patterns: Iterable[str],
