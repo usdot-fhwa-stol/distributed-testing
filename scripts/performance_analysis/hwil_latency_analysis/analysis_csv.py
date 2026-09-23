@@ -164,32 +164,6 @@ def read_latency_data(
 
         csv_data = csv_data.loc[~skipped_events].copy()
 
-    # Filter out messages where the host sent messages to itself
-    # host_ip_column = "const^Metadata,SDOid.hostIPaddress"
-    # endpoint_column = "const^Metadata,Endpoint"
-
-    # if (
-    #     host_ip_column in csv_data.columns
-    #     and endpoint_column in csv_data.columns
-    # ):
-    #     # Extract and clean ips
-    #     host_ips = csv_data[host_ip_column].map(clean_text)
-    #     endpoint_hosts = csv_data[endpoint_column].map(extract_host)
-
-    #     # Check if ips match
-    #     self_messages = host_ips.eq(endpoint_hosts) & host_ips.ne("")
-    #     skipped_count = int(self_messages.sum())
-
-    #     if skipped_count:
-    #         logging.info(
-    #             "Skipped %d self-message row(s) in %s",
-    #             skipped_count,
-    #             csv_file.name,
-    #         )
-
-    #     # Remove rows that are self messages
-    #     csv_data = csv_data.loc[~self_messages].copy()
-
     # Convert int time values to float, set to Nan if error
     tx_timestamps = pd.to_numeric(
         csv_data[outbound_col],
@@ -201,52 +175,32 @@ def read_latency_data(
     )
 
     # Remove Nan values
-    valid_timestamps = (
-        tx_timestamps.notna()
-        & rx_timestamps.notna()
-    )
-    skipped_count = int((~valid_timestamps).sum())
+    valid_timestamps = tx_timestamps.notna() & rx_timestamps.notna()
+    
+    tx_ns = tx_timestamps.loc[valid_timestamps].astype("int64")
+    rx_ns = rx_timestamps.loc[valid_timestamps].astype("int64")
+    
+    # Calculate latency while values with raw nanosecond unix time
+    latency_ns = rx_ns - tx_ns
 
-    if skipped_count:
-        logging.warning(
-            "Skipped %d row(s) without valid transmission and receipt "
-            "timestamps in %s",
-            skipped_count,
-            csv_file.name,
-        )
-
-    # Calcualte latency for each row, remove latency values that dont make sense (negative)
-    tx_timestamps = tx_timestamps.loc[valid_timestamps]
-    rx_timestamps = rx_timestamps.loc[valid_timestamps]
+    # Remove negative latency rows
+    valid_latency = latency_ns >= 0
+    tx_ns = tx_ns.loc[valid_latency]
+    rx_ns = rx_ns.loc[valid_latency]
+    latency_ns = latency_ns.loc[valid_latency]
 
     # Convert to ms
-    tx_timestamps = tx_timestamps / 1e6
-    rx_timestamps = rx_timestamps / 1e6
-    
-    latency_ms = rx_timestamps - tx_timestamps
-
-    valid_latency = latency_ms >= 0
-    skipped_count = int((~valid_latency).sum())
-
-    if skipped_count:
-        logging.warning(
-            "Skipped %d row(s) with negative latency in %s",
-            skipped_count,
-            csv_file.name,
-        )
-
-    # Get all valid positive latency rows
-    tx_timestamps = tx_timestamps.loc[valid_latency]
-    rx_timestamps = rx_timestamps.loc[valid_latency]
-    latency_ms = latency_ms.loc[valid_latency]
+    tx_ms = tx_ns / 1_000_000
+    rx_ms = rx_ns / 1_000_000
+    latency_ms = latency_ns / 1_000_000
 
     return pd.DataFrame(
         {
-            "Tx Timestamp (ms)": tx_timestamps.to_numpy(),
-            "Rx Timestamp (ms)": rx_timestamps.to_numpy(),
+            "Tx Timestamp (ms)": tx_ms.to_numpy(),
+            "Rx Timestamp (ms)": rx_ms.to_numpy(),
             "Latency (ms)": latency_ms.to_numpy(),
             "Datetime": pd.to_datetime(
-                tx_timestamps.to_numpy(),
+                tx_ns.to_numpy(),
                 unit="ns",
                 utc=True,
             ),
