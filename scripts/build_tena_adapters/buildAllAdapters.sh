@@ -38,7 +38,7 @@ BRANCH_APP_6="develop"
 # [7] v2xhub-tena-v2x-plugin
 BRANCH_APP_7="develop"
 
-# [8] hwil-gnss-emulator
+# [8] vug-radio-adapter
 BRANCH_APP_8="develop"
 
 # -----------------------------------------------
@@ -72,7 +72,7 @@ run_build 4 "$BRANCH_APP_4" "vug-carla-adapter"
 run_build 5 "$BRANCH_APP_5" "tena-v2x-adapter"
 run_build 6 "$BRANCH_APP_6" "tena-entity-generator"
 # run_build 7 "$BRANCH_APP_7" "v2xhub-tena-v2x-plugin" # BUILD MOVED TO DIFFERENT SCRIPT, see dt-v2xhub_Dockerfile
-run_build 8 "$BRANCH_APP_8" "hwil-gnss-emulator"
+run_build 8 "$BRANCH_APP_8" "vug-radio-adapter"
 
 echo "================================================================================"
 echo "All adapters built successfully!"
