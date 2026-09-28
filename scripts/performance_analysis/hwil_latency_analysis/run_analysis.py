@@ -9,7 +9,9 @@ from pathlib import Path
 
 import analysis_csv
 import analysis_pcap
+import analysis_spdu_chain
 import pandas as pd
+from pcap_frames import parse_address
 
 
 FAILURE_RESULTS = {"FAIL", "ERROR"}
@@ -30,6 +32,36 @@ def parse_arguments() -> argparse.Namespace:
         help=(
             "Parent directory containing the run directories. Results are "
             "written to a results directory beside this parent directory."
+        ),
+    )
+    parser.add_argument(
+        "--dut1-dst",
+        nargs="+",
+        type=parse_address,
+        metavar="ADDR",
+        help=(
+            "SPDU chain: keep only dut_1 tx frames sent to these IP/MAC "
+            "addresses (default: outgoing frames)."
+        ),
+    )
+    parser.add_argument(
+        "--proxy1-src",
+        nargs="+",
+        type=parse_address,
+        metavar="ADDR",
+        help=(
+            "SPDU chain: keep only proxy_1 rx frames from these IP/MAC "
+            "addresses (default: drop frames sent by the proxy_2 tx source)."
+        ),
+    )
+    parser.add_argument(
+        "--dut2-src",
+        nargs="+",
+        type=parse_address,
+        metavar="ADDR",
+        help=(
+            "SPDU chain: keep only dut_2 rx frames from these IP/MAC "
+            "addresses (default: all frames)."
         ),
     )
     return parser.parse_args()
@@ -213,6 +245,7 @@ def write_total_summary(
 def analyze_run(
     input_dir: Path,
     results_dir: Path,
+    chain_filters: analysis_spdu_chain.ChainFilters,
 ) -> bool:
     """Run the PCAP and CSV analysis for one run."""
     logging.info("============================================================")
@@ -234,6 +267,20 @@ def analyze_run(
     except Exception:
         logging.exception(
             "PCAP analysis error for %s",
+            input_dir.name,
+        )
+        analysis_failed = True
+
+    try:
+        status = analysis_spdu_chain.run_spdu_chain_analysis(
+            input_dir=input_dir,
+            results_dir=results_dir,
+            overrides=chain_filters,
+        )
+        analysis_failed = analysis_failed or status != 0
+    except Exception:
+        logging.exception(
+            "SPDU chain analysis error for %s",
             input_dir.name,
         )
         analysis_failed = True
@@ -270,6 +317,12 @@ def main() -> int:
         logging.error("Unable to find input runs: %s", error)
         return 1
 
+    chain_filters = analysis_spdu_chain.ChainFilters(
+        dut1_dst=set(args.dut1_dst) if args.dut1_dst else None,
+        proxy1_src=set(args.proxy1_src) if args.proxy1_src else None,
+        dut2_src=set(args.dut2_src) if args.dut2_src else None,
+    )
+
     run_results: list[dict[str, str]] = []
     any_run_failed = False
 
@@ -280,6 +333,7 @@ def main() -> int:
         analysis_failed = analyze_run(
             input_dir=run_dir,
             results_dir=run_results_dir,
+            chain_filters=chain_filters,
         )
 
         summary = read_run_summary_files(run_results_dir)
