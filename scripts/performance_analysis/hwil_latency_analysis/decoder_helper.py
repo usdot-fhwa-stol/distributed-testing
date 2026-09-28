@@ -1,7 +1,6 @@
 import os, pyshark
 from binascii import unhexlify
 from io import TextIOWrapper
-from tkinter import Tk, filedialog
 from collections import defaultdict
 
 # Monkey-patch imports to control JSON encoding behavior used by to_jer()
@@ -74,6 +73,7 @@ def browse_file() -> str:
     Returns:
         str: The selected file path.
     """
+    from tkinter import Tk, filedialog
     root = Tk()
     root.withdraw()
     srcDir = os.path.dirname(os.path.abspath(__file__))
