@@ -410,7 +410,7 @@ def main() -> None:
 
     try:
         client = carla.Client(args.host, args.port)
-        client.set_timeout(10.0)
+        client.set_timeout(60.0)
 
         print(f"Connected to CARLA at {args.host}:{args.port}")
 
@@ -455,7 +455,9 @@ def main() -> None:
                 time.sleep(args.refresh_interval)
 
     except RuntimeError as error:
-        print(f"\nCARLA Connection Error: {error}", file=sys.stderr)
+        import traceback
+        traceback.print_exc()
+        print(f"\nCARLA Error: {error}", file=sys.stderr, flush=True)
         sys.exit(1)
 
 

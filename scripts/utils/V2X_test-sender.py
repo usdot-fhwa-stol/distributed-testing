@@ -5,7 +5,7 @@ from time import sleep
 
 def main():
   # send Hex string to IP + port
-  ip = '127.0.0.1'
+  ip = '192.168.55.237'
   port = '56700'
   sk = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 

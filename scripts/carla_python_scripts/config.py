@@ -172,7 +172,7 @@ def main() -> None:
     args = argparser.parse_args()
 
     client = carla.Client(args.host, args.port, worker_threads=1)
-    client.set_timeout(10.0)
+    client.set_timeout(60.0)
 
     if args.default:
         args.rendering = True

@@ -62,7 +62,7 @@ def main() -> None:
     args = argparser.parse_args()
 
     client = carla.Client(args.host, args.port)
-    client.set_timeout(10.0)
+    client.set_timeout(30.0)
 
     try:
         world = client.get_world()
