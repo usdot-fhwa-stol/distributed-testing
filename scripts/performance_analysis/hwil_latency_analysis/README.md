@@ -157,11 +157,14 @@ results
       │   ├── latency_results.csv
       │   ├── results_summary.csv
       │   └── plot files
-      └── full_chain/
-          ├── latency_results.csv
-          ├── results_summary.csv
-          ├── spdu_repeats.csv
-          └── plot files
+      ├── full_chain/
+      │   ├── latency_results.csv
+      │   ├── results_summary.csv
+      │   ├── spdu_repeats.csv
+      │   └── plot files
+      └── dut_2_bsm_gps/
+          ├── bsm_positions.csv
+          └── bsm_gps_track.png
     └── csv/
       ├── Radio/
       │   ├── latency_results.csv
@@ -248,3 +251,25 @@ Thresholds come from the PCAP table: DUT to proxy for `proxy_1`, DUT to DUT for
 `pycrate`, `pandas`, `matplotlib`. WSMP
 framing is parsed by `../e2e_utils/spdu_utils.py`, and the SPDU is decoded with
 `Ieee1609dot2.py`, generated using pycrate.
+
+## DUT 2 BSM GPS Track
+
+`analysis_bsm_gps.py` runs as part of `run_analysis.py` and writes to
+`pcap/dut_2_bsm_gps/`. It plots the positions of the BSMs that `dut_1` sent, as
+received by `dut_2`. Received BSMs are matched to `dut_1` by signature; BSMs from
+other senders are ignored, and each message is kept once even if it was received
+several times.
+
+| File | Content |
+|---|---|
+| `bsm_positions.csv` | One row per BSM: receive `timestamp`, `src`, `signature`, `copies`, `bsm_id`, `msg_cnt`, `sec_mark`, `lat_deg`, `lon_deg`, `elev_m`, `speed_mps`, `heading_deg`, and `east_m` / `north_m` from the first fix |
+| `bsm_gps_track.png` | Positions in metres from the first fix, coloured by receive time |
+
+It can also be run on its own:
+
+```bash
+python analysis_bsm_gps.py --sender-pcap event/run_001/pcap/dut_1/tx.pcap \
+  --receiver-pcap event/run_001/pcap/dut_2/rx.pcap --output-dir gps_out/
+```
+
+Requires `j2735_202409` in addition to the SPDU chain dependencies.
