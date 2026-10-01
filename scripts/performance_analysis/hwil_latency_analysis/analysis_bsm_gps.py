@@ -9,14 +9,13 @@ from pathlib import Path
 import pandas as pd
 from j2735_202409 import MessageFrame
 
-import Ieee1609dot2
 from analysis_pcap import get_pcaps
-from analysis_spdu_chain import load_signed_spdus, signature_key
+from analysis_spdu_chain import load_signed_spdus
 from pcap_frames import parse_frame, read_pcap
 from plots_and_summaries import plot_bsm_track
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from e2e_utils.spdu_utils import locate_spdu  # noqa: E402
+from e2e_utils.spdu_utils import locate_spdu, signature_key, spdu_bytes, unsecured_payload  # noqa: E402
 
 SENDER_CAPTURE = "dut_1_tx"
 CAPTURE = "dut_2_rx"
@@ -41,7 +40,8 @@ EARTH_RADIUS_M = 6371008.8
 def extract_j2735(payload: bytes) -> tuple[bytes, str | None] | None:
     """Return (J2735 UPER bytes, signature hex or None) carried by a payload.
 
-    Handles signed and unsigned 1609.2 SPDUs; returns None when no SPDU is found.
+    Handles unsecured SPDUs and signed SPDUs with an embedded payload; returns None
+    when no supported SPDU is found.
     """
     spdu_info = locate_spdu(payload)
     if not (spdu_info.recognised and spdu_info.anchored):
@@ -49,20 +49,14 @@ def extract_j2735(payload: bytes) -> tuple[bytes, str | None] | None:
     if spdu_info.content_choice not in ("signedData", "unsecuredData"):
         return None
 
-    start = spdu_info.spdu_offset
-    end = start + spdu_info.wsm_length if spdu_info.wsm_length is not None else None
-    data = Ieee1609dot2.Ieee1609Dot2.Ieee1609Dot2Data
-    try:
-        data.from_coer(payload[start:end])
-        if spdu_info.is_signed:
-            signed = ["content", "signedData"]
-            choice, inner = data.get_val_at(signed + ["tbsData", "payload", "data", "content"])
-            if choice != "unsecuredData":
-                return None
-            return inner, signature_key(data.get_val_at(signed + ["signature"]))
-        return data.get_val_at(["content"])[1], None
-    except Exception:
+    spdu = spdu_bytes(payload, spdu_info)
+    j2735 = unsecured_payload(spdu)
+    if j2735 is None:
         return None
+    if not spdu_info.is_signed:
+        return j2735, None
+    signature = signature_key(spdu)
+    return (j2735, signature) if signature is not None else None
 
 
 def _scaled(value: int, scale: float, unavailable: int) -> float | None:
