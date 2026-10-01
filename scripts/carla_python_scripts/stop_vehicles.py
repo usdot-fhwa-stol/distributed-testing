@@ -64,7 +64,7 @@ def main():
     logging.basicConfig(format='%(levelname)s: %(message)s', level=logging.INFO)
 
     client = carla.Client(args.host, args.port)
-    client.set_timeout(60.0)
+    client.set_timeout(45.0)
 
     try:
 

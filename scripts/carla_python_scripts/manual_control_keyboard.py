@@ -468,7 +468,7 @@ class KeyboardControl:
             self._lights = carla.VehicleLightState.NONE
             if self._autopilot_enabled:
                 world.player.set_autopilot(True, 8000)
-            world.player.set_light_state(self._lights)
+            world.player.set_light_state(carla.VehicleLightState(self._lights))
         elif isinstance(world.player, carla.Walker):
             self._control = carla.WalkerControl()
             self._rotation = world.player.get_transform().rotation
@@ -489,7 +489,7 @@ class KeyboardControl:
             self._control = carla.VehicleControl()
             if self._autopilot_enabled:
                 world.player.set_autopilot(True, 8000)
-            world.player.set_light_state(self._lights)
+            world.player.set_light_state(carla.VehicleLightState(self._lights))
         elif isinstance(world.player, carla.Walker):
             self._control = carla.WalkerControl()
             self._rotation = world.player.get_transform().rotation
@@ -725,7 +725,7 @@ class KeyboardControl:
         speed_kph = 3.6 * math.sqrt(velocity.x**2 + velocity.y**2 + velocity.z**2)
         dt = clamp(milliseconds / 1000.0, 0.001, 0.1)
         throttle_pressed = bool(keys[K_UP] or keys[K_w])
-        brake_pressed = bool(keys[K_DOWN] or keys[K_s])
+        brake_pressed = bool(keys[K_DOWN])
 
         if throttle_pressed and not brake_pressed:
             error = world.args.speed_limit - speed_kph
@@ -803,7 +803,7 @@ class KeyboardControl:
             self._steer_cache,
             3,
         )
-        self._control.hand_brake = bool(keys[K_SPACE])
+        self._control.hand_brake = bool(keys[K_SPACE] or keys[K_s])
 
     def _parse_walker_keys(self, keys, milliseconds, world):
         if not isinstance(self._control, carla.WalkerControl):
