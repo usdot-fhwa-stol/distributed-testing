@@ -248,9 +248,10 @@ Thresholds come from the PCAP table: DUT to proxy for `proxy_1`, DUT to DUT for
 
 ### Dependencies
 
-`pycrate`, `pandas`, `matplotlib`. WSMP
-framing is parsed by `../e2e_utils/spdu_utils.py`, and the SPDU is decoded with
-`Ieee1609dot2.py`, generated using pycrate.
+`pandas`, `matplotlib`. No ASN.1 module is needed: `../e2e_utils/spdu_utils.py`
+parses the WSMP framing and reads the signature from the last 66 bytes of each
+signed SPDU. Only ECDSA NIST P-256 signatures with an x-only or compressed `rSig`
+are supported; other SPDUs are skipped and counted in a warning.
 
 ## DUT 2 BSM GPS Track
 
@@ -272,4 +273,6 @@ python analysis_bsm_gps.py --sender-pcap event/run_001/pcap/dut_1/tx.pcap \
   --receiver-pcap event/run_001/pcap/dut_2/rx.pcap --output-dir gps_out/
 ```
 
-Requires `j2735_202409` in addition to the SPDU chain dependencies.
+Requires `j2735_202409` in addition to the SPDU chain dependencies. The J2735
+payload is read from signed SPDUs that embed it with a SHA-256 hash, and from
+unsecured SPDUs.
