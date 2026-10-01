@@ -21,6 +21,7 @@ from e2e_utils.spdu_utils import locate_spdu  # noqa: E402
 SENDER_CAPTURE = "dut_1_tx"
 CAPTURE = "dut_2_rx"
 OUTPUT_SUBDIR = Path("pcap") / "dut_2_bsm_gps"
+PLOT_TITLE = "GPS trajectory in BSM received by DUT2"
 BSM_MESSAGE_ID = 20
 
 # J2735 units and "unavailable" sentinels
@@ -202,7 +203,7 @@ def run_bsm_gps_analysis(input_dir: Path, results_dir: Path) -> int:
             logging.info("Skipping BSM GPS analysis: need %s and %s captures", SENDER_CAPTURE, CAPTURE)
             return 0
         analyze_capture(captures[CAPTURE], results_dir / OUTPUT_SUBDIR,
-                        title=f"DUT 1 BSMs received by DUT 2 ({input_dir.name})",
+                        title=PLOT_TITLE,
                         signatures=sent_signatures(captures[SENDER_CAPTURE]))
         return 0
     except Exception:
@@ -219,7 +220,7 @@ def main() -> int:
     parser.add_argument("--receiver-pcap", type=Path, required=True,
                         help="Capture taken on the receiving device (e.g. DUT 2).")
     parser.add_argument("--output-dir", type=Path, required=True, help="Directory for the CSV and plot.")
-    parser.add_argument("--title", default="DUT 1 BSMs received by DUT 2", help="Plot title.")
+    parser.add_argument("--title", default=PLOT_TITLE, help="Plot title.")
     args = parser.parse_args()
 
     logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")

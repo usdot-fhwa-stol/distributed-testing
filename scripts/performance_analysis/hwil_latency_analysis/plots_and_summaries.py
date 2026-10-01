@@ -508,19 +508,12 @@ def plot_bsm_track(bsms: pd.DataFrame, output_dir: Path, title: str) -> None:
         track = points[points["src"] == sender]
         scatter = axis.scatter(track["east_m"], track["north_m"], c=elapsed[track.index],
                                cmap=BSM_TIME_CMAP, norm=norm, s=10, linewidths=0)
-        # Mark and label the first and last positions.
-        for row, label, marker in ((track.iloc[0], "first", "o"), (track.iloc[-1], "last", "s")):
-            axis.scatter(row["east_m"], row["north_m"], s=60, marker=marker, facecolors="none",
-                         edgecolors=CHAIN_TEXT, linewidths=1.5, zorder=3)
-            axis.annotate(label, xy=(row["east_m"], row["north_m"]), xytext=(8, 6),
-                          textcoords="offset points", color=CHAIN_TEXT, fontsize=9)
         axis.set_aspect("equal", adjustable="datalim")
         _chain_style(axis)
         axis.set_xlabel("East of first fix (m)")
         axis.set_ylabel("North of first fix (m)")
-        first = track.iloc[0]
-        axis.set_title(f"{sender}\n{len(track)} BSMs, first fix {first['lat_deg']:.6f}, "
-                       f"{first['lon_deg']:.6f}", loc="left", color=CHAIN_TEXT, fontsize=10)
+        if len(senders) > 1:
+            axis.set_title(sender, loc="left", color=CHAIN_TEXT, fontsize=10)
 
     for axis in axes.flat[len(senders):]:
         axis.set_visible(False)
