@@ -190,3 +190,70 @@ def locate_spdu(payload: bytes) -> SpduInfo:
             "length matches the payload"
         ),
     )
+
+
+# Signature: the last field of SignedData. Only ECDSA NIST P-256 with an x-only or
+# compressed rSig is supported; all of these are exactly 66 bytes:
+# Signature CHOICE tag, EccP256CurvePoint CHOICE tag, 32-byte r, 32-byte s.
+SIGNATURE_LENGTH = 66
+ECDSA_NIST_P256_TAG = 0x80
+P256_POINT_TAGS = {0x80: "x-only", 0x82: "compressed-y-0", 0x83: "compressed-y-1"}
+
+# Prefix of a SignedData SPDU whose payload is embedded unsecured data: version 3,
+# signedData, hashId sha256, SignedDataPayload with only `data`, inner version 3,
+# unsecuredData. The COER length of the payload follows.
+SIGNED_UNSECURED_PREFIX = bytes([PROTOCOL_VERSION_3, 0x81, 0x00, 0x40, PROTOCOL_VERSION_3, 0x80])
+UNSECURED_PREFIX = bytes([PROTOCOL_VERSION_3, 0x80])
+
+
+def spdu_bytes(payload: bytes, info: SpduInfo) -> bytes:
+    """Return the SPDU bytes located by `locate_spdu`, bounded by the WSM length when known."""
+    start = info.spdu_offset
+    end = start + info.wsm_length if info.wsm_length is not None else None
+    return payload[start:end]
+
+
+def signature_key(spdu: bytes) -> str | None:
+    """Return the signature of a signed SPDU as hex (r || s), read from its last 66 bytes.
+
+    Returns None unless the SPDU ends in an ECDSA NIST P-256 signature with an
+    x-only or compressed rSig.
+    """
+    if len(spdu) < SIGNATURE_LENGTH:
+        return None
+    if spdu[-SIGNATURE_LENGTH] != ECDSA_NIST_P256_TAG:
+        return None
+    if spdu[-SIGNATURE_LENGTH + 1] not in P256_POINT_TAGS:
+        return None
+    return spdu[-SIGNATURE_LENGTH + 2:].hex()
+
+
+def _coer_length(buffer: bytes, offset: int) -> tuple[int, int] | None:
+    """Decode a COER length determinant at `offset`; return (length, offset after it)."""
+    if offset >= len(buffer):
+        return None
+    first = buffer[offset]
+    if first < 0x80:
+        return first, offset + 1
+    width = first & 0x7F
+    if width == 0 or offset + 1 + width > len(buffer):
+        return None
+    return int.from_bytes(buffer[offset + 1:offset + 1 + width], "big"), offset + 1 + width
+
+
+def unsecured_payload(spdu: bytes) -> bytes | None:
+    """Return the unsecured data carried by an SPDU (e.g. a J2735 MessageFrame).
+
+    Supports unsecuredData SPDUs and signedData SPDUs with an embedded payload hashed
+    with SHA-256 (SIGNED_UNSECURED_PREFIX); returns None for any other layout.
+    """
+    for prefix in (SIGNED_UNSECURED_PREFIX, UNSECURED_PREFIX):
+        if spdu.startswith(prefix):
+            decoded = _coer_length(spdu, len(prefix))
+            if decoded is None:
+                return None
+            length, start = decoded
+            if start + length > len(spdu):
+                return None
+            return spdu[start:start + length]
+    return None
