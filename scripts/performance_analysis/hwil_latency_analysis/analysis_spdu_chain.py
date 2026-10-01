@@ -9,7 +9,6 @@ from pathlib import Path
 
 import pandas as pd
 
-import Ieee1609dot2
 from analysis_pcap import LATENCY_THRESHOLDS_MS, get_pcaps
 from pcap_frames import Address, FrameInfo, parse_frame, read_pcap
 from plots_and_summaries import (
@@ -23,7 +22,7 @@ from plots_and_summaries import (
 )
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from e2e_utils.spdu_utils import locate_spdu  # noqa: E402
+from e2e_utils.spdu_utils import locate_spdu, signature_key, spdu_bytes  # noqa: E402
 
 REFERENCE = "dut_1_tx"
 STAGES = (REFERENCE, "proxy_1_rx", "proxy_2_tx", "dut_2_rx")
@@ -57,7 +56,7 @@ class ChainFilters:
 
 @dataclass(frozen=True)
 class SpduRecord:
-    """One captured copy of a signed SPDU."""
+    """One captured copy of a signed SPDU; psid comes from the WSMP header (None if absent)."""
 
     timestamp: float
     spdu: str
@@ -114,26 +113,18 @@ def _fmt_addresses(addresses: set[Address]) -> str:
     return "{" + ", ".join(sorted(map(str, addresses))) + "}"
 
 
-def signature_key(signature) -> str:
-    """Return rSig value || sSig as hex from a pycrate Signature value."""
-    _, ecdsa = signature
-    r_sig = ecdsa["rSig"]
-    if isinstance(r_sig, tuple):  # EccP256CurvePoint / EccP384CurvePoint CHOICE
-        r_sig = r_sig[1]
-    if isinstance(r_sig, dict):  # uncompressed point
-        r_sig = r_sig["x"] + r_sig["y"]
-    return ((r_sig or b"") + ecdsa["sSig"]).hex()
-
-
 def load_signed_spdus(path: Path, keep: Keep) -> tuple[dict[str, list[SpduRecord]], int]:
-    """Decode the signed SPDUs of the frames that pass `keep`, grouped by signature.
+    """Read the signed SPDUs of the frames that pass `keep`, grouped by signature.
+
+    SPDUs whose signature is not ECDSA NIST P-256 (x-only or compressed) are skipped
+    and counted in a warning.
 
     Returns:
         (signature -> copies sorted by timestamp, number of frames dropped by `keep`).
     """
-    data = Ieee1609dot2.Ieee1609Dot2.Ieee1609Dot2Data
     by_signature: defaultdict[str, list[SpduRecord]] = defaultdict(list)
     n_dropped = 0
+    n_unsupported = 0
 
     for timestamp, frame, linktype in read_pcap(path):
         info = parse_frame(frame, linktype)
@@ -146,19 +137,16 @@ def load_signed_spdus(path: Path, keep: Keep) -> tuple[dict[str, list[SpduRecord
         spdu_info = locate_spdu(info.payload)
         if not (spdu_info.anchored and spdu_info.is_signed):
             continue
-        start = spdu_info.spdu_offset
-        end = start + spdu_info.wsm_length if spdu_info.wsm_length is not None else None
-        spdu = info.payload[start:end]
-        try:
-            data.from_coer(spdu)
-            signed = ["content", "signedData"]
-            signature = signature_key(data.get_val_at(signed + ["signature"]))
-            psid = data.get_val_at(signed + ["tbsData", "headerInfo", "psid"])
-        except Exception as error:
-            logging.debug("Skipping undecodable SPDU at %.6f in %s: %s", timestamp, path.name, error)
+        spdu = spdu_bytes(info.payload, spdu_info)
+        signature = signature_key(spdu)
+        if signature is None:
+            n_unsupported += 1
             continue
-        by_signature[signature].append(SpduRecord(timestamp, spdu.hex(), psid))
+        by_signature[signature].append(SpduRecord(timestamp, spdu.hex(), spdu_info.psid))
 
+    if n_unsupported:
+        logging.warning("%s: skipped %d signed SPDUs with an unsupported signature format",
+                        path.name, n_unsupported)
     for copies in by_signature.values():
         copies.sort(key=lambda record: record.timestamp)
     return dict(by_signature), n_dropped
