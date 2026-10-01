@@ -1,5 +1,6 @@
 """Create plots and summary reports from latency data."""
 
+import math
 from pathlib import Path
 from typing import Any
 
@@ -475,3 +476,58 @@ def plot_chain_per_message(table: pd.DataFrame, output_dir: Path, labels: dict[s
     axis.set_title(f"Per-message latency at each stage (n={len(ordered)})", loc="left", color=CHAIN_TEXT)
     axis.legend(loc="upper right", frameon=False, markerscale=3, labelcolor=CHAIN_TEXT_MUTED)
     _save_chain_figure(figure, output_dir / "spdu_latency_per_message.png")
+
+
+# Colormap for time-coloured BSM positions
+BSM_TIME_CMAP = "plasma"
+
+
+def plot_bsm_track(bsms: pd.DataFrame, output_dir: Path, title: str) -> None:
+    """Save a map of BSM positions with one panel per sender, coloured by time.
+
+    Each panel shows metres from that sender's first fix; all panels share one time scale.
+
+    Args:
+        bsms: Rows with timestamp, src, lat_deg, lon_deg, east_m and north_m columns.
+        output_dir: Directory for bsm_gps_track.png.
+        title: Figure title.
+    """
+    from matplotlib.colors import Normalize
+
+    points = bsms.dropna(subset=["east_m", "north_m"])
+    senders = points.groupby("src").size().sort_values(ascending=False).index.tolist()
+    elapsed = points["timestamp"] - points["timestamp"].min()
+    norm = Normalize(vmin=0.0, vmax=max(float(elapsed.max()), 1e-9))
+
+    columns = min(len(senders), 3)
+    rows = math.ceil(len(senders) / columns)
+    figure, axes = plt.subplots(rows, columns, figsize=(6 * columns, 5.5 * rows),
+                                facecolor=CHAIN_SURFACE, squeeze=False)
+
+    for axis, sender in zip(axes.flat, senders):
+        track = points[points["src"] == sender]
+        scatter = axis.scatter(track["east_m"], track["north_m"], c=elapsed[track.index],
+                               cmap=BSM_TIME_CMAP, norm=norm, s=10, linewidths=0)
+        # Mark and label the first and last positions.
+        for row, label, marker in ((track.iloc[0], "first", "o"), (track.iloc[-1], "last", "s")):
+            axis.scatter(row["east_m"], row["north_m"], s=60, marker=marker, facecolors="none",
+                         edgecolors=CHAIN_TEXT, linewidths=1.5, zorder=3)
+            axis.annotate(label, xy=(row["east_m"], row["north_m"]), xytext=(8, 6),
+                          textcoords="offset points", color=CHAIN_TEXT, fontsize=9)
+        axis.set_aspect("equal", adjustable="datalim")
+        _chain_style(axis)
+        axis.set_xlabel("East of first fix (m)")
+        axis.set_ylabel("North of first fix (m)")
+        first = track.iloc[0]
+        axis.set_title(f"{sender}\n{len(track)} BSMs, first fix {first['lat_deg']:.6f}, "
+                       f"{first['lon_deg']:.6f}", loc="left", color=CHAIN_TEXT, fontsize=10)
+
+    for axis in axes.flat[len(senders):]:
+        axis.set_visible(False)
+
+    colorbar = figure.colorbar(scatter, ax=axes.ravel().tolist(), fraction=0.046, pad=0.04)
+    colorbar.set_label("Seconds since first received BSM", color=CHAIN_TEXT_MUTED)
+    colorbar.ax.tick_params(colors=CHAIN_TEXT_MUTED, labelcolor=CHAIN_TEXT_MUTED)
+    colorbar.outline.set_visible(False)
+    figure.suptitle(title, x=0.06, ha="left", color=CHAIN_TEXT)
+    _save_chain_figure(figure, output_dir / "bsm_gps_track.png")
