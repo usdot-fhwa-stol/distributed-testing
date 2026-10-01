@@ -7,6 +7,7 @@ import logging
 import sys
 from pathlib import Path
 
+import analysis_bsm_gps
 import analysis_csv
 import analysis_pcap
 import analysis_spdu_chain
@@ -281,6 +282,19 @@ def analyze_run(
     except Exception:
         logging.exception(
             "SPDU chain analysis error for %s",
+            input_dir.name,
+        )
+        analysis_failed = True
+
+    try:
+        status = analysis_bsm_gps.run_bsm_gps_analysis(
+            input_dir=input_dir,
+            results_dir=results_dir,
+        )
+        analysis_failed = analysis_failed or status != 0
+    except Exception:
+        logging.exception(
+            "BSM GPS analysis error for %s",
             input_dir.name,
         )
         analysis_failed = True
