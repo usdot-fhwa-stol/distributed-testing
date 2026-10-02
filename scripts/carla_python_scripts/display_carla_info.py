@@ -6,6 +6,7 @@ import argparse
 import os
 import sys
 import time
+import traceback
 from typing import Optional, cast
 
 import carla
@@ -410,7 +411,7 @@ def main() -> None:
 
     try:
         client = carla.Client(args.host, args.port)
-        client.set_timeout(10.0)
+        client.set_timeout(30.0)
 
         print(f"Connected to CARLA at {args.host}:{args.port}")
 
@@ -455,7 +456,8 @@ def main() -> None:
                 time.sleep(args.refresh_interval)
 
     except RuntimeError as error:
-        print(f"\nCARLA Connection Error: {error}", file=sys.stderr)
+        traceback.print_exc()
+        print(f"\nCARLA Connection Error: {error}", file=sys.stderr, flush=True)
         sys.exit(1)
 
 

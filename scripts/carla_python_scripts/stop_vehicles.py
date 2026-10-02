@@ -23,6 +23,18 @@ import argparse
 import logging
 from numpy import random
 
+def safe_control(vehicle, hand_brake):
+    try:
+        if not vehicle.is_alive:
+            return False
+        ctrl = carla.VehicleControl()
+        ctrl.hand_brake = hand_brake
+        vehicle.apply_control(ctrl)
+        return True
+    except Exception as e:
+        print(f'\tWARNING: could not control {vehicle.id}: {e}')
+        return False
+
 def main():
     argparser = argparse.ArgumentParser(
         description=__doc__)
@@ -51,11 +63,11 @@ def main():
     logging.basicConfig(format='%(levelname)s: %(message)s', level=logging.INFO)
 
     client = carla.Client(args.host, args.port)
-    client.set_timeout(10.0)
+    client.set_timeout(20.0)
 
     try:
 
-        already_stopped_once = []
+        already_stopped_once = set()
 
         if args.exclude:
             vehicles_to_exclude = (args.exclude).split(",")
@@ -67,45 +79,37 @@ def main():
 
         for i in range(max_checks):
 
-            world = client.get_world()
-
-            vehicles = world.get_actors().filter('vehicle.*')
-
-            # print(f'Found {len(vehicles)} vehicles')
-            # print(f'\t{vehicles}')
-
-            stopped_vehicles = []
+            try:
+                world = client.get_world()
+                vehicles = world.get_actors().filter('vehicle.*')
+            except Exception as e:
+                print(f'WARNING: could not fetch actors: {e}')
+                time.sleep(1)
+                continue
 
             if args.verbose: print(f"Checking for new vehicles to stop [{max_checks - i}]")
 
             for vehicle in vehicles:
                 
-                if vehicle.attributes["role_name"] in vehicles_to_exclude:
-                    if args.verbose: print("\tSkipping: " + str(vehicle.attributes["role_name"]))
+                role = vehicle.attributes.get("role_name", "")
+                if role in vehicles_to_exclude:
+                    if args.verbose:
+                        print("\tSkipping: " + role)
                     continue
-                elif vehicle.attributes["role_name"] in already_stopped_once:
-                    if args.verbose: print("\tAlready stopped: " + str(vehicle.attributes["role_name"]))
+                if vehicle.id in already_stopped_once:
+                    if args.verbose:
+                        print("\tAlready stopped: " + (role or str(vehicle.id)))
                     continue
-                
-                print(f'\tStopping vehicle: {vehicle.attributes["role_name"]}')
-                # print("attributes: " + str(vehicle.attributes))
-                # print("location: " + str(vehicle.get_location()))
-                veh_control = carla.VehicleControl()
-                veh_control.hand_brake = True
-                vehicle.apply_control(veh_control)
 
-                stopped_vehicles.append(vehicle)
-                already_stopped_once.append(vehicle.attributes["role_name"])
+                print(f'\tStopping vehicle: {role or vehicle.id}')
+                if safe_control(vehicle, True):
+                    stopped_vehicles.append(vehicle)
+                    already_stopped_once.add(vehicle.id)
 
-
-            if len(stopped_vehicles) > 0:
+            if stopped_vehicles:
                 time.sleep(5)
-
                 for vehicle in stopped_vehicles:
-
-                    veh_control = carla.VehicleControl()
-                    veh_control.hand_brake = False
-                    vehicle.apply_control(veh_control)
+                    safe_control(vehicle, False)
 
             time.sleep(1)
     except Exception as errMsg:
