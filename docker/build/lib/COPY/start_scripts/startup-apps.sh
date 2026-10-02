@@ -99,6 +99,43 @@ if [[ $VUG_DOCKER_START_CONSOLE == true ]]; then
    sleep 5s
 fi
 
+# try to change carla map 
+if [[ $VUG_DOCKER_START_CARLA == "local" ]] || [[ $VUG_DOCKER_START_CARLA == "remote" ]]; then
+   echo "CHANGING CARLA MAP TO: $VUG_CARLA_MAP_NAME"
+	python3 $HOME/distributed-testing/scripts/carla_python_scripts/config.py \
+      -m $VUG_CARLA_MAP_NAME --weather ClearNoon --host $VUG_CARLA_ADDRESS 2>&1 | awk '{ print "CHANGE MAP: ", $0; fflush(); }'
+
+   sleep 5s
+   
+   if [[ $VUG_CARLA_BLANK_SIGNALS == true ]]; then
+      # blank signals and essentially disable their timing so that the only TL states we see are from TENA TrafficLight SDO updates
+      python3 "$HOME/distributed-testing/scripts/carla_python_scripts/blank_traffic_signals.py" \
+         --host "$VUG_CARLA_ADDRESS" 2>&1 | awk '{ print "BLANK SIGNALS: ", $0; fflush(); }'
+   fi
+
+   # set spectator view
+   python3 $HOME/distributed-testing/scripts/carla_python_scripts/spectator_view.py --host $VUG_CARLA_ADDRESS 2>&1 | awk '{ print "SET VIEW: ", $0; fflush(); }'
+
+   if [[ $VUG_DISPLAY_VEHICLE_ROLENAMES == true ]] || [[ $VUG_DISPLAY_TRAFFIC_SIGNAL_STATES == true ]]; then
+      # display vehicle names and/or traffic light info
+      python3 $HOME/distributed-testing/scripts/carla_python_scripts/display_carla_info.py --host $VUG_CARLA_ADDRESS -d 0 2>&1 | awk '{ print "CARLA INFO: ", $0; fflush(); }' &
+   fi
+
+   if [[ $VUG_DISPLAY_SDSM == true ]]; then
+      # display SDSMs as they are received
+      python3 $HOME/distributed-testing/scripts/carla_python_scripts/draw_sdsm_json_live.py --host $VUG_CARLA_ADDRESS 2>&1 | awk '{ print "DISPLAY SDSM: ", $0; fflush(); }' &
+   fi
+
+   sleep 5s
+fi
+
+if [[ $VUG_DOCKER_START_SUMO == true ]]; then
+   echo "STARTING SUMO"
+   python3 $HOME/distributed-testing/scripts/carla_python_scripts/Sumo/run_synchronization.py $HOME/distributed-testing/scripts/carla_python_scripts/Sumo/$VUG_DOCKER_SUMO_CONFIG --sumo-gui --tls-manager carla --carla-host $VUG_LOCAL_ADDRESS --sumo-host $VUG_LOCAL_ADDRESS &
+   
+   sleep 5s
+fi
+
 if [[ $VUG_DOCKER_START_CANARY == true ]]; then
    echo "STARTING TENA CANARY"
    $VUG_LOCAL_TENA_PATH/tenaCanary-v1.0.15/start.sh -emEndpoints $VUG_EM_ADDRESS:$VUG_EM_PORT -listenEndpoints $VUG_LOCAL_ADDRESS -auto 2>&1 | awk '{ print "TENA CANARY: ", $0; fflush(); }' &
@@ -130,6 +167,13 @@ fi
 if [[ $VUG_DOCKER_START_SCENARIO_PUBLISHER == true ]]; then
    echo "STARTING SCENARIO PUBLISHER"
    $HOME/distributed-testing/scripts/run_scripts/start-scenario-publisher.sh &
+
+   sleep 5s
+fi
+
+if [[ $VUG_DOCKER_START_TENA_CARLA_ADAPTER == true ]]; then
+   echo "STARTING TENA CARLA ADAPTER"
+   $HOME/distributed-testing/scripts/run_scripts/start-carla-tena-adapter.sh &
 
    sleep 5s
 fi
@@ -169,52 +213,6 @@ if [[ $VUG_DOCKER_START_GNSS_EMULATOR == true ]]; then
 
    sleep 5s
 fi
-
-# try to change carla map 
-if [[ $VUG_DOCKER_START_CARLA == "local" ]] || [[ $VUG_DOCKER_START_CARLA == "remote" ]]; then
-   echo "CHANGING CARLA MAP TO: $VUG_CARLA_MAP_NAME"
-	python3 $HOME/distributed-testing/scripts/carla_python_scripts/config.py \
-      -m $VUG_CARLA_MAP_NAME --weather ClearNoon --host $VUG_CARLA_ADDRESS 2>&1 | awk '{ print "CHANGE MAP: ", $0; fflush(); }'
-
-   sleep 5s
-   
-   if [[ $VUG_CARLA_BLANK_SIGNALS == true ]]; then
-      # blank signals and essentially disable their timing so that the only TL states we see are from TENA TrafficLight SDO updates
-      python3 "$HOME/distributed-testing/scripts/carla_python_scripts/blank_traffic_signals.py" \
-         --host "$VUG_CARLA_ADDRESS" 2>&1 | awk '{ print "BLANK SIGNALS: ", $0; fflush(); }'
-   fi
-
-   # set spectator view
-   python3 $HOME/distributed-testing/scripts/carla_python_scripts/spectator_view.py --host $VUG_CARLA_ADDRESS 2>&1 | awk '{ print "SET VIEW: ", $0; fflush(); }'
-
-   if [[ $VUG_DISPLAY_VEHICLE_ROLENAMES == true ]] || [[ $VUG_DISPLAY_TRAFFIC_SIGNAL_STATES == true ]]; then
-      # display vehicle names and/or traffic light info
-      python3 $HOME/distributed-testing/scripts/carla_python_scripts/display_carla_info.py --host $VUG_CARLA_ADDRESS -d 0 2>&1 | awk '{ print "CARLA INFO: ", $0; fflush(); }' &
-   fi
-
-   if [[ $VUG_DISPLAY_SDSM == true ]]; then
-      # display SDSMs as they are received
-      python3 $HOME/distributed-testing/scripts/carla_python_scripts/draw_sdsm_json_live.py --host $VUG_CARLA_ADDRESS 2>&1 | awk '{ print "DISPLAY SDSM: ", $0; fflush(); }' &
-   fi
-
-   sleep 5s
-fi
-
-if [[ $VUG_DOCKER_START_SUMO == true ]]; then
-   echo "STARTING SUMO"
-   python3 $HOME/distributed-testing/scripts/carla_python_scripts/Sumo/run_synchronization.py $HOME/distributed-testing/scripts/carla_python_scripts/Sumo/$VUG_DOCKER_SUMO_CONFIG --sumo-gui --tls-manager carla --carla-host $VUG_LOCAL_ADDRESS --sumo-host $VUG_LOCAL_ADDRESS &
-   
-   sleep 5s
-fi
-
-if [[ $VUG_DOCKER_START_TENA_CARLA_ADAPTER == true ]]; then
-   echo "STARTING TENA CARLA ADAPTER"
-   $HOME/distributed-testing/scripts/run_scripts/start-carla-tena-adapter.sh &
-
-   sleep 5s
-fi
-
-sleep 180
 
 if [[ $VUG_DOCKER_START_MANUAL_CARLA_VEHICLE == true ]]; then
    echo "STARTING MANUAL CARLA VEHICLE"

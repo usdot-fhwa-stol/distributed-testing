@@ -762,19 +762,15 @@ class KeyboardControl:
                 0.0,
                 self._control.throttle - 2.0 * dt,
             )
-            self._control.brake = 0.0
             self._previous_speed_error = 0.0
+            if not brake_pressed:
+                self._control.brake = 0.0
 
         if brake_pressed:
             self._control.throttle = 0.0
             self._control.brake = min(
                 1.0,
                 self._control.brake + 3.5 * dt,
-            )
-            print(
-                "S pressed:", brake_pressed,
-                "throttle:", self._control.throttle,
-                "brake:", self._control.brake
             )
 
         steer_increment = 1.5 * dt
@@ -1798,6 +1794,7 @@ def game_loop(args: argparse.Namespace) -> None:
 
         hud = HUD(args.width, args.height)
         world = World(client.get_world(), hud, args)
+        
         controller = KeyboardControl(
             world,
             args.autopilot,
@@ -1875,7 +1872,7 @@ def main():
     )
     parser.add_argument(
         "--timeout",
-        default=20.0,
+        default=60.0,
         type=float,
         help="Client timeout in seconds (default: 10).",
     )

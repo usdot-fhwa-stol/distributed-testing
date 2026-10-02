@@ -63,7 +63,7 @@ def main():
     logging.basicConfig(format='%(levelname)s: %(message)s', level=logging.INFO)
 
     client = carla.Client(args.host, args.port)
-    client.set_timeout(20.0)
+    client.set_timeout(60.0)
 
     try:
 
@@ -89,6 +89,7 @@ def main():
 
             if args.verbose: print(f"Checking for new vehicles to stop [{max_checks - i}]")
 
+            stopped_vehicles = []
             for vehicle in vehicles:
                 
                 role = vehicle.attributes.get("role_name", "")
