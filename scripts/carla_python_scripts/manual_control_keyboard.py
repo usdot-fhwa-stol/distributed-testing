@@ -59,6 +59,7 @@ import os
 import random
 import re
 import weakref
+from ast import Raise
 from pathlib import Path
 
 import numpy as np
@@ -123,14 +124,15 @@ def safe_stop_and_destroy(actor):
     try:
         if getattr(actor, "is_listening", False):
             actor.stop()
-    except (AttributeError, RuntimeError):
-        pass
+    except Exception as e:
+        raise e
 
     try:
         if getattr(actor, "is_alive", True):
             actor.destroy()
-    except RuntimeError:
-        pass
+    except Exception as e:
+        # Catch std::excerption/RuntimeError thrown by C++ API wrapper
+        raise e
 
 
 def spring_arm_attachment():
@@ -464,8 +466,9 @@ class KeyboardControl:
         if isinstance(world.player, carla.Vehicle):
             self._control = carla.VehicleControl()
             self._lights = carla.VehicleLightState.NONE
-            world.player.set_autopilot(self._autopilot_enabled)
-            world.player.set_light_state(self._lights)
+            if self._autopilot_enabled:
+                world.player.set_autopilot(True, 8000)
+            world.player.set_light_state(carla.VehicleLightState(self._lights))
         elif isinstance(world.player, carla.Walker):
             self._control = carla.WalkerControl()
             self._rotation = world.player.get_transform().rotation
@@ -484,8 +487,9 @@ class KeyboardControl:
 
         if isinstance(world.player, carla.Vehicle):
             self._control = carla.VehicleControl()
-            world.player.set_autopilot(self._autopilot_enabled)
-            world.player.set_light_state(self._lights)
+            if self._autopilot_enabled:
+                world.player.set_autopilot(True, 8000)
+            world.player.set_light_state(carla.VehicleLightState(self._lights))
         elif isinstance(world.player, carla.Walker):
             self._control = carla.WalkerControl()
             self._rotation = world.player.get_transform().rotation
@@ -758,8 +762,9 @@ class KeyboardControl:
                 0.0,
                 self._control.throttle - 2.0 * dt,
             )
-            self._control.brake = 0.0
             self._previous_speed_error = 0.0
+            if not brake_pressed:
+                self._control.brake = 0.0
 
         if brake_pressed:
             self._control.throttle = 0.0
@@ -1789,6 +1794,7 @@ def game_loop(args: argparse.Namespace) -> None:
 
         hud = HUD(args.width, args.height)
         world = World(client.get_world(), hud, args)
+        
         controller = KeyboardControl(
             world,
             args.autopilot,
@@ -1866,7 +1872,7 @@ def main():
     )
     parser.add_argument(
         "--timeout",
-        default=10.0,
+        default=60.0,
         type=float,
         help="Client timeout in seconds (default: 10).",
     )

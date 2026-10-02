@@ -23,6 +23,10 @@ MAP_PRESETS = {
         "location": carla.Location(x=100, y=0, z=75),
         "rotation": carla.Rotation(pitch=-43.542046, yaw=144.351303, roll=0.0),
     },
+    "richmond_field_station_richmond_ca": {
+        "location": carla.Location(x=219, y=131, z=169),
+        "rotation": carla.Rotation(pitch=-33, yaw=-124, roll=0.0),
+    },
     "default": {
         "location": carla.Location(x=100, y=0, z=75),
         "rotation": carla.Rotation(pitch=-43.542046, yaw=144.351303, roll=0.0),
