@@ -13,7 +13,7 @@
 
     <vehicles>
 
-        <vehicle name="VW-M-1" bsmid="00000000" type="vehicle.audi.tt" simulationIdentifier="CARLA-VW-1" material="Aluminum" lvcIndicator="Constructive" generate_bsms="true" organization="VW">
+        <vehicle name="VW-M-1" bsmid="00000000" type="vehicle.lincoln.mkz" simulationIdentifier="CARLA-VW-1" material="Aluminum" lvcIndicator="Constructive" generate_bsms="true" organization="VW">
             <initialTSPI>
                 <GeodeticPosition latitudeInDegrees="0.002902" longitudeInDegrees="0.001816" heightAboveEllipsoidInMeters="1.014072">
                 </GeodeticPosition>
