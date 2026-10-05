@@ -33,7 +33,7 @@ function print_help {
 	echo "    [5]  vug-v2x-adapter"
 	echo "    [6]  vug-entity-generator"
 	echo "    [7]  vug-v2xhub-v2x-plugin"
-	echo "    [8]  hwil-gnss-emulator"
+	echo "    [8]  vug-radio-adapter"
 	echo
 	echo "Examples:"
 	echo "    # Build vug-carla-adapter in release mode:"
@@ -162,7 +162,7 @@ else
 	echo "    [5]  vug-v2x-adapter"
 	echo "    [6]  vug-entity-generator"
 	echo "    [7]  vug-v2xhub-v2x-plugin"
-	echo "    [8]  hwil-gnss-emulator"
+	echo "    [8]  vug-radio-adapter"
 	echo
 	read -p "--> " tenaAppIndex
 fi
@@ -251,15 +251,15 @@ elif [[ $tenaAppIndex == 7 ]]; then
 	applicationFolderName=TenaV2XPlugin
 
 elif [[ $tenaAppIndex == 8 ]]; then
-	tenaApp=DT4ITS-RadioHWIL
-	gitCloneUrl="git@github.com:usdot-fhwa-stol/DT4ITS-RadioHWIL.git"
+	tenaApp=vug-radio-adapter
+	gitCloneUrl="git@github.com:usdot-fhwa-stol/vug-radio-adapter.git"
 	dockerContainer=$buildGeneralImage
 	remoteAppDir=/home/dt_user/$tenaApp	#DO NOT CHANGE: internal docker directory mapped to localAppDir
 	isV2xhubPlugin=false
 	requiresProtocolio=false
 	defaultBranch='develop'
 	noBuildVersion=false
-	applicationFolderName=DT4ITS-RadioHWIL
+	applicationFolderName=vug-radio-adapter
 
 else
 	echo "Invalid selection, try again..."

@@ -76,9 +76,10 @@ fi
 siteID=$(( $(printf '%s' "$VUG_SHORT_IDENTIFIER" | cksum | awk '{print $1}') & 0xFFFF ))
 applicationID=$(( $(printf '%s' "$VUG_CARLA_ADAPTER_VERSION" | cksum | awk '{print $1}') & 0xFFFF ))
 
-echo "----- STARTING VEHICLE E-BRAKE SCRIPT -----"
-
-python3 $VUG_LOCAL_DT_PATH/scripts/carla_python_scripts/stop_vehicles.py --host $VUG_CARLA_ADDRESS 2>&1 | awk '{ print "STOP VEHICLES: ", $0; fflush(); }'&
+# Brings all vehicles in simulation to rest before starting the CARLA adapter
+# Disabling stop_vehicles as its causing a race condition causing the CARLA adapter to stop publishing for local spawned manually controlled vehicle
+#echo "----- STARTING VEHICLE E-BRAKE SCRIPT -----"
+#python3 $VUG_LOCAL_DT_PATH/scripts/carla_python_scripts/stop_vehicles.py --host $VUG_CARLA_ADDRESS 2>&1 | awk '{ print "STOP VEHICLES: ", $0; fflush(); }'&
 
 mkdir -p $VUG_ADAPTER_LOG_PATH
 

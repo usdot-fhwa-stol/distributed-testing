@@ -83,11 +83,6 @@ trap cleanup TERM INT
 
 source $HOME/start_scripts/setup-docker.sh
 
-if [[ $VUG_DEV_MODE == true ]]; then
-   echo "DEV MODE ENABLED, PLEASE RUN START SCRIPT MANUALLY"
-   exit 0
-fi
-
 sleep 5s
 
 if [[ $VUG_DOCKER_START_EM == true ]]; then
@@ -136,9 +131,8 @@ fi
 
 if [[ $VUG_DOCKER_START_SUMO == true ]]; then
    echo "STARTING SUMO"
-   cd $HOME/distributed-testing/scripts/carla_python_scripts/Sumo/
    python3 $HOME/distributed-testing/scripts/carla_python_scripts/Sumo/run_synchronization.py $HOME/distributed-testing/scripts/carla_python_scripts/Sumo/$VUG_DOCKER_SUMO_CONFIG --sumo-gui --tls-manager carla --carla-host $VUG_LOCAL_ADDRESS --sumo-host $VUG_LOCAL_ADDRESS &
-   cd $HOME
+   
    sleep 5s
 fi
 

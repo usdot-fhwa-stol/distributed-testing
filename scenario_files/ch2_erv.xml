@@ -13,7 +13,7 @@
 
     <vehicles>
 
-        <vehicle name="VW-M-1" bsmid="00000000" type="vehicle.audi.tt" simulationIdentifier="CARLA-VW-1" material="Aluminum" lvcIndicator="Constructive" generate_bsms="true" organization="VW">
+        <vehicle name="VW-M-1" bsmid="00000000" type="vehicle.lincoln.mkz" simulationIdentifier="CARLA-VW-1" material="Aluminum" lvcIndicator="Constructive" generate_bsms="true" organization="VW">
             <initialTSPI>
                 <GeodeticPosition latitudeInDegrees="0.002902" longitudeInDegrees="0.001816" heightAboveEllipsoidInMeters="1.014072">
                 </GeodeticPosition>
@@ -149,6 +149,14 @@
             </initialTSPI>
         </vehicle>
 
+        <vehicle name="FHWA-M-1" bsmid="44444440" type="vehicle.lincoln.mkz" simulationIdentifier="CARLA-FHWA-1" material="Aluminum" lvcIndicator="Constructive" generate_bsms="true" organization="FHWA">
+            <initialTSPI>
+                <GeodeticPosition latitudeInDegrees="0.002791" longitudeInDegrees="0.002422" heightAboveEllipsoidInMeters="1.001166">
+                </GeodeticPosition>
+                <Heading>180.546768</Heading>
+            </initialTSPI>
+        </vehicle>
+
     </vehicles>
 
     <simulations>
@@ -166,6 +174,10 @@
         </simulation>
 
         <simulation name="CARLA-PATH-1" type="CARLA">
+            <WeatherState>ClearNoon</WeatherState>
+        </simulation>
+
+        <simulation name="CARLA-FHWA-1" type="CARLA">
             <WeatherState>ClearNoon</WeatherState>
         </simulation>
 
