@@ -1,13 +1,18 @@
 name: "CI"
 on:
   workflow_dispatch:
+
   push:
     branches:
-    - event/hass_dt_develop
+      - event/hass_dt_develop
+      - 'release/*'
+    tags:
+      - 'dot-ostr-*'
 
   pull_request:
     branches:
       - event/hass_dt_develop
+      - 'release/*'
     types: [opened, synchronize, reopened]
 
 permissions:
@@ -21,12 +26,21 @@ jobs:
   determine_docker_org_and_tag:
     runs-on: ubuntu-22.04
     steps:
-      - name: Determine Docker organization and tag
+      - name: Determine Docker tag
         id: docker-org-and-tag
-        uses: usdot-fhwa-stol/actions/docker-org-and-tag@main
-    outputs: # Hardcoded: only one image repo and one supported base branch right now
+        run: |
+          REF="${GITHUB_BASE_REF:-$GITHUB_REF_NAME}"
+          if [[ "$GITHUB_REF_TYPE" == "tag" ]]; then
+            DOCKER_TAG="${GITHUB_REF_NAME#dot-ostr-}"
+          elif [[ "$REF" == release/* ]]; then
+            DOCKER_TAG="${REF#release/}"
+          else
+            DOCKER_TAG="develop"
+          fi
+          echo "docker_tag=$DOCKER_TAG" >> "$GITHUB_OUTPUT"
+    outputs:
       docker_org: dot-ostr-dt
-      docker_tag: develop
+      docker_tag: ${{ steps.docker-org-and-tag.outputs.docker_tag }}
 
   # Shared prerequisite: dt-core and dt-v2xhub FROM dt-base and/or build against dt-build-general.
   build-dt-base-general:
@@ -37,15 +51,15 @@ jobs:
       DOCKER_TAG: ${{ needs.determine_docker_org_and_tag.outputs.docker_tag }}
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v6
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@v4
         with:
           version: latest
 
       - name: Log in to DT Docker registry
-        uses: docker/login-action@v3
+        uses: docker/login-action@v4
         with:
           registry: harbor.distributedtesting.org
           username: ${{ secrets.KEYCLOAK_USERNAME }}
@@ -111,14 +125,14 @@ jobs:
       DOCKER_TAG: ${{ needs.determine_docker_org_and_tag.outputs.docker_tag }}
     steps:
       - name: Log in to DT Docker registry
-        uses: docker/login-action@v3
+        uses: docker/login-action@v4
         with:
           registry: harbor.distributedtesting.org
           username: ${{ secrets.KEYCLOAK_USERNAME }}
           password: ${{ secrets.KEYCLOAK_TOKEN }}
 
       - name: Download base images artifact
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v7
         with:
           name: dt-base-images
           path: /tmp
@@ -164,15 +178,15 @@ jobs:
       DOCKER_TAG: ${{ needs.determine_docker_org_and_tag.outputs.docker_tag }}
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v6
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@v4
         with:
           version: latest
 
       - name: Log in to DT Docker registry
-        uses: docker/login-action@v3
+        uses: docker/login-action@v4
         with:
           registry: harbor.distributedtesting.org
           username: ${{ secrets.KEYCLOAK_USERNAME }}
@@ -261,15 +275,15 @@ jobs:
       DOCKER_TAG: ${{ needs.determine_docker_org_and_tag.outputs.docker_tag }}
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v6
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@v4
         with:
           version: latest
 
       - name: Log in to DT Docker registry
-        uses: docker/login-action@v3
+        uses: docker/login-action@v4
         with:
           registry: harbor.distributedtesting.org
           username: ${{ secrets.KEYCLOAK_USERNAME }}
@@ -331,15 +345,15 @@ jobs:
       DOCKER_TAG: ${{ needs.determine_docker_org_and_tag.outputs.docker_tag }}
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v6
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@v4
         with:
           version: latest
 
       - name: Log in to DT Docker registry
-        uses: docker/login-action@v3
+        uses: docker/login-action@v4
         with:
           registry: harbor.distributedtesting.org
           username: ${{ secrets.KEYCLOAK_USERNAME }}

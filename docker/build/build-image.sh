@@ -236,7 +236,7 @@ if [[ "$IMAGE" == "v2xhub" ]]; then
 
       # The devcontainer image is tagged by the V2X-Hub ref it was built against, not VERSION
       if [[ "$BAKE_TARGET" == "tena-v2xhub-build-dependencies" ]]; then
-            FULL_TAG="${REGISTRY}/dt-build-v2xhub:${V2XHUB_REF}"
+            FULL_TAG="${REGISTRY}/dt-build-v2xhub:${V2XHUB_REF//\//-}"
       else
             FULL_TAG="${REGISTRY}/${IMAGE_NAME[$IMAGE]}:${VERSION}"
       fi

@@ -101,7 +101,7 @@ target "tena-v2xhub-build-dependencies" {
   }
   secret = ["id=GIT_AUTH_TOKEN,src=../usdotfhwastol_token"]
   output = ["type=docker"]
-  tags   = ["${REGISTRY}/dt-build-v2xhub:${V2XHUB_REF}"]
+  tags = ["${REGISTRY}/dt-build-v2xhub:${replace(V2XHUB_REF, "/", "-")}"]
 }
 
 // V2X-Hub's own, unmodified Dockerfile, run at its "v2xhub" stage, with `build-environment`
