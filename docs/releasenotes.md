@@ -4,26 +4,26 @@
 ## Version 2.0.0, released Sep 30th 2026
 
 ### Summary
-In this release, Distributed Testing adds automated Docker builds and GitHub workflows, TENA V2X Hub build environment automation, SIMDIS integration, and updates to the HASS DT work zone development images and scenario configuration.
+In this release, Distributed Testing (DT) adds automated Docker builds and GitHub workflows, TENA V2X Hub build environment automation, SIMDIS integration, and updates to the HASS (Highly Automated Systems Safety, U.S. Department of Transportation) DT work zone development images and scenario configuration.
 
 **Enhancements**
 
 - Automate TENA V2X Hub build environment creation with full runtime support, and add GitHub workflows and automated Docker builds split by dependency.
   * Pull Requests: [distributed-testing PR #83](https://github.com/usdot-fhwa-stol/distributed-testing/pull/83), [distributed-testing PR #86](https://github.com/usdot-fhwa-stol/distributed-testing/pull/86), [distributed-testing PR #102](https://github.com/usdot-fhwa-stol/distributed-testing/pull/102)
 
-- Add the SIMDIS Dockerfile for HASS and SIMDIS and yield integration testing changes.
+- Add the SIMDIS Dockerfile for SIMDIS and related quality of life improvements.
   * Pull Requests: [distributed-testing PR #72](https://github.com/usdot-fhwa-stol/distributed-testing/pull/72), [distributed-testing PR #81](https://github.com/usdot-fhwa-stol/distributed-testing/pull/81)
 
-- Update the HASS DT work zone development image to the 6.0.11 SDK, update the V2X Hub Dockerfile to V2X Hub develop, and add the V2X Hub V2X plugin Docker build.
+- Update the image to the 6.0.11 SDK, update the V2X Hub Dockerfile to V2X Hub 7.12.0, and add the V2X Hub V2X plugin Docker build.
   * Pull Requests: [distributed-testing PR #63](https://github.com/usdot-fhwa-stol/distributed-testing/pull/63), [distributed-testing PR #74](https://github.com/usdot-fhwa-stol/distributed-testing/pull/74), [distributed-testing PR #88](https://github.com/usdot-fhwa-stol/distributed-testing/pull/88)
 
 - Install the STOL J2735 deb package in the Dockerfile and update to the J2735 2024 version.
   * Pull Requests: [distributed-testing PR #76](https://github.com/usdot-fhwa-stol/distributed-testing/pull/76), [distributed-testing PR #77](https://github.com/usdot-fhwa-stol/distributed-testing/pull/77)
 
-- Add a staleSdsmThreshMs option to the start-entity-generator script, and update scenario XML and Docker-related settings.
+- Add a staleSdsmThreshMs option to the start-entity-generator script and update demo-related configs.
   * Pull Requests: [distributed-testing PR #101](https://github.com/usdot-fhwa-stol/distributed-testing/pull/101), [distributed-testing PR #105](https://github.com/usdot-fhwa-stol/distributed-testing/pull/105)
 
-- Update configurations for dth2, add a testing script from develop, and add PC configuration for HASS-639.
+- Update configurations for demonstration activities.
   * Pull Requests: [distributed-testing PR #65](https://github.com/usdot-fhwa-stol/distributed-testing/pull/65), [distributed-testing PR #66](https://github.com/usdot-fhwa-stol/distributed-testing/pull/66)
 
 **Fixes**
@@ -44,11 +44,11 @@ In this release, Distributed Testing adds automated Docker builds and GitHub wor
 
 ### VUG Entity Generator
 
-In this release, VUG Entity Generator adds VRU LVC entity support and stale SDSM entity pruning, and updates to the J2735 2024 standard.
+In this release, VUG Entity Generator adds support for LVC entity generation from SDSM, stale SDSM entity pruning, and updates to use the J2735 2024 standard. Bumps the version to 2.2.4.
 
 **Enhancements**
 
-- Add the VRU LVC entity.
+- Add support for LVC entity generation from SDSM.
   * Pull Requests: [vug-entity-generator PR #14](https://github.com/usdot-fhwa-stol/vug-entity-generator/pull/14)
 
 - Prune stale SDSM entities after a time threshold.
@@ -60,15 +60,14 @@ In this release, VUG Entity Generator adds VRU LVC entity support and stale SDSM
 - Update the STOL J2735 version to the 2024 standard.
   * Pull Requests: [vug-entity-generator PR #17](https://github.com/usdot-fhwa-stol/vug-entity-generator/pull/17)
 
+- Update versions to support the 6.0.11 SDK.
+  * Pull Requests: [vug-entity-generator PR #24](https://github.com/usdot-fhwa-stol/vug-entity-generator/pull/24), [vug-entity-generator PR #25](https://github.com/usdot-fhwa-stol/vug-entity-generator/pull/25)
+
 **Fixes**
 
-- [vug-entity-generator PR #20](https://github.com/usdot-fhwa-stol/vug-entity-generator/pull/20): Fix the coordinate convention.
+- [vug-entity-generator PR #20](https://github.com/usdot-fhwa-stol/vug-entity-generator/pull/20): Fix SDSM coordinate conversion.
 
-- [vug-entity-generator PR #22](https://github.com/usdot-fhwa-stol/vug-entity-generator/pull/22): Fix the offset_z type.
-
-**Other Updates**
-
-- [vug-entity-generator PR #24](https://github.com/usdot-fhwa-stol/vug-entity-generator/pull/24), [vug-entity-generator PR #25](https://github.com/usdot-fhwa-stol/vug-entity-generator/pull/25): Update versions to support the 6.0.11 SDK.
+- [vug-entity-generator PR #22](https://github.com/usdot-fhwa-stol/vug-entity-generator/pull/22): Fix the SDSM offset_z type.
 
 ### VUG V2X Hub V2X Plugin
 
@@ -85,17 +84,18 @@ In this release, the VUG V2X Hub V2X Plugin is built against the V2X Hub develop
 - Support development container setup for the new dt-v2xhub and dt-build-v2xhub images.
   * Pull Requests: [vug-v2xhub-v2x-plugin PR #16](https://github.com/usdot-fhwa-stol/vug-v2xhub-v2x-plugin/pull/16)
 
+- Update versions to support the 6.0.11 SDK.
+  * Pull Requests: [vug-v2xhub-v2x-plugin PR #19](https://github.com/usdot-fhwa-stol/vug-v2xhub-v2x-plugin/pull/19), [vug-v2xhub-v2x-plugin PR #20](https://github.com/usdot-fhwa-stol/vug-v2xhub-v2x-plugin/pull/20)
+
 **Fixes**
 
 - [vug-v2xhub-v2x-plugin PR #12](https://github.com/usdot-fhwa-stol/vug-v2xhub-v2x-plugin/pull/12): Fix the TENA V2X plugin networking issue.
 
-- [vug-v2xhub-v2x-plugin PR #13](https://github.com/usdot-fhwa-stol/vug-v2xhub-v2x-plugin/pull/13): Fix payload bytes being copied from the full length buffer.
+- [vug-v2xhub-v2x-plugin PR #13](https://github.com/usdot-fhwa-stol/vug-v2xhub-v2x-plugin/pull/13): Fix payload bytes being copied from the full-length buffer.
 
 - [vug-v2xhub-v2x-plugin PR #15](https://github.com/usdot-fhwa-stol/vug-v2xhub-v2x-plugin/pull/15): Fix the integration test.
 
 **Other Updates**
-
-- [vug-v2xhub-v2x-plugin PR #19](https://github.com/usdot-fhwa-stol/vug-v2xhub-v2x-plugin/pull/19), [vug-v2xhub-v2x-plugin PR #20](https://github.com/usdot-fhwa-stol/vug-v2xhub-v2x-plugin/pull/20): Update versions to support the 6.0.11 SDK.
 
 - [vug-v2xhub-v2x-plugin PR #25](https://github.com/usdot-fhwa-stol/vug-v2xhub-v2x-plugin/pull/25): Update the repository for the Wrangler release.
 
@@ -103,14 +103,20 @@ In this release, the VUG V2X Hub V2X Plugin is built against the V2X Hub develop
 
 In this release, VUG Scenario Publisher is updated to support the 6.0.11 SDK.
 
-**Other Updates**
+**Enhancements**
 
-- [vug-scenario-publisher PR #13](https://github.com/usdot-fhwa-stol/vug-scenario-publisher/pull/13), [vug-scenario-publisher PR #14](https://github.com/usdot-fhwa-stol/vug-scenario-publisher/pull/14): Update versions to support the 6.0.11 SDK.
+- Update versions to support the 6.0.11 SDK.
+  * Pull Requests: [vug-scenario-publisher PR #13](https://github.com/usdot-fhwa-stol/vug-scenario-publisher/pull/13), [vug-scenario-publisher PR #14](https://github.com/usdot-fhwa-stol/vug-scenario-publisher/pull/14)
 
 ### VUG V2X Adapter
 
 In this release, VUG V2X Adapter is updated from the 6.0.9 SDK to the 6.0.11 SDK.
 
-**Other Updates**
+**Enhancements**
 
-- [vug-v2x-adapter PR #9](https://github.com/usdot-fhwa-stol/vug-v2x-adapter/pull/9), [vug-v2x-adapter PR #10](https://github.com/usdot-fhwa-stol/vug-v2x-adapter/pull/10): Update versions from the 6.0.9 SDK to the 6.0.11 SDK.
+- Update versions to support the 6.0.11 SDK.
+  * Pull Requests: [vug-v2x-adapter PR #9](https://github.com/usdot-fhwa-stol/vug-v2x-adapter/pull/9), [vug-v2x-adapter PR #10](https://github.com/usdot-fhwa-stol/vug-v2x-adapter/pull/10)
+
+### VUG-udp-protocolio (No Updates)
+
+### VUG threads-library (No Updates)
