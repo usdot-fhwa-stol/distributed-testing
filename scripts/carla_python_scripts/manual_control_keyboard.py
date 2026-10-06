@@ -270,16 +270,20 @@ class World:
 
         if blueprint.has_attribute("speed"):
             values = blueprint.get_attribute("speed").recommended_values
-            try:
-                if len(values) > 1:
-                    self.player_max_speed = float(values[1])
-                if len(values) > 2:
-                    self.player_max_speed_fast = float(values[2])
-            except (TypeError, ValueError):
-                logging.warning(
-                    "Blueprint %s has invalid speed recommendations.",
-                    blueprint.id,
-                )
+            if blueprint.id.startswith("walker.pedestrian"):
+                self.player_max_speed = 14
+                self.player_max_speed_fast = 20
+            else:
+                try:
+                    if len(values) > 1:
+                        self.player_max_speed = float(values[1])
+                    if len(values) > 2:
+                        self.player_max_speed_fast = float(values[2])
+                except (TypeError, ValueError):
+                    logging.warning(
+                        "Blueprint %s has invalid speed recommendations.",
+                        blueprint.id,
+                    )
 
         return blueprint
 
