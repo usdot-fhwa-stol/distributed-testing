@@ -18,7 +18,7 @@ BUILD_MODE="release"
 # You can modify these variables to change the target branch for each adapter, or
 # override them from the environment (e.g. in CI) without editing this file.
 # ADAPTER_BRANCH sets the default for every adapter; BRANCH_APP_<n> overrides one.
-ADAPTER_BRANCH="${ADAPTER_BRANCH:-event/hass_dt_develop}"
+ADAPTER_BRANCH="${ADAPTER_BRANCH:-dot-ostr-2.0.0}"
 
 # [1] vug-threads-library
 BRANCH_APP_1="${BRANCH_APP_1:-$ADAPTER_BRANCH}"

@@ -132,7 +132,7 @@ tenaBuildVersion=u2204-gcc11-64
 #-------------------|  DO NOT CHANGE   |-------------------#
 # remoteDownloadsDir=/home/Downloads 		#DO NOT CHANGE: internal docker directory mapped to localTenaPackageDownloadDir
 remoteTenaDir=/home/dt_user/TENA			#DO NOT CHANGE: internal docker directory mapped to localTenaDir
-remoteInstallDir=/home/dt_user/INSTALL		#DO NOT CHANGE: internal docker directory mapped to localInstallDir	
+remoteInstallDir=/home/dt_user/INSTALL		#DO NOT CHANGE: internal docker directory mapped to localInstallDir
 remoteCarlaDir=/home/dt_user/carla
 #--------------------------------------------------------#
 
@@ -162,8 +162,8 @@ if [[ -n "$arg_app_index" ]]; then
 	tenaAppIndex=$arg_app_index
 else
 	echo
-	echo "What application would you like to install? [#]" 
-	echo 
+	echo "What application would you like to install? [#]"
+	echo
 	echo "    [1]  vug-threads-library"
 	echo "    [2]  vug-udp-protocolio"
 	echo "    [3]  scenario-publisher"
@@ -179,7 +179,7 @@ carlaTenaAdapterGitUrl="git@github.com:usdot-fhwa-stol/vug-carla-adapter.git"
 
 # Build containers. Overridable via the environment so CI can build against the
 # images it just produced (e.g. a dev org / versioned tag) instead of :latest.
-buildGeneralImage="${VUG_BUILD_GENERAL_IMAGE:-harbor.distributedtesting.org/dot-ostr-dt/dt-build-general:develop}"
+buildGeneralImage="${VUG_BUILD_GENERAL_IMAGE:-harbor.distributedtesting.org/dot-ostr-dt/dt-build-general:2.0.0}"
 buildCarlaImage="${VUG_BUILD_CARLA_IMAGE:-harbor.distributedtesting.org/distributed-testing/dt-build-carla:latest}"
 buildV2xImage="${VUG_BUILD_V2X_IMAGE:-usdotfhwaops/v2xhubamd:dt-P-1.1.0}"
 
@@ -271,7 +271,7 @@ if [[ -d $localInstallDir/$applicationFolderName* ]]; then
 fi
 
 localAppDir=$VUG_LOCAL_TENADEV_DIR/$tenaApp	#location of git directory of application to be built
-			
+
 downloadedSource=false
 
 
@@ -289,7 +289,7 @@ if [[ ! -d $localAppDir ]]; then
 		exit 1
 	fi
 
-	
+
 	if [[ -n "$arg_branch" ]]; then
 		branchToDownload=$arg_branch
 	else
@@ -299,7 +299,7 @@ if [[ ! -d $localAppDir ]]; then
 	if [[ $branchToDownload == "" ]]; then
 		branchToDownload=$defaultBranch
 	fi
-	
+
 	git clone $gitCloneUrl -b $branchToDownload $localAppDir || exit
 
 	downloadedSource=true
@@ -317,14 +317,14 @@ if ! $downloadedSource; then
 
 	echo
 	echo Current Branch: $gitBranch
-	
+
 
 	if [[ -n "$arg_branch" ]]; then
 
 		echo "Switching to branch: $arg_branch"
-		git pull || exit 
+		git pull || exit
 		git checkout $arg_branch || exit
-		git pull || exit 
+		git pull || exit
 
 	elif [ $arg_no_branch_change == false ]; then
 		echo
@@ -338,8 +338,8 @@ if ! $downloadedSource; then
 		fi
 
 	else
-		if [ $arg_no_pull == false ]; then 
-		
+		if [ $arg_no_pull == false ]; then
+
 			echo
 			echo "Current Commit Info:"
 			echo
@@ -355,7 +355,7 @@ if ! $downloadedSource; then
 		fi
 	fi
 
-	
+
 fi
 
 if $noBuildVersion; then
@@ -367,8 +367,8 @@ else
 
 	if [ $arg_release_or_debug == false ] ; then
 		echo
-		echo "Would you like to build release or debug? [#]" 
-		echo 
+		echo "Would you like to build release or debug? [#]"
+		echo
 		echo "    [1]  	release"
 		echo "    [2]  	debug"
 		echo
@@ -380,7 +380,7 @@ else
 		buildVersionDirArg="-B release"
 		buildVersionCmake="RELEASE"
 		buildVersionCmakeArg="-D CMAKE_BUILD_TYPE=RELEASE"
-		
+
 	elif [[ $releaseOrDebug == 2 ]]; then
 		buildVersion="debug"
 		buildVersionDirArg="-B debug"
@@ -451,7 +451,7 @@ fi
 if $isV2xhubPlugin; then
 
 	remoteTenaDir=/home/plugin/TENA			#DO NOT CHANGE: internal docker directory mapped to localTenaDir
-	remoteInstallDir=/home/plugin/INSTALL		#DO NOT CHANGE: internal docker directory mapped to localInstallDir	
+	remoteInstallDir=/home/plugin/INSTALL		#DO NOT CHANGE: internal docker directory mapped to localInstallDir
 fi
 
 currentDockerImages=$(docker image list -q $dockerContainer)
@@ -531,7 +531,7 @@ if [[ "$skipMake" == true ]]
 	else
 		echo
 		echo "#### Running Make ####"
-		
+
 		echo
 		echo "MAKE COMMAND: "
 		echo
@@ -546,10 +546,10 @@ if [[ "$skipMake" == true ]]
 
 		if $isV2xhubPlugin
 			then
-		
+
 				echo
 				echo "#### Running Make Package ####"
-				
+
 				echo
 				echo "MAKE PACKAGE COMMAND: "
 				if ! ( set -x ; docker run --entrypoint /bin/bash --rm -v $localAppDir:$remoteAppDir  -v $localInstallDir:$remoteInstallDir $dockerContainer -c "cd $remoteAppDir/build/$buildVersion; export TENA_PLATFORM=$tenaBuildVersion; export TENA_HOME=$remoteTenaDir; export TENA_VERSION=6.0.11; export CARLA_HOME=$remoteCarlaDir; make -j $numBuildJobs package VERBOSE=1" ); then
@@ -558,14 +558,14 @@ if [[ "$skipMake" == true ]]
 					exit 1
 				fi
 
-				
+
 				echo
 				echo "#### Make Package Complete ####"
 			else
-			
+
 				echo
 				echo "#### Running Make Install ####"
-				
+
 				echo
 				echo "MAKE INSTALL COMMAND: "
 				if ! ( set -x ; docker run --entrypoint /bin/bash --rm -v $localAppDir:$remoteAppDir -v $localInstallDir:$remoteInstallDir $dockerContainer -c "cd $remoteAppDir/build/$buildVersion; export TENA_PLATFORM=$tenaBuildVersion; export TENA_HOME=$remoteTenaDir; export TENA_VERSION=6.0.11; export CARLA_HOME=$remoteCarlaDir; make install VERBOSE=1" ); then
