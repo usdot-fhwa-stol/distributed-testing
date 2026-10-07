@@ -130,58 +130,6 @@ def get_label_lifetime(args: argparse.Namespace) -> float:
 
     return args.duration
 
-def display_pedestrian_rolenames():
-
-    text_offset = carla.Location(x=5, y=0, z=2)
-
-    walker_list = world.get_actors().filter(args.filterw)
-
-    if args.duration == 0:
-        label_duration = 0.5
-    else:
-        label_duration = args.duration
-
-    if len(walker_list) == 0:
-
-        if args.verbose:
-            print("    NO PEDESTRIANS")
-
-    else:
-        if args.verbose:
-            print("\nCARLA PEDESTRIANS: ")
-
-        for index, walker in enumerate(walker_list, start=1):
-
-            walker_name = str(walker.attributes["role_name"])
-
-            if args.verbose:
-                print("    " + str(walker.attributes))
-            if map_string in map_height_dict:
-                if walker.get_location().z < map_height_dict[map_string]["bottom_line"]:
-                    continue
-                elif walker.get_location().z > map_height_dict[map_string]["spawn_line"]:
-                    color = carla.Color(r=0, g=0, b=255)
-                else:
-                    color = carla.Color(r=255, g=0, b=0)
-
-                world.debug.draw_string(
-                    walker.get_location() + text_offset,
-                    walker_name,
-                    draw_shadow=False,color=color,
-                    life_time=label_duration,
-                    persistent_lines=True)
-            else:
-                world.debug.draw_string(
-                    walker.get_location() + text_offset,
-                    walker_name,
-                    draw_shadow=False,color=carla.Color(r=255,g=0,b=0),
-                    life_time=label_duration,
-                    persistent_lines=True)
-
-
-def display_traffic_signal_state():
-    signal_list = world.get_actors().filter('traffic.traffic_light')
-    # Print all index corresponding to all traffic signals in scene (CarlaUE4)
 
 def clean_role_name(role_name: str) -> str:
     cleaned_name = (
@@ -308,11 +256,17 @@ def display_vehicle_rolenames(
             label_lifetime=label_lifetime,
         )
 
+def traffic_signal_display(state: carla.TrafficLightState):
+    if state == carla.TrafficLightState.Green:
+        return "GREEN", TRAFFIC_GREEN_COLOR
+    if state == carla.TrafficLightState.Red:
+        return "RED", TRAFFIC_RED_COLOR
+    if state == carla.TrafficLightState.Yellow:
+        return "YELLOW", TRAFFIC_YELLOW_COLOR
+    return "UNKNOWN", TRAFFIC_UNKNOWN_COLOR
 
-def display_walker_rolenames(
-    world: carla.World,
-    args: argparse.Namespace,
-) -> None:
+
+def display_walker_rolenames(world, args) -> None:
     walker_list = world.get_actors().filter(args.filterw)
     label_lifetime = get_label_lifetime(args)
 
@@ -327,7 +281,6 @@ def display_walker_rolenames(
     for walker in walker_list:
         role_name = walker.attributes.get("role_name", "pedestrian")
         display_name = clean_role_name(role_name)
-        walker_location = walker.get_location()
 
         label = actor_label(
             actor=walker,
@@ -336,9 +289,24 @@ def display_walker_rolenames(
             prefix="P: ",
         )
 
-        if display_vehicle_rolenames_env:
-            display_vehicle_rolenames()
-            display_pedestrian_rolenames()                        
+        if args.verbose:
+            loc = walker.get_location()
+            print(f"    Walker ID {walker.id}: role_name={role_name!r}, "
+                  f"location=({loc.x:.2f}, {loc.y:.2f}, {loc.z:.2f})")
+
+        draw_actor_label(
+            world=world,
+            actor=walker,
+            text=label,
+            color=WALKER_COLOR,
+            height_offset=args.walker_label_height,
+            label_lifetime=label_lifetime,
+        )
+
+
+def display_traffic_signal_state(world, args) -> None:
+    signal_list = world.get_actors().filter("traffic.traffic_light")
+    label_lifetime = get_label_lifetime(args)
 
     if args.verbose:
         print("\nTRAFFIC SIGNALS:")
@@ -356,13 +324,9 @@ def display_walker_rolenames(
         )
 
         if args.verbose:
-            signal_location = signal.get_location()
-            print(
-                f"    Signal ID {signal.id}: "
-                f"state={signal_state}, "
-                f"location=({signal_location.x:.2f}, "
-                f"{signal_location.y:.2f}, {signal_location.z:.2f})"
-            )
+            loc = signal.get_location()
+            print(f"    Signal ID {signal.id}: state={signal_state}, "
+                  f"location=({loc.x:.2f}, {loc.y:.2f}, {loc.z:.2f})")
 
         draw_actor_label(
             world=world,
@@ -372,7 +336,7 @@ def display_walker_rolenames(
             height_offset=args.signal_label_height,
             label_lifetime=label_lifetime,
         )
-
+        
 
 def clear_all_labels(world: carla.World) -> None:
     world.debug.draw_string(
@@ -471,6 +435,5 @@ def main() -> None:
         sys.exit(1)
 
 
-    ################################################################################################
-    # Once you see all index number, you can manually change its states and timimg.
-    # Your signal control scripts.
+if __name__ == "__main__":
+    main()
