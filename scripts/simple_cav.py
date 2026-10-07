@@ -657,6 +657,197 @@ class VehicleController:
     Main control algorithm for ego vehicle
     """
 
+    def __init__(self, world: carla.World, vehicle: carla.Vehicle, config: ControllerConfig):
+        self.world = world
+        self.vehicle = vehicle
+        self.config = config
+
+        self.lanes = LaneManager(world, vehicle)
+        self.state = ControllerState.NORMAL
+        self.original_waypoint = None
+        self.erv_confirmation_start = None
+        self.current_erv = None
+
+    # Speed
+    def speed_mps(self):
+        velocity = self.vehicle.get_velocity()
+        return magnitude_2d(velocity.x, velocity.y)
+
+    def speed_kph(self):
+        return self.speed_mps() * 3.6
+
+    # Longitudinal controller
+    def speed_control(self, target_speed_kph: float):
+        current_speed = self.speed_kph()
+        error = target_speed_kph - current_speed
+
+        # Simple proportional controller
+        # TODO: Replace with tuned PID/Ackermann controller
+
+        throttle = max(0.0, min(0.75, error * 0.025))
+        brake = 0.0
+        if error < -2.0:
+            brake = max(0.0, min(1.0, (-error) * 0.04))
+            throttle = 0.0
+        return throttle, brake
+
+    # Steering
+    def steer_to_waypoint(self, waypoint: carla.Waypoint):
+        vehicle_transform = self.vehicle.get_transform()
+        vehicle_yaw = vehicle_transform.rotation.yaw
+        target_yaw = waypoint.transform.rotation.yaw
+        yaw_error = normalize_angle_deg(target_yaw - vehicle_yaw)
+
+        # Simple heading controller
+        # TODO: Replace with tuned controller
+        steer = yaw_error/45.0
+        return max(-self.config.max_steer, min(self.config.max_steer, steer))
+
+    # Vehicle Controls
+    def normal_control(self):
+        waypoint = self.lanes.current_waypoint()
+        if waypoint is None:
+            return carla.VehicleControl(throttle=0.0,brake=1.0)
+
+        throttle, brake = self.speed_control(self.config.target_speed_kph)
+
+        return carla.VehicleControl(
+            throttle=throttle,
+            brake=brake,
+            steer=self.steer_to_waypoint(waypoint)
+        )
+
+    def yield_control(self):
+        waypoint = self.lanes.current_waypoint()
+        throttle, brake = self.speed_control(self.config.yield_speed_kph)
+        steer = 0.0
+        if waypoint is not None:
+            steer = self.steer_to_waypoint(waypoint)
+
+        return carla.VehicleControl(
+            throttle=throttle,
+            brake=brake,
+            steer=steer
+        )
+
+    def move_over_control(self):
+        current = self.lanes.current_waypoint()
+        if current is None:
+            return self.yield_control()
+
+        # Look for waypoint in target lane
+        # Using target lane's waypoint ahead of us rather than directly steering at the center
+        target_lane = None
+        if self.lanes.target_lane_id is not None:
+            candidates = current.next(self.config.waypoint_lookahead_m)
+            for waypoint in candidates:
+                if waypoint.lane_id == self.lanes.target_lane_id:
+                    target_lane = waypoint
+                    break
+
+        if target_lane is None:
+            return self.yield_control()
+
+        throttle, brake = self.speed_control(self.config.yield_speed_kph)
+        steer = self.steer_to_waypoint(target_lane)
+        return carla.VehicleControl(
+            throttle=throttle,
+            brake=brake,
+            steer=steer
+        )
+
+    def return_control(self):
+        current = self.lanes.current_waypoint()
+        if current is None:
+            return self.yield_control()
+
+        target = None
+        candidates = current.next(self.config.waypoint_lookahead_m)
+        for waypoint in candidates:
+            if waypoint.lane_id == self.lanes.original_lane_id:
+                target = waypoint
+                break
+
+        if target is None:
+            return self.yield_control()
+
+        throttle, brake = self.speed_control(self.config.target_speed_kph)
+        steer = self.steer_to_waypoint(target)
+        return carla.VehicleControl(
+            throttle=throttle,
+            brake=brake,
+            steer=steer
+        )
+
+    # ERV State Machine
+    def update(self, assessment: Optional[ERVAssessment]):
+        now = time.monotonic()
+
+        if self.state == ControllerState.NORMAL:
+            if assessment is None:
+                self.erv_confirmation_start = None
+                return
+            if not assessment.approaching:
+                self.erv_confirmation_start = None
+                return
+            if assessment.distance_m > self.config.erv_response_distance_m:
+                self.erv_confirmation_start = None
+                return
+            if self.erv_confirmation_start is None:
+                self.erv_confirmation_start = now
+                self.current_erv = assessment.bsm.sender_id
+                return
+            if (now - self.erv_confirmation_start) < self.config.erv_confirmation_time_s:
+                return
+
+            # Determine whether we have an adjacent lane
+            # Initially prefer right
+            # TODO: Reconfigure this to match scenario or use road topology
+
+            if self.lanes.can_move_over("right"):
+                if self.lanes.set_target_lane("right"):
+                    self.state = ControllerState.SLOWING
+                    print("[CTRL] ERV response: SLOWING")
+            else:
+                # No adjacent lane available
+                # For now remain in lane and slow down
+                # TODO: Fix this logic
+                self.state = ControllerState.SLOWING
+                print("[CTRL] ERV response: SLOWING (no lane change available)")
+        elif self.state == ControllerState.SLOWING:
+            # Once we are sufficiently slow, move over
+            if self.speed_kph() <= self.config.yield_speed_kph + 5.0:
+                if self.lanes.target_lane_id is not None:
+                    self.state = ControllerState.MOVING_OVER
+                    print("[CTRL] ERV resposne: MOVING OVER")
+                else:
+                    self.state = ControllerState.YIELDED
+        elif self.state == ControllerState.MOVING_OVER:
+            if self.lanes.is_in_target_lane():
+                self.state = ControllerState.YIELDED
+                print("[CTRL] ERV response: YIELDED")
+        elif self.state == ControllerState.YIELDED:
+            if assessment is None:
+                self.state = ControllerState.RETURNING
+                print("[CTRL] ERV no longer detected: RETURNING")
+                return
+            # ERV is no longer approaching
+            if not assessment.approaching:
+                self.state = ControllerState.RETURNING
+                print("[CTRL] ERV passed: RETURNING")
+                return
+            # Or it has moved sufficiently far away
+            if assessment.distance_m > self.config.erv_clear_distance_m:
+                self.state = ControllerState.RETURNING
+                print("[CTRL] ERV cleared: RETURNING")
+        elif self.state == ControllerState.RETURNING:
+            if self.lanes.is_in_original_lane():
+                self.state = ControllerState.NORMAL
+                self.erv_confirmation_start = None
+                self.current_erv = None
+                self.lanes.target_lane_id = None
+                print("[CTRL] Back in original lane: NORMAL OPERATION")
+
     # -------------------------------------------
     # Generate Vehicle Command
     # -------------------------------------------
@@ -855,22 +1046,81 @@ def main():
             f"  lane_id = {original_waypoint.lane_id}"
         )
 
-        # # Start BSM Listener
-        # decoder = BSMDecoder()
+        # Start BSM Listener
+        decoder = BSMDecoder()
+        bsm_receiver = BSMReceiver(
+            bind_address=(
+                config.bsm_bind_address
+            ),
+            port=config.bsm_port,
+            decoder=decoder,
+        )
+        bsm_receiver.start()
 
-        # bsm_receiver = BSMReceiver(
-        #     bind_address=(
-        #         config.bsm_bind_address
-        #     ),
-        #     port=config.bsm_port,
-        #     decoder=decoder,
-        # )
+        # Coordinate conversion
+        coordinate_converter = CoordinateConverter(world)
 
-        # bsm_receiver.start()
+        # ERV detector
+        erv_detector = ERVDetector(world=world, ego_vehicle=vehicle, coordinate_converter=coordinate_converter)
 
+        # Main controller
+        controller = VehicleController(world=world, vehicle=vehicle, config=config)
+        controller.original_waypoint = original_waypoint
 
-        while(1):
-            x=1
+        # Main loop
+        period = 1.0 / config.control_hz
+        print("[CTRL] Controller started")
+
+        while(True):
+            loop_start = time.monotonic()
+
+            # Get fresh BSMs
+            bsms = bsm_receiver.get_fresh_BSMs(config.bsm_timeout_s)
+            
+            # Assess ERVs
+            assessments = []
+            for bsm in bsms:
+                try:
+                    assessment = erv_detector.assess(bsm)
+                    if assessment is not None:
+                        assessments.append(assessment)
+                except Exception as exc:
+                    print(f"[ERV] Assessment error: {exc}")
+
+            # Determine closest approaching ERV
+            closest_erv = None
+            for assessment in assessments:
+                if not assessment.approaching:
+                    continue
+
+                if closest_erv is None or (assessment.distance_m < closest_erv.distance_m):
+                    closest_erv = assessment
+
+            # Update state machine
+            controller.update(closest_erv)
+
+            # Generate vehicle control
+            control = controller.get_control()
+            vehicle.apply_control(control)
+
+            # Diagnostics
+            if closest_erv is not None:
+                print(
+                    "[ERV] " 
+                    f"id={closest_erv.bsm.sender_id} "
+                    f"distance={closest_erv.distance_m:.1f}m "
+                    f"closing={closest_erv.closing_speed_mps:.1f}m/s "
+                    f"bearing={closest_erv.relative_bearing_deg:.1f}deg "
+                    f"approaching={closest_erv.approaching} "
+                    f"state={controller.state.name}"
+                )
+
+            # Maintain loop frequency
+            elapsed = time.monotonic() = loop_start
+            sleep_time = period - elapsed
+            if sleep_time > 0:
+                time.sleep(sleep_time)
+
     except KeyboardInterrupt:
         print("\n[CTRL] Interrupted")
     finally:
