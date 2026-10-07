@@ -548,8 +548,6 @@ class ERVDetector:
             relative_bearing_deg=relative_bearing
         )
 
-
-
 # ===============================================
 # Controller State Machine
 # ===============================================
@@ -576,7 +574,7 @@ class LaneManager:
 
     def __init__(self, world: carla.World, vehicle: carla.Vehicle):
         self.world = world
-        self.vehicle: vehicle
+        self.vehicle = vehicle
         self.map = world.get_map()
 
         self.original_lane_id = None
@@ -654,7 +652,10 @@ class LaneManager:
 # Vehicle Controller
 # ===============================================
 
-
+class VehicleController:
+    """
+    Main control algorithm for ego vehicle
+    """
 
     # -------------------------------------------
     # Generate Vehicle Command
@@ -836,8 +837,8 @@ def main():
     client.set_timeout(30.0)
     world = client.get_world()
     print(f"[CARLA] Connected")
+    print(f"[CARLA] Map: {world.get_map().name}")
 
-    
     vehicle = None
     bsm_receiver = None
 
@@ -847,6 +848,12 @@ def main():
 
         # Lane Manager
         lane_manager = LaneManager(world, vehicle)
+        original_waypoint = lane_manager.capture_original_lane()
+        print(
+            f"[CARLA] Original lane:"
+            f"  road_id = {original_waypoint.road_id}"
+            f"  lane_id = {original_waypoint.lane_id}"
+        )
 
         # # Start BSM Listener
         # decoder = BSMDecoder()
