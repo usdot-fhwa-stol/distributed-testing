@@ -9,7 +9,7 @@ from pathlib import Path
 
 import pandas as pd
 
-from analysis_pcap import LATENCY_THRESHOLDS_MS, get_pcaps
+from analysis_pcap import LATENCY_THRESHOLDS_MS, get_pcap_root, get_pcaps
 from pcap_frames import Address, FrameInfo, parse_frame, read_pcap
 from plots_and_summaries import (
     LATENCY_COLUMN,
@@ -288,8 +288,8 @@ def run_spdu_chain_analysis(
     Returns:
         0 on success or when the run has no chain captures, 1 on error.
     """
-    pcap_root = input_dir / "pcap"
-    if not pcap_root.is_dir():
+    pcap_root = get_pcap_root(input_dir)
+    if pcap_root is None:
         logging.info("Skipping SPDU chain analysis because the PCAP directory is missing")
         return 0
 
