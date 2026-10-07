@@ -13,12 +13,6 @@ BUILD_SCRIPT_PATH="$(dirname "$0")/buildTenaAdapters.sh"
 
 # Build Mode: 'release' or 'debug'
 BUILD_MODE="release"
-# CI selects the CARLA variant; other adapters retain their release builds.
-CARLA_BUILD_MODE="${CARLA_BUILD_MODE:-release}"
-case "$CARLA_BUILD_MODE" in
-    release|debug) ;;
-    *) echo "Invalid CARLA_BUILD_MODE: $CARLA_BUILD_MODE" >&2; exit 1 ;;
-esac
 
 # Branch Configuration for each Adapter
 # You can modify these variables to change the target branch for each adapter
@@ -60,15 +54,13 @@ run_build() {
     local index=$1
     local branch=$2
     local name=$3
-    local mode="$BUILD_MODE"
-    if [[ "$index" == 4 ]]; then mode="$CARLA_BUILD_MODE"; fi
 
     echo "================================================================================"
     echo "Building [$index] $name"
-    echo "Branch: $branch | Mode: $mode"
+    echo "Branch: $branch | Mode: $BUILD_MODE"
     echo "================================================================================"
 
-    "$BUILD_SCRIPT_PATH" --app_index "$index" --branch "$branch" --"$mode" --auto_download
+    "$BUILD_SCRIPT_PATH" --app_index "$index" --branch "$branch" --"$BUILD_MODE" --auto_download
     echo ""
 }
 

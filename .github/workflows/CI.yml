@@ -173,13 +173,9 @@ jobs:
 
           exit "$fail"
 
-  # Package release and debug CARLA adapters in separate dt-core images.
+  # Package release adapters in dt-core.
   build-and-push-dt-core:
     runs-on: ubuntu-22.04
-    strategy:
-      fail-fast: false
-      matrix:
-        mode: [release, debug]
     needs: [determine_docker_org_and_tag, build-dt-base-general]
     env:
       DOCKER_ORG: ${{ needs.determine_docker_org_and_tag.outputs.docker_org }}
@@ -255,7 +251,6 @@ jobs:
           # VUG_SKIP_DOCKER_PULL stops buildTenaAdapters.sh overwriting the loaded image with a registry pull.
           VUG_BUILD_GENERAL_IMAGE: harbor.distributedtesting.org/${{ needs.determine_docker_org_and_tag.outputs.docker_org }}/dt-build-general:${{ needs.determine_docker_org_and_tag.outputs.docker_tag }}
           VUG_BUILD_CARLA_IMAGE: harbor.distributedtesting.org/${{ needs.determine_docker_org_and_tag.outputs.docker_org }}/dt-build-carla:${{ needs.determine_docker_org_and_tag.outputs.docker_tag }}
-          CARLA_BUILD_MODE: ${{ matrix.mode }}
           VUG_SKIP_DOCKER_PULL: "true"
         run: |
           chmod +x scripts/build_tena_adapters/buildAllAdapters.sh scripts/build_tena_adapters/buildTenaAdapters.sh
@@ -272,30 +267,24 @@ jobs:
           ls -la docker/build/lib/COPY/VUG_Adapters
 
       - name: Build dt-core image
-        env:
-          IMAGE_TAG: ${{ needs.determine_docker_org_and_tag.outputs.docker_tag }}${{ matrix.mode == 'debug' && '-debug' || '' }}
         working-directory: ./docker/build
         run: |
           chmod +x build-image.sh
-          ./build-image.sh core -v "$IMAGE_TAG"
+          ./build-image.sh core -v "$DOCKER_TAG"
 
       - name: Verify CARLA adapter is packaged
-        env:
-          IMAGE_TAG: ${{ needs.determine_docker_org_and_tag.outputs.docker_tag }}${{ matrix.mode == 'debug' && '-debug' || '' }}
         run: |
           docker run --rm --entrypoint /bin/bash \
-            "${DOCKERHUB_NAMESPACE}/${DOCKER_ORG}/dt-core:${IMAGE_TAG}" \
+            "${DOCKERHUB_NAMESPACE}/${DOCKER_ORG}/dt-core:${DOCKER_TAG}" \
             -ec 'test -n "$(find /home/dt_user/VUG_Adapters -type f -name CARLAtenaAdapter -executable -print -quit)"'
 
       - name: Push dt-core to DT registry
-        env:
-          IMAGE_TAG: ${{ needs.determine_docker_org_and_tag.outputs.docker_tag }}${{ matrix.mode == 'debug' && '-debug' || '' }}
         if: needs.determine_docker_org_and_tag.outputs.publish == 'true' && github.event_name != 'pull_request'
         run: |
-          docker push "${DOCKERHUB_NAMESPACE}/${DOCKER_ORG}/dt-core:${IMAGE_TAG}"
+          docker push "${DOCKERHUB_NAMESPACE}/${DOCKER_ORG}/dt-core:${DOCKER_TAG}"
 
       - name: Push CARLA adapter toolchain
-        if: needs.determine_docker_org_and_tag.outputs.publish == 'true' && github.event_name != 'pull_request' && matrix.mode == 'release'
+        if: needs.determine_docker_org_and_tag.outputs.publish == 'true' && github.event_name != 'pull_request'
         run: docker push "${DOCKERHUB_NAMESPACE}/${DOCKER_ORG}/dt-build-carla:${DOCKER_TAG}"
 
       - name: Remove private repository credentials
