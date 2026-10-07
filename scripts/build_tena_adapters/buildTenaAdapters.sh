@@ -323,9 +323,12 @@ if ! $downloadedSource; then
 	if [[ -n "$arg_branch" ]]; then
 
 		echo "Switching to branch: $arg_branch"
-		git pull || exit 
+		git fetch --tags origin || exit
 		git checkout $arg_branch || exit
-		git pull || exit 
+		# A tag leaves HEAD detached with nothing to pull; only pull when on a branch
+		if git symbolic-ref -q HEAD >/dev/null; then
+			git pull || exit
+		fi
 
 	elif [ $arg_no_branch_change == false ]; then
 		echo
