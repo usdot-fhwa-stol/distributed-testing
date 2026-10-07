@@ -286,9 +286,8 @@ class BSMDecoder:
         return (value * self.ELEVATION_SCALE_M) + self.ELEVATION_OFFSET_M 
 
     @staticmethod
-    def decode_part_ii(
-        part_ii
-    ):
+    def decode_part_ii(part_ii):
+        
         VEHICLE_SAFETY_EXTENSIONS = 1
         SPECIAL_VEHICLE_EXTENSIONS = 2
         vehicle_role = None
@@ -340,12 +339,7 @@ class BSMReceiver:
     The CARLA control loop will not wait for network data.
     """
 
-    def __init__(
-        self,
-        bind_address: str,
-        port: int,
-        decoder: BSMDecoder,
-    ):
+    def __init__(self, bind_address: str, port: int, decoder: BSMDecoder):
 
         self.bind_address = bind_address
         self.port = port
@@ -362,33 +356,13 @@ class BSMReceiver:
 
     def start(self):
 
-        self._socket = socket.socket(
-            socket.AF_INET,
-            socket.SOCK_DGRAM,
-        )
-
-        self._socket.setsockopt(
-            socket.SOL_SOCKET,
-            socket.SO_REUSEADDR,
-            1,
-        )
-
-        self._socket.bind(
-            (
-                self.bind_address,
-                self.port,
-            )
-        )
-
+        self._socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        self._socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        self._socket.bind((self.bind_address, self.port))
         self._socket.settimeout(0.5)
 
         self._running = True
-
-        self._thread = threading.Thread(
-            target=self._receive_loop,
-            daemon=True,
-        )
-
+        self._thread = threading.Thread(target=self._receive_loop, daemon=True)
         self._thread.start()
 
         print(
@@ -423,7 +397,6 @@ class BSMReceiver:
             # Decode data and format into BSM defined above
             try:
                 bsm = self.decoder.decode(data)
-                print(bsm)
 
                 if bsm is None:
                     continue
@@ -436,10 +409,7 @@ class BSMReceiver:
                     f"{address}: {exc}"
                 )
 
-    def get_fresh_BSMs(
-        self,
-        max_age_s: float,
-    ) -> List[BSM]:
+    def get_fresh_BSMs(self, max_age_s: float) -> List[BSM]:
 
         now = time.monotonic()
         with self._lock:
@@ -470,7 +440,24 @@ class CoordinateConverter:
         )
 
 # ===============================================
-# ERVAssessment
+# Geometry Helpers
+# ===============================================
+
+def magnitude_2d(x: float, y: float) -> float:
+    return math.sqrt((x*x)+(y*y))
+
+def distance_2d(a: carla.Location, b: carla.Location) -> float:
+    return magnitude_2d((a.x - b.x), (a.y - b.y))
+
+def normalize_angle_deg(angle: float) -> float:
+    return ((angle + 180.0) % 360.0) - 180.0
+
+def heading_vector(heading_deg: float):
+    angle = math.radians(heading_deg)
+    return (math.cos(angle), math.sin(angle))
+
+# ===============================================
+# ERV Assessment
 # ===============================================
 
 @dataclass
@@ -487,21 +474,13 @@ class ERVDetector:
     Determines wheter a BSM represents an approaching ERV
     """
 
-    def __init__(
-        self,
-        world: carla.World,
-        ego_vehicle: carla.Vehicle,
-        coordinate_converter: CoordinateConverter,
-    ):
+    def __init__(self, world: carla.World, ego_vehicle: carla.Vehicle, coordinate_converter: CoordinateConverter):
         self.world = world
         self.ego = ego_vehicle
 
         self.converter = coordinate_converter
 
-    def assess(
-        self,
-        bsm: BSM,
-    ) -> Optional[ERVAssessment]:
+    def assess(self, bsm: BSM) -> Optional[ERVAssessment]:
 
         # Is this an ERV?
         if not bsm.is_erv:
@@ -512,12 +491,10 @@ class ERVDetector:
         erv_location = self.converter.bsm_to_carla(bsm)
 
         # Distance calculations
-        dx = ego_location.x - erv_location.x
-        dy = ego_location.y - erv_location.y
-        distance = magnitude_2d(
-            dx,
-            dy,
-        )
+        #   dx = ego_location.x - erv_location.x
+        #   dy = ego_location.y - erv_location.y
+        #   distance = magnitude_2d(dx, dy)
+        distance = distance_2d(ego_location, erv_location)
 
         if distance < 0.001:
             return ERVAssessment(
@@ -529,7 +506,6 @@ class ERVDetector:
             )
 
         # Determine direction (from/toward ego)
-
         erv_to_ego_x = dx / distance
         erv_to_ego_y = dy / distance
 
@@ -539,8 +515,38 @@ class ERVDetector:
         # +1 = directly toward ego 
         # 0 = perpendicular 
         # -1 = directly away 
-        direction_alignment = ( erv_heading_x * erv_to_ego_x + erv_heading_y * erv_to_ego_y ) 
+        direction_alignment = ( (erv_heading_x * erv_to_ego_x) + (erv_heading_y * erv_to_ego_y) ) 
         approaching = ( direction_alignment > 0.5 )
+
+        # Relative velocity
+        ego_velocity = self.ego.get_velocity()
+        ego_speed = magnitude_2d(ego_velocity.x, ego_velocity.y)
+
+        # TODO: Refine this using road geometry and relative velocity
+        erv_closing_component = bsm.speed_mps * max(0.0, direction_alignment)
+        closing_speed = erv_closing_component + ego_speed
+
+        # Relative bearing
+        ego_forward = self.ego.get_transform().get_forward_vector()
+        to_erv_x = erv_location.x - ego_location.x
+        to_erv_y = erv_location.y - ego_location.y
+        to_erv_mag = magnitude_2d(to_erv_x, to_erv_y)
+
+        to_erv_x /= to_erv_mag
+        to_erv_y /= to_erv_mag
+
+        dot = (ego_forward.x * to_erv_x) + (ego_forward.y * to_erv_y)
+        cross = (ego_forward.x * to_erv_y) - (ego_forward.y * to_erv_x)
+
+        relative_bearing = math.degrees(math.atan2(cross,dot))
+
+        return ERVAssessment(
+            bsm=bsm,
+            distance_m=distance,
+            approaching=approaching,
+            closing_speed_mps = closing_speed,
+            relative_bearing_deg=relative_bearing
+        )
 
 
 
@@ -560,7 +566,89 @@ class ControllerState(Enum):
 # Lane Manager
 # ===============================================
 
+class LaneManager:
+    """
+    Handles CARLA waypoint/lane information
 
+    CARLA 0.10.0's waypoint API provides get_left_lane() and get_right_lane(),
+    so the controller uses those rather tahn teleporting the vehicle between lanes
+    """
+
+    def __init__(self, world: carla.World, vehicle: carla.Vehicle):
+        self.world = world
+        self.vehicle: vehicle
+        self.map = world.get_map()
+
+        self.original_lane_id = None
+        self.original_road_id = None
+
+        self.target_lane_id = None
+
+    def current_waypoint(self):
+        return self.map.get_waypoint(self.vehicle.get_location(), project_to_road=True, lane_type=carla.LaneType.Driving)
+
+    def capture_original_lane(self):
+        waypoint = self.current_waypoint()
+        if waypoint is None:
+            raise RuntimeError(
+                "Ego vehicle is not currently on a driving lane"
+            )
+        self.original_land_id = waypoint.lane_id
+        self.original_road_id = waypoint.road_id
+
+        return waypoint
+
+    def get_adjacent_lane(self, diration: str):
+        current = self.current_waypoint()
+
+        if current is None:
+            return None
+
+        if direction == "left":
+            return current.get_left_lane()
+        if direction == "right":
+            return current.get_right_lane()
+        raise ValueError(f"Invalid lane direction: {direction}")
+
+    def can_move_over(self, direction: str) -> bool:
+        adjacent = self.get_adjacent_lane(direction)
+        if adjacent is None:
+            return False
+
+        if adjacent.lane_type != carla.LaneType.Driving:
+            return False
+
+        return True
+
+    def set_target_lane(self, direction: str) -> bool:
+        adjacent = self.get_adjacent_lane(direction)
+        if adjacent is None:
+            return False
+
+        if adjacent.lane_type != carla.LaneType.Driving:
+            return False
+
+        self.target_lane_id = adjacent.lane_id
+
+        return True
+
+    def is_in_target_lane(self):
+        if self.target_lane_id is None:
+            return False
+
+        current = self.current_waypoint()
+
+        if current is None:
+            return False
+
+        return current.lane_id == self.target_lane_id
+
+    def is_in_original_lane(self):
+        current = self.current_waypoint()
+        if current is None:
+            return False
+
+        return current.lane_id == self.original_lane_id    
 
 # ===============================================
 # Vehicle Controller
@@ -568,10 +656,62 @@ class ControllerState(Enum):
 
 
 
+    # -------------------------------------------
+    # Generate Vehicle Command
+    # -------------------------------------------
+
+    def get_control(self):
+        if self.state == ControllerState.NORMAL:
+            return self.normal_control()
+
+        if self.state == ControllerState.SLOWING:
+            return self.yield_control()
+
+        if self.state == ControllerState.MOVING_OVER:
+            return self.move_over_control()
+
+        if self.state == ControllerState.YIELDED:
+            return self.yield_control()
+
+        if self.state == ControllerState.RETURNING:
+            return self.return_control()
+
+        return self.normal_control()
+
 # ===============================================
 # Spawning/Attaching to Vehicle
 # ===============================================
 
+def spawn_vehicle(world: carla.World, config: ControllerConfig):
+    
+    blueprint_library = world.get_blueprint_library()
+    blueprint = blueprint_library.find(config.vehicle_model)
+    if blueprint is None:
+        raise RuntimeError(f"Vehicle blueprint not found: {config.vehicle_model}")
+
+    if blueprint.has_attribute("role_name"):
+        blueprint.set_attribute("role_name", config.role_name)
+
+    transform = carla.Transform(
+        carla.Location(x=config.spawn_x, y=config.spawn_y, z=config.spawn_z),
+        carla.Rotation(pitch=config.spawn_pitch, yaw=config.spawn_yaw, roll=config.spawn_roll)
+    )
+
+    vehicle = world.try_spawn_actor(blueprint, transform)
+
+    if vehicle is None:
+        raise RuntimeError("CARLA failed to spawn vehicle. The spawn location may be occupied.")
+
+    print(
+        "[CARLA] Spawned:"
+        f"  type = {vehicle.type_id}"
+        f"  id = {vehicle.id}"
+        f"  role_name = {config.role_name}"
+        f"  location = ({config.spawn_x},{config.spawn_y},{config.spawn_z})"
+        f"  yaw = {config.spawn_yaw}"
+    )
+
+    return vehicle
 
 
 # ===============================================
@@ -690,20 +830,52 @@ def main():
         erv_response_distance_m=args.erv_distance,
     )
 
-    decoder = BSMDecoder()
+    # Connect to CARLA
+    print(f"[CARLA] Connecting to {config.carla_host}:{config.carla_port}")
+    client = carla.Client(config.carla_host, config.carla_port)
+    client.set_timeout(30.0)
+    world = client.get_world()
+    print(f"[CARLA] Connected")
 
-    bsm_receiver = BSMReceiver(
-        bind_address=(
-            config.bsm_bind_address
-        ),
-        port=config.bsm_port,
-        decoder=decoder,
-    )
+    
+    vehicle = None
+    bsm_receiver = None
 
-    bsm_receiver.start()
+    try:
+        # Spawn vehicle
+        vehicle = spawn_vehicle(world,config)
 
-    while(1):
-        x=1
+        # Lane Manager
+        lane_manager = LaneManager(world, vehicle)
+
+        # # Start BSM Listener
+        # decoder = BSMDecoder()
+
+        # bsm_receiver = BSMReceiver(
+        #     bind_address=(
+        #         config.bsm_bind_address
+        #     ),
+        #     port=config.bsm_port,
+        #     decoder=decoder,
+        # )
+
+        # bsm_receiver.start()
+
+
+        while(1):
+            x=1
+    except KeyboardInterrupt:
+        print("\n[CTRL] Interrupted")
+    finally:
+        print("[CTRL] Shutting down...")
+        if bsm_receiver is not None:
+            bsm_receiver.stop()
+        if vehicle is not None:
+            try:
+                vehicle.destroy()
+            except Exception:
+                pass
+        print("[CTRL] Done")
 
 if __name__ == "__main__":
     main()
