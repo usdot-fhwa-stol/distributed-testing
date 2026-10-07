@@ -105,5 +105,6 @@ set -x
     -sendAddress "$HWIL_GNSS_EMULATOR_SEND_ADDRESS" \
     -sendPort "$HWIL_GNSS_EMULATOR_SEND_PORT" \
     -gnssType "$GNSS_TYPE" \
+    -commandPort "$HWIL_GNSS_EMULATOR_COMMAND_PORT" \    
     | awk -v adapter="[$VUG_GNSS_EMULATOR_VERSION]" '{ print adapter, $0; fflush(); }' \
     | tee -a "$adapterLogFile"
