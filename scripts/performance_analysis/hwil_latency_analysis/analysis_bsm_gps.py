@@ -9,7 +9,7 @@ from pathlib import Path
 import pandas as pd
 from j2735_202409 import MessageFrame
 
-from analysis_pcap import get_pcaps
+from analysis_pcap import get_pcap_root, get_pcaps
 from analysis_spdu_chain import load_signed_spdus
 from pcap_frames import parse_frame, read_pcap
 from plots_and_summaries import plot_bsm_track
@@ -188,8 +188,8 @@ def run_bsm_gps_analysis(input_dir: Path, results_dir: Path) -> int:
     Returns:
         0 on success or when the run lacks the DUT 1 or DUT 2 capture, 1 on error.
     """
-    pcap_root = input_dir / "pcap"
-    if not pcap_root.is_dir():
+    pcap_root = get_pcap_root(input_dir)
+    if pcap_root is None:
         return 0
     try:
         captures = get_pcaps(pcap_root)

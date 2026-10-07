@@ -1,9 +1,11 @@
 """Decode fixed-layout PCAP inputs and analyze V2X message latency."""
 
 import logging
+import re
 import shutil
 from pathlib import Path
 
+import decoder_helper
 import pcap_decoder
 from log_parser import (
     calculate_latency,
@@ -68,30 +70,58 @@ def filename_has_direction(path: Path, direction: str) -> bool:
     return path.stem.lower().endswith(direction)
 
 
+def filename_has_endpoint_prefix(path: Path, endpoint: str, direction: str) -> bool:
+    """Check whether a PCAP filename starts with the endpoint and direction.
+
+    Matches names such as dut1_tx_20261002_153255.pcap, dut_1_tx.pcap or
+    proxy-1-rx_2.pcap for endpoint dut_1/proxy_1.
+    """
+    endpoint_type, number = endpoint.rsplit("_", maxsplit=1)
+    pattern = rf"{re.escape(endpoint_type)}[_-]?{number}[_-]{direction}(?:[_.-]|$)"
+    return re.match(pattern, path.name.lower()) is not None
+
+
+def get_pcap_root(input_dir: Path) -> Path | None:
+    """Return the directory holding a run's PCAPs: pcap/ if present, else the run directory."""
+    pcap_root = input_dir / "pcap"
+    if pcap_root.is_dir():
+        return pcap_root
+    if any(path.suffix.lower() == ".pcap" for path in input_dir.iterdir() if path.is_file()):
+        return input_dir
+    return None
+
+
 def get_pcap(
     pcap_root: Path,
     endpoint: str,
     direction: str,
 ) -> Path | None:
-    """Find a PCAP in an endpoint directory."""
+    """Find a PCAP in an endpoint directory or by filename prefix in the PCAP root."""
     endpoint_directory = pcap_root / endpoint
+    candidates: list[Path] = []
 
-    if not endpoint_directory.is_dir():
-        logging.info(
-            "PCAP endpoint directory is missing; skipping %s",
-            endpoint,
-        )
-        return None
+    # Files in the endpoint directory whose name ends with the direction or
+    # starts with the endpoint and direction
+    if endpoint_directory.is_dir():
+        candidates += [
+            path
+            for path in endpoint_directory.iterdir()
+            if filename_has_direction(path, direction)
+            or filename_has_endpoint_prefix(path, endpoint, direction)
+        ]
 
-    # Search through all tx and rx files in the endpoint directory and
-    # check for the one that matches our end point and direction.
+    # Files in the PCAP root whose name starts with the endpoint and direction
+    candidates += [
+        path
+        for path in pcap_root.iterdir()
+        if filename_has_endpoint_prefix(path, endpoint, direction)
+    ]
+
     matches = sorted(
         (
             path.resolve()
-            for path in endpoint_directory.iterdir()
-            if path.is_file()
-            and path.suffix.lower() == ".pcap"
-            and filename_has_direction(path, direction)
+            for path in candidates
+            if path.is_file() and path.suffix.lower() == ".pcap"
         ),
         key=lambda path: path.name.lower(),
     )
@@ -150,7 +180,7 @@ def decode_pcap(
 ) -> Path:
     """Decode one PCAP into its own output directory."""
     output_directory = decoded_root / pcap_name
-    decoded_log = output_directory / ("decoded_" + pcap_name.split("_")[2] + ".log")
+    decoded_log = output_directory / decoder_helper.formatFileName(str(pcap_path))
 
     # Remove the previous output so every PCAP is decoded from scratch.
     if output_directory.exists():
@@ -254,11 +284,11 @@ def run_pcap_analysis(
     results_dir: Path,
 ) -> int:
     """Decode and analyze all available PCAP directions for one run."""
-    pcap_root = input_dir / "pcap"
+    pcap_root = get_pcap_root(input_dir)
 
-    if not pcap_root.is_dir():
+    if pcap_root is None:
         logging.info(
-            "Skipping PCAP analysis because the directory is missing",
+            "Skipping PCAP analysis because no PCAP files were found",
         )
         return 0
 
