@@ -167,11 +167,14 @@ class BSMDecoder:
     LONGITUDE_SCALE = 1e-7
 
     HEADING_SCALE_DEG = 0.0125
+    UNAVAILABLE_HEADING = 28800
 
     SPEED_SCALE_MPS = 0.02
+    UNAVAILABLE_SPEED = 8191
 
     ELEVATION_SCALE_M = 0.1
     ELEVATION_OFFSET_M = -409.5
+    UNAVAILABLE_ELEVATION = 4095
 
     def decode(self, data: bytes) -> Optional[BSM]:
         """
@@ -184,20 +187,147 @@ class BSMDecoder:
 
         return self.convert_dict(bsm_dict)
 
-    def convert_dict(
-        self,
-        message: Dict[str, Any],
-    ) -> Optional[BSM]:
+    def convert_dict(self, message: Dict[str, Any]) -> Optional[BSM]:
         """
         Convert received BSM in JSON/Dict format into BSM class
         """
         try:
+            # Get Base BSM information
             message_id = message.get("messageId")
-            core=message["value"]["coreData"]
+            core = message["value"]["coreData"]
+            sender_id = str(core["id"])
+            latitude = float(core["lat"]) * self.LATITUDE_SCALE
+            longitude = float(core["long"]) * self.LONGITUDE_SCALE
+            elevation_m = self.decode_elevation(core.get("elev"))
+            speed_mps = self.decode_speed(core.get("speed"))
+            heading_deg = self.decode_heading(core.get("heading"))
+            message_count = core.get("msgCnt")
+            second_mark = core.get("secMark")
+            
+            # Get BSM PartII information
+            part_ii = message["value"].get("partII",[])
+            (vehicle_role, vehicle_classification, siren_use, lights_use) = self.decode_part_ii(part_ii)
+            
         except( KeyError,TypeError, ) as exc:
             print(f"[BSM] Missing required field: {exc}")
 
-        print(core)
+        # Determine whether BSM is from an ERV
+        is_erv = self.determine_erv(
+            vehicle_role = vehicle_role,
+            vehicle_classification = vehicle_classification,
+            siren_use = siren_use,
+            lights_use = lights_use
+        )
+
+        return BSM(
+            sender_id = sender_id,
+            latitude = latitude,
+            longitude = longitude,
+            elevation_m = elevation_m,
+            speed_mps = speed_mps,
+            heading_deg = heading_deg,
+            is_erv = is_erv,
+            vehicle_role = vehicle_role,
+            vehicle_classification = vehicle_classification,
+            siren_use = siren_use,
+            lights_use = lights_use,
+            message_id = message_id,
+            message_count = message_count,
+            second_mark = second_mark,
+            received_time = time.monotonic(),
+        )
+
+    @classmethod
+    def decode_heading(self, value) -> Optional[float]:
+        """
+        J2735 heading resolution:
+            <value> * 0.0125 degrees
+        """
+
+        if value is None:
+            return None
+
+        value = int(value)
+        if value >= self.UNAVAILABLE_HEADING:
+            return None
+
+        return value * self.HEADING_SCALE_DEG
+
+    @classmethod
+    def decode_speed(self, value) -> Optional[float]:
+        """
+        J2735 speed resolution:
+            <value> * 0.02 m/s
+        """
+
+        if value is None:
+            return None
+
+        value = int(value)
+        if value >= self.UNAVAILABLE_SPEED:
+            return None
+
+        return value * self.SPEED_SCALE_MPS
+
+    @classmethod
+    def decode_elevation(self, value) -> Optional[float]:
+        """
+        J2735 elevation resolution
+            ( <value> * 0.1 ) - 409.5
+        """
+
+        if value is None:
+            return None
+
+        value = int(value)
+        if value >= self.UNAVAILABLE_ELEVATION:
+            return None
+
+        return (value * self.ELEVATION_SCALE_M) + self.ELEVATION_OFFSET_M 
+
+    @staticmethod
+    def decode_part_ii(
+        part_ii
+    ):
+        VEHICLE_SAFETY_EXTENSIONS = 1
+        SPECIAL_VEHICLE_EXTENSIONS = 2
+        vehicle_role = None
+        vehicle_classification = None
+
+        siren_use = None
+        lights_use = None
+
+        for part in part_ii:
+            part_id = part.get("partII-Id")
+
+            part_value = part.get("partII-Value", {})
+
+            if part_id == VEHICLE_SAFETY_EXTENSIONS:
+                vehicle_alerts = part_value.get("vehicleAlerts", {})
+                siren_use = vehicle_alerts.get("sirenUse")
+                lights_use = vehicle_alerts.get("lightsUse")
+            elif part_id == SPECIAL_VEHICLE_EXTENSIONS:
+                class_details = part_value.get("classDetails",{})
+                vehicle_role = class_details.get("role")
+                vehicle_classification = part_value.get("classification")
+
+        return (vehicle_role, vehicle_classification, siren_use, lights_use)
+
+    @staticmethod
+    def determine_erv(vehicle_role: Optional[str], vehicle_classification: Optional[int], siren_use: Optional[str], lights_use: Optional[str]) -> bool:
+        """
+        Determine whether BSM represents an ERV
+        """
+        emergency_roles = {
+            "ambulance",
+            "firetruck",
+            "police",
+        }
+
+        if vehicle_role and (vehicle_role in emergency_roles):
+            return True
+
+        return False
 
 # ===============================================
 # UDP BSM Receiver
@@ -293,6 +423,7 @@ class BSMReceiver:
             # Decode data and format into BSM defined above
             try:
                 bsm = self.decoder.decode(data)
+                print(bsm)
 
                 if bsm is None:
                     continue
