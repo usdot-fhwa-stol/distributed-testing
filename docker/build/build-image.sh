@@ -178,11 +178,14 @@ fi
 
 if [[ "${NEEDS_SECRET[$IMAGE]:-0}" -eq 1 ]]; then
       if [[ "$IMAGE" == "build-general" ]]; then
-            if [[ -z "${USDOTFHWASTOL_TOKEN:-}" ]]; then
-                  echo "USDOTFHWASTOL_TOKEN is required for build-general" >&2
+            if [[ -n "${USDOTFHWASTOL_TOKEN:-}" ]]; then
+                  EXTRA_ARGS+=(--secret "id=usdotfhwastol_token,env=USDOTFHWASTOL_TOKEN")
+            elif [[ -f "$TOKEN_FILE" ]]; then
+                  EXTRA_ARGS+=(--secret "id=usdotfhwastol_token,src=$TOKEN_FILE")
+            else
+                  echo "Set USDOTFHWASTOL_TOKEN or create $TOKEN_FILE" >&2
                   exit 1
             fi
-            EXTRA_ARGS+=(--secret "id=usdotfhwastol_token,env=USDOTFHWASTOL_TOKEN")
       else
             if [[ ! -f "$TOKEN_FILE" ]]; then
                   echo "Missing $TOKEN_FILE - see the secret instructions at the top of dt-v2xhub_Dockerfile" >&2
@@ -212,8 +215,7 @@ if [[ "$IMAGE" == "v2xhub" ]]; then
             PLUGIN_REF="$PLUGIN_BRANCH"
       fi
       # DOCKER_TAG: so tena-source (below) tracks the dt-build-general this pipeline just built.
-      export PLUGIN_REF VERSION REGISTRY
-      export DT_BUILD_GENERAL_TAG="$DOCKER_TAG"
+      export PLUGIN_REF VERSION REGISTRY DOCKER_TAG
 
       # Both V2X Hub images use this run's version tag.
       if [[ "$BAKE_TARGET" == "tena-v2xhub-build-dependencies" ]]; then

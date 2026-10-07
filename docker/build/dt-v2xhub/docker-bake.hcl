@@ -42,7 +42,8 @@ variable "J2735_VERSION" {
   default = "2024"
 }
 
-variable "DT_BUILD_GENERAL_TAG" {
+// Use the same base-image tag as the other DT images; exported by build-image.sh.
+variable "DOCKER_TAG" {
   default = "latest"
 }
 
@@ -69,7 +70,7 @@ target "tena-v2xhub-build-dependencies" {
   dockerfile = "dt-v2xhub_Dockerfile"
   contexts = {
     v2xhub-build-dependencies = "target:v2xhub-build-environment"
-    tena-source                = "docker-image://${REGISTRY}/dt-build-general:${DT_BUILD_GENERAL_TAG}"
+    tena-source                = "docker-image://${REGISTRY}/dt-build-general:${DOCKER_TAG}"
   }
   args = {
     J2735_VERSION = J2735_VERSION

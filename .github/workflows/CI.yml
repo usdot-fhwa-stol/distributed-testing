@@ -8,7 +8,8 @@ on:
     - "release/**"
     - feature/add_gha # Temporary: publish images for review before merging.
     tags:
-    - "dot-ostr-*"
+    - "event/**"
+    - "[0-9]*"
 
   pull_request:
     branches:
@@ -34,17 +35,28 @@ jobs:
       - name: Determine Docker organization and tag
         id: docker-org-and-tag
         uses: usdot-fhwa-stol/actions/docker-org-and-tag@main
+      - name: Set DT Harbor project and image tag
+        id: dt-image
+        env:
+          SOURCE_BRANCH: ${{ github.head_ref || github.ref_name }}
+          REF_TYPE: ${{ github.ref_type }}
+          IMAGE_TAG: ${{ github.ref_type == 'tag' && github.ref_name || steps.docker-org-and-tag.outputs.docker_image_tag }}
+        run: |
+          if [[ "$REF_TYPE" == "tag" ]]; then
+            docker_org=distributed-testing
+          else
+            case "$SOURCE_BRANCH" in
+              develop|master|release/*) docker_org=distributed-testing ;;
+              *) docker_org=distributed-testing-dev ;;
+            esac
+          fi
+          echo "docker_org=$docker_org" >> "$GITHUB_OUTPUT"
+          # Docker tags cannot contain slashes, e.g. event/cohort-1 becomes event-cohort-1.
+          echo "docker_tag=${IMAGE_TAG//\//-}" >> "$GITHUB_OUTPUT"
     outputs:
-      # Use the DT Harbor project instead of the action's Docker Hub organization.
-      publish: >-
-        ${{ github.event_name == 'push' &&
-            (github.ref == 'refs/heads/develop' ||
-             github.ref == 'refs/heads/master' ||
-             github.ref == 'refs/heads/feature/add_gha' ||
-             startsWith(github.ref, 'refs/heads/release/') ||
-             startsWith(github.ref, 'refs/tags/dot-ostr-')) }}
-      docker_org: distributed-testing
-      docker_tag: ${{ steps.docker-org-and-tag.outputs.docker_image_tag }}
+      publish: ${{ github.event_name == 'push' || github.event_name == 'workflow_dispatch' }}
+      docker_org: ${{ steps.dt-image.outputs.docker_org }}
+      docker_tag: ${{ steps.dt-image.outputs.docker_tag }}
 
   # Shared prerequisite: dt-core and dt-v2xhub FROM dt-base and/or build against dt-build-general.
   build-dt-base-general:
@@ -320,10 +332,7 @@ jobs:
 
       - name: Build dt-carla image
         working-directory: ./docker/build
-        run: |
-          # No custom maps are required yet; keep the Dockerfile's COPY source available.
-          mkdir -p lib/MAPS
-          bash build-image.sh carla -v "$DOCKER_TAG"
+        run: bash build-image.sh carla -v "$DOCKER_TAG"
 
       - name: Verify CARLA simulator files
         run: |
