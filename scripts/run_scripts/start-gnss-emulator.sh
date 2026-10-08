@@ -66,6 +66,30 @@ else
     exit 1
 fi
 
+# Load GPSD settings after the site/scenario and Docker overrides.
+gnss_script_dir="$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")"
+source "$gnss_script_dir/../../config/gpsd.config" || exit 1
+
+case "$HWIL_GNSS_OUTPUT_MODE" in
+    gpsd)
+        if [[ "$GPSD_ENABLED" != true ]]; then
+            echo "ERROR: GPSD output selected but GPSD_ENABLED is not true" >&2
+            exit 1
+        fi
+        HWIL_GNSS_EMULATOR_SEND_ADDRESS=127.0.0.1
+        HWIL_GNSS_EMULATOR_SEND_PORT="$GPSD_INPUT_PORT"
+        ;;
+    direct)
+        # Keep the destination from the existing configuration.
+        ;;
+    *)
+        echo "ERROR: HWIL_GNSS_OUTPUT_MODE must be gpsd or direct" >&2
+        exit 1
+        ;;
+esac
+
+echo "GNSS destination: $HWIL_GNSS_EMULATOR_SEND_ADDRESS:$HWIL_GNSS_EMULATOR_SEND_PORT"
+
 localadapterPath=$VUG_LOCAL_INSTALL_PATH/$VUG_GNSS_EMULATOR_VERSION
 
 adapterVerbosity='4'

@@ -1,0 +1,24 @@
+services:
+  gpsd:
+    build: ./build/gpsd
+    image: dt-gpsd:standalone-test
+    init: true
+    restart: "no"
+    ports:
+      - "127.0.0.1:55000:5000"
+      - "127.0.0.1:52947:2947"
+    healthcheck:
+      test: ["CMD", "python3", "/opt/gpsd/healthcheck.py"]
+      interval: 5s
+      timeout: 5s
+      retries: 6
+      start_period: 20s
+    mem_limit: 128m
+    cpus: 0.5
+    pids_limit: 64
+    stop_grace_period: 10s
+    logging:
+      driver: json-file
+      options:
+        max-size: "5m"
+        max-file: "2"
