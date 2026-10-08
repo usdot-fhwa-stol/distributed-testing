@@ -1095,6 +1095,18 @@ def main():
 
             # Get fresh BSMs
             bsms = bsm_receiver.get_fresh_BSMs(config.bsm_timeout_s)
+            for bsm in bsms:
+                print(
+                    "[BSM] "
+                    f"id={bsm.sender_id} "
+                    f"lat={bsm.latitude:.7f} "
+                    f"lon={bsm.longitude:.7f} "
+                    f"elev={bsm.elevation_m} "
+                    f"speed={bsm.speed_mps:.2f} m/s "
+                    f"heading={bsm.heading_deg}° "
+                    f"ERV={bsm.is_erv} "
+                    f"role={bsm.vehicle_role} "
+                )
             
             # Assess ERVs
             assessments = []
@@ -1115,12 +1127,18 @@ def main():
                 if closest_erv is None or (assessment.distance_m < closest_erv.distance_m):
                     closest_erv = assessment
 
-            # Update state machine
-            controller.update(closest_erv)
-
-            # Generate vehicle control
-            control = controller.get_control()
+            # Stage 3 test:
+            # BSM/ERV information is diagnostic only
+            # Do NOT allow it to influence vehicl control yet
+            control = controller.normal_control()
             vehicle.apply_control(control)
+
+            # # Update state machine
+            # controller.update(closest_erv)
+
+            # # Generate vehicle control
+            # control = controller.get_control()
+            # vehicle.apply_control(control)
 
             # Diagnostics
             if closest_erv is not None:
