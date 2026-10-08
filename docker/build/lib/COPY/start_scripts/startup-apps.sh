@@ -113,10 +113,12 @@ if [[ $VUG_DOCKER_START_CARLA == "local" ]] || [[ $VUG_DOCKER_START_CARLA == "re
          --host "$VUG_CARLA_ADDRESS" 2>&1 | awk '{ print "BLANK SIGNALS: ", $0; fflush(); }'
    fi
 
-   # set spectator view
-   python3 $HOME/distributed-testing/scripts/carla_python_scripts/spectator_view.py --host $VUG_CARLA_ADDRESS 2>&1 | awk '{ print "SET VIEW: ", $0; fflush(); }'
+   if [[ $VUG_CARLA_VR_MODE == false ]]; then
+       # set spectator view
+       python3 $HOME/distributed-testing/scripts/carla_python_scripts/spectator_view.py --host $VUG_CARLA_ADDRESS 2>&1 | awk '{ print "SET VIEW: ", $0; fflush(); }'
+   fi 
 
-   if [[ $VUG_DISPLAY_VEHICLE_ROLENAMES == true ]] || [[ $VUG_DISPLAY_TRAFFIC_SIGNAL_STATES == true ]]; then
+   if [[ $VUG_DISPLAY_VEHICLE_ROLENAMES == true ]] || [[ $VUG_DISPLAY_TRAFFIC_SIGNAL_STATES == true ]] || [[ $VUG_DISPLAY_WALKER_ROLENAMES == true ]]; then
       # display vehicle names and/or traffic light info
       python3 $HOME/distributed-testing/scripts/carla_python_scripts/display_carla_info.py --host $VUG_CARLA_ADDRESS -d 0 2>&1 | awk '{ print "CARLA INFO: ", $0; fflush(); }' &
    fi
