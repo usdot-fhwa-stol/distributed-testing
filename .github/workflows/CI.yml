@@ -6,7 +6,6 @@ on:
     - develop
     - master
     - "release/**"
-    - feature/add_gha # Temporary: publish images for review before merging.
     tags:
     - "event/**"
     - "[0-9]*"
