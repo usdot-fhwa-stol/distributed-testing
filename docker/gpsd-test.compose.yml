@@ -5,7 +5,7 @@ services:
     init: true
     restart: "no"
     ports:
-      - "127.0.0.1:55000:5000"
+      - "127.0.0.1:51928:51928"
       - "127.0.0.1:52947:2947"
     healthcheck:
       test: ["CMD", "python3", "/opt/gpsd/healthcheck.py"]

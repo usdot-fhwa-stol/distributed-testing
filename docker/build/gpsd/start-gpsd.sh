@@ -12,7 +12,6 @@ cleanup() {
 trap cleanup EXIT
 trap 'exit 0' TERM INT
 
-# Ji's TCP-to-UDP approach, entirely inside this container.
 # No physical devices, virtual serial devices, or host services are involved.
 gpsd -N -n -b -G -D 2 -S 2947 udp://127.0.0.1:5001 &
 gpsd_pid=$!
@@ -31,9 +30,9 @@ while True:
         raise SystemExit('GPSD client service did not become ready')
     time.sleep(0.1)
 PY
-socat -u TCP-LISTEN:5000,reuseaddr,fork UDP-SENDTO:127.0.0.1:5001 &
+socat -u TCP-LISTEN:51928,reuseaddr,fork UDP-SENDTO:127.0.0.1:5001 &
 bridge_pid=$!
-echo "GPSD: TCP producer 5000 -> internal UDP 5001 -> GPSD client TCP 2947"
+echo "GPSD: TCP producer 51928 -> internal UDP 5001 -> GPSD client TCP 2947"
 # With fork, one producer disconnect does not terminate the listener or GPSD.
 set +e
 wait -n "$gpsd_pid" "$bridge_pid"

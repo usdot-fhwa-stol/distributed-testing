@@ -12,7 +12,7 @@ case "${1:-status}" in
     start)
         "${compose[@]}" up -d --build --wait --wait-timeout 60 gpsd
         echo "GPSD test service is ready."
-        echo "Emulator input: 127.0.0.1:55000"
+        echo "Emulator input: 127.0.0.1:51928"
         echo "GPSD clients:  127.0.0.1:52947"
         ;;
     stop)

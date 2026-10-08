@@ -4,7 +4,7 @@ import sys
 
 try:
     # Confirm the emulator's TCP input listener is accepting connections.
-    with socket.create_connection(("127.0.0.1", 5000), timeout=2):
+    with socket.create_connection(("127.0.0.1", 51928), timeout=2):
         pass
 
     # Confirm GPSD responds using its client protocol.

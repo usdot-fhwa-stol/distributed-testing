@@ -92,7 +92,7 @@ echo "GNSS destination: $HWIL_GNSS_EMULATOR_SEND_ADDRESS:$HWIL_GNSS_EMULATOR_SEN
 
 localadapterPath=$VUG_LOCAL_INSTALL_PATH/$VUG_GNSS_EMULATOR_VERSION
 
-adapterVerbosity='4'
+adapterVerbosity='1'
 
 useBestEffort=''
 if [[ $VUG_USE_BEST_EFFORT == true ]]; then
