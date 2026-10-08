@@ -210,6 +210,7 @@ class BSMDecoder:
             
         except( KeyError,TypeError, ) as exc:
             print(f"[BSM] Missing required field: {exc}")
+            return None
 
         # Determine whether BSM is from an ERV
         is_erv = self.determine_erv(
@@ -466,7 +467,7 @@ class ERVAssessment:
     bsm: BSM
     distance_m: float
     approaching: bool
-    closing_spped_mps: float
+    closing_speed_mps: float
     relative_bearing_deg: float
 
 class ERVDetector:
@@ -490,11 +491,10 @@ class ERVDetector:
         ego_location = self.ego.get_location()
         erv_location = self.converter.bsm_to_carla(bsm)
 
-        # Distance calculations
-        #   dx = ego_location.x - erv_location.x
-        #   dy = ego_location.y - erv_location.y
-        #   distance = magnitude_2d(dx, dy)
-        distance = distance_2d(ego_location, erv_location)
+        #Distance calculations
+        dx = ego_location.x - erv_location.x
+        dy = ego_location.y - erv_location.y
+        distance = magnitude_2d(dx, dy)
 
         if distance < 0.001:
             return ERVAssessment(
@@ -502,7 +502,7 @@ class ERVDetector:
                 distance_m=0.0,
                 approaching=True,
                 closing_speed_mps=0.0,
-                relative_bearing_deb=0.0,
+                relative_bearing_deg=0.0,
             )
 
         # Determine direction (from/toward ego)
@@ -591,12 +591,12 @@ class LaneManager:
             raise RuntimeError(
                 "Ego vehicle is not currently on a driving lane"
             )
-        self.original_land_id = waypoint.lane_id
+        self.original_lane_id = waypoint.lane_id
         self.original_road_id = waypoint.road_id
 
         return waypoint
 
-    def get_adjacent_lane(self, diration: str):
+    def get_adjacent_lane(self, direction: str):
         current = self.current_waypoint()
 
         if current is None:
@@ -691,16 +691,35 @@ class VehicleController:
             throttle = 0.0
         return throttle, brake
 
-    # Steering
+    # Steering    
     def steer_to_waypoint(self, waypoint: carla.Waypoint):
         vehicle_transform = self.vehicle.get_transform()
+        vehicle_location = vehicle_transform.location
         vehicle_yaw = vehicle_transform.rotation.yaw
-        target_yaw = waypoint.transform.rotation.yaw
-        yaw_error = normalize_angle_deg(target_yaw - vehicle_yaw)
 
-        # Simple heading controller
-        # TODO: Replace with tuned controller
-        steer = yaw_error/45.0
+        # Lane center at the vehicle's current position
+        lane_location = waypoint.transform.location
+
+        # Lane heading
+        lane_yaw = waypoint.transform.rotation.yaw
+
+        # Heading error
+        heading_error = normalize_angle_deg(lane_yaw - vehicle_yaw)
+
+        # Lateral error
+        dx = vehicle_location.x - lane_location.x
+        dy = vehicle_location.y - lane_location.y
+
+        lane_yaw_rad = math.radians(lane_yaw)
+
+        # Signed lateral displacement from lane center
+        lateral_error = (-dx * math.sin(lane_yaw_rad)) + (dy * math.cos(lane_yaw_rad))
+
+        heading_gain = 0.02
+        lateral_gain = 0.20
+
+        steer = (heading_gain * heading_error) - (lateral_gain * lateral_error)
+
         return max(-self.config.max_steer, min(self.config.max_steer, steer))
 
     # Vehicle Controls
@@ -1116,7 +1135,7 @@ def main():
                 )
 
             # Maintain loop frequency
-            elapsed = time.monotonic() = loop_start
+            elapsed = time.monotonic() - loop_start
             sleep_time = period - elapsed
             if sleep_time > 0:
                 time.sleep(sleep_time)
