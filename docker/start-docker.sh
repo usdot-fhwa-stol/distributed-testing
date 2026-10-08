@@ -5,7 +5,7 @@ stopDocker()
 
 echo
 echo STOPPING AND REMOVING VUG CONTAINERS
-$docker_compose_cmd "${compose_env_args[@]}" -f "$docker_compose_file" "${compose_profile_args[@]}" down -v
+$docker_compose_cmd "${compose_env_args[@]}" -f "$docker_compose_file" "${compose_profile_args[@]}" --profile gpsd down
 if [ $VUG_FORMAL_EVENT = true ]; then 
     source $VUG_LOCAL_DT_PATH/scripts/utils/stop_current_vpn_connection.sh
 fi
@@ -382,6 +382,14 @@ else
 fi
 
 
-trap stopDocker SIGINT
+source "$SCRIPT_DIR/../config/gpsd.config" || exit 1
+source "$SCRIPT_DIR/gpsd-startup.sh" || exit 1
+
+trap 'stopDocker; exit 130' SIGINT
+trap 'stopDocker; exit 143' SIGTERM
+
+if ! dt_gpsd_prepare; then
+    exit 1
+fi
 
 $docker_compose_cmd "${compose_env_args[@]}" -f "$docker_compose_file" "${compose_profile_args[@]}" up "${EXTRA_ARGS[@]}"
