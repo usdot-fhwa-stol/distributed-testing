@@ -20,6 +20,16 @@ cleanup() {
   (( CLEANUP_RAN )) && return
   CLEANUP_RAN=1
 
+  # Stop the GPSD supervisor, which cleans up its own process groups.
+  if [[ -n "${gpsd_service_pid:-}" ]]; then
+    kill -TERM "$gpsd_service_pid" 2>/dev/null || true
+    wait "$gpsd_service_pid" 2>/dev/null || true
+  fi
+  if [[ -n "${gpsd_ready_dir:-}" ]]; then
+    rm -f -- "$gpsd_ready_dir/ready"
+    rmdir -- "$gpsd_ready_dir" 2>/dev/null || true
+  fi
+
   echo "Stopping TENA Applications Gracefully"
 
   # Let dumb-init finish first to avoid racing (200ms)
@@ -87,6 +97,39 @@ if [[ $VUG_DEV_MODE == true ]]; then
    echo "DEV MODE ENABLED, PLEASE RUN START SCRIPT MANUALLY"
    exit 0
 fi
+
+gpsd_service_pid=""
+gpsd_ready_dir=""
+
+wait_for_gpsd() {
+    [[ -z "$gpsd_service_pid" ]] && return 0
+    local attempt
+    for attempt in {1..30}; do
+        if ! kill -0 "$gpsd_service_pid" 2>/dev/null; then
+            echo "ERROR: GPSD launcher exited before readiness" >&2
+            return 1
+        fi
+        [[ -f "$gpsd_ready_dir/ready" ]] && return 0
+        sleep 1
+    done
+    echo "ERROR: GPSD readiness timed out" >&2
+    return 1
+}
+
+case "${GPSD_ENABLED:-false}" in
+    true)
+        gpsd_ready_dir=$(mktemp -d /tmp/dt-gpsd-ready.XXXXXX) || exit 1
+        echo "STARTING GPSD"
+        GPSD_READY_FILE="$gpsd_ready_dir/ready" \
+            bash "$HOME/start_scripts/start-gpsd.sh" &
+        gpsd_service_pid=$!
+        ;;
+    false) ;;
+    *)
+        echo "ERROR: GPSD_ENABLED must be true or false" >&2
+        exit 1
+        ;;
+esac
 
 sleep 5s
 
@@ -222,6 +265,7 @@ if [[ $VUG_DOCKER_START_ENTITY_GENERATOR == true ]]; then
 fi
 
 if [[ $VUG_DOCKER_START_GNSS_EMULATOR == true ]]; then
+   if ! wait_for_gpsd; then cleanup; exit 1; fi
    echo "STARTING TENA GNSS EMULATOR"
    $HOME/distributed-testing/scripts/run_scripts/start-gnss-emulator.sh &
 
@@ -248,6 +292,7 @@ if [[ $VUG_DOCKER_START_MANUAL_CARLA_VEHICLE == true ]]; then
 fi
 
 echo
+if ! wait_for_gpsd; then cleanup; exit 1; fi
 echo "VUG STARTUP COMLPETE"
 
 # Keep PID 1 alive and responsive to TERM/INT

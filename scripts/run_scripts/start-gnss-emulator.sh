@@ -66,18 +66,31 @@ else
     exit 1
 fi
 
-# Load GPSD settings after the site/scenario and Docker overrides.
-gnss_script_dir="$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")"
-source "$gnss_script_dir/../../config/gpsd.config" || exit 1
-
-case "$HWIL_GNSS_OUTPUT_MODE" in
+# Site/scenario settings and Docker overrides are already loaded.
+case "${HWIL_GNSS_OUTPUT_MODE:-direct}" in
     gpsd)
-        if [[ "$GPSD_ENABLED" != true ]]; then
-            echo "ERROR: GPSD output selected but GPSD_ENABLED is not true" >&2
+        if [[ "${GPSD_ENABLED:-false}" != true ]]; then
+            echo "ERROR: GPSD output requires GPSD_ENABLED=true" >&2
             exit 1
         fi
-        HWIL_GNSS_EMULATOR_SEND_ADDRESS=127.0.0.1
-        HWIL_GNSS_EMULATOR_SEND_PORT="$GPSD_INPUT_PORT"
+
+        HWIL_GNSS_EMULATOR_SEND_ADDRESS="${GPSD_INPUT_ADDRESS:-${VUG_LOCAL_ADDRESS:-}}"
+        if [[ -z "$HWIL_GNSS_EMULATOR_SEND_ADDRESS" ]]; then
+            echo "ERROR: GPSD input address is not configured" >&2
+            exit 1
+        fi
+
+        port="${GPSD_INPUT_PORT:-}"
+        if [[ ! "$port" =~ ^[0-9]{1,5}$ ]]; then
+            echo "ERROR: GPSD_INPUT_PORT must be from 1 to 65535" >&2
+            exit 1
+        fi
+        port=$((10#$port))
+        if (( port < 1 || port > 65535 )); then
+            echo "ERROR: GPSD_INPUT_PORT is outside 1 to 65535" >&2
+            exit 1
+        fi
+        HWIL_GNSS_EMULATOR_SEND_PORT="$port"
         ;;
     direct)
         # Keep the destination from the existing configuration.

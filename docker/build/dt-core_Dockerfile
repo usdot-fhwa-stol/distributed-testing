@@ -120,6 +120,8 @@ RUN apt clean && \
     iputils-ping nano tshark git tcpdump nethogs rsync \
     # install sumo tools
     sumo sumo-tools sumo-doc \
+    # GPSD service and TCP-to-UDP bridge
+    gpsd gpsd-tools socat util-linux \
     # install iproute2
     iproute2 \
     # install dumb init to enable gracefully stopping container processes

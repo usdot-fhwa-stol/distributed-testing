@@ -1,29 +1,4 @@
 services:
-  gpsd:
-    build: ./build/gpsd
-    image: dt-gpsd:local
-    healthcheck:
-      test: ["CMD", "python3", "/opt/gpsd/healthcheck.py"]
-      interval: 5s
-      timeout: 5s
-      retries: 6
-      start_period: 20s
-    profiles: ["gpsd"]
-    init: true
-    restart: unless-stopped
-    ports:
-      - "127.0.0.1:${GPSD_INPUT_PORT:-51928}:51928"
-      - "${GPSD_CLIENT_BIND_ADDRESS:-127.0.0.1}:${GPSD_CLIENT_PORT:-52947}:2947"
-    mem_limit: 128m
-    cpus: 0.5
-    pids_limit: 64
-    stop_grace_period: 10s
-    logging:
-      driver: json-file
-      options:
-        max-size: "5m"
-        max-file: "2"
-
   dt-core:
     container_name: dt-core
     image: harbor.distributedtesting.org/distributed-testing/dt-core:latest
@@ -43,8 +18,6 @@ services:
     volumes:
       - /tmp/.X11-unix:/tmp/.X11-unix:rw
       - ${VUG_LOCAL_DT_PATH}:/home/dt_user/distributed-testing
-      - ~/tenadev/INSTALL/HWILgnssEmulator-1.0.0:/home/dt_user/VUG_Adapters/HWILgnssEmulator-1.0.0
-      - ~/distributed-testing/docker/build/lib/COPY/start_scripts:/home/dt_user/start_scripts
     stop_grace_period: 30s
   
   dt-carla:
