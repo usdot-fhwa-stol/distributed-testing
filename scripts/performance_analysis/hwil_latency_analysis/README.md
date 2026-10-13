@@ -248,10 +248,13 @@ Thresholds come from the PCAP table: DUT to proxy for `proxy_1`, DUT to DUT for
 
 ### Dependencies
 
-`pandas`, `matplotlib`. No ASN.1 module is needed: `../e2e_utils/spdu_utils.py`
-parses the WSMP framing and reads the signature from the last 66 bytes of each
-signed SPDU. Only ECDSA NIST P-256 signatures with an x-only or compressed `rSig`
-are supported; other SPDUs are skipped and counted in a warning.
+Install dependencies from the `requirements.txt` file (assuming python version 3.12):
+
+```bash
+python -m pip install -r requirements.txt
+```
+
+Next, refer to [install_dependencies.sh](../../encoding_decoding_tools/msg_gen/install_dependencies.sh) to install the `j2735_202409` package.
 
 ## DUT 2 BSM GPS Track
 
