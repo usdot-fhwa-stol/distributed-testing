@@ -9,11 +9,11 @@ uses host networking.
 Data flow when GPSD is enabled:
 
     GNSS emulator
-      -> configured host address, TCP 51928
+      -> configured host address, TCP 5000
       -> socat bridge
       -> loopback UDP 5001
       -> GPSD
-      -> host TCP 52947
+      -> host TCP 2947
       -> GPSD clients
 
 GPSD runs independently of automatic emulator startup. Other DT
@@ -50,8 +50,8 @@ GPSD settings belong in the selected site configuration.
 | GPSD_ENABLED | false | Enable GPSD inside dt-core when needed |
 | HWIL_GNSS_OUTPUT_MODE | direct | Use gpsd to route emulator output through GPSD |
 | GPSD_INPUT_ADDRESS | empty | Use effective VUG_LOCAL_ADDRESS |
-| GPSD_INPUT_PORT | 51928 | TCP bridge listener |
-| GPSD_CLIENT_PORT | 52947 | GPSD client TCP listener |
+| GPSD_INPUT_PORT | 5000 | TCP bridge listener |
+| GPSD_CLIENT_PORT | 2947 | GPSD client TCP listener |
 | GPSD_UDP_PORT | 5001 | Loopback UDP connection between bridge and GPSD |
 
 Site/scenario configuration and Docker overrides are loaded before the
@@ -150,7 +150,7 @@ import socket
 import time
 
 deadline = time.monotonic() + 120
-with socket.create_connection(("127.0.0.1", 52947), timeout=5) as client:
+with socket.create_connection(("127.0.0.1", 2947), timeout=5) as client:
     client.sendall(b'?WATCH={"enable":true,"json":true};\n')
     client.settimeout(1)
     pending = b""
