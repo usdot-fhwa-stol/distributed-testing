@@ -66,6 +66,43 @@ else
     exit 1
 fi
 
+# Site/scenario settings and Docker overrides are already loaded.
+case "${HWIL_GNSS_OUTPUT_MODE:-direct}" in
+    gpsd)
+        if [[ "${GPSD_ENABLED:-false}" != true ]]; then
+            echo "ERROR: GPSD output requires GPSD_ENABLED=true" >&2
+            exit 1
+        fi
+
+        HWIL_GNSS_EMULATOR_SEND_ADDRESS="${GPSD_INPUT_ADDRESS:-${VUG_LOCAL_ADDRESS:-}}"
+        if [[ -z "$HWIL_GNSS_EMULATOR_SEND_ADDRESS" ]]; then
+            echo "ERROR: GPSD input address is not configured" >&2
+            exit 1
+        fi
+
+        port="${GPSD_INPUT_PORT:-}"
+        if [[ ! "$port" =~ ^[0-9]{1,5}$ ]]; then
+            echo "ERROR: GPSD_INPUT_PORT must be from 1 to 65535" >&2
+            exit 1
+        fi
+        port=$((10#$port))
+        if (( port < 1 || port > 65535 )); then
+            echo "ERROR: GPSD_INPUT_PORT is outside 1 to 65535" >&2
+            exit 1
+        fi
+        HWIL_GNSS_EMULATOR_SEND_PORT="$port"
+        ;;
+    direct)
+        # Keep the destination from the existing configuration.
+        ;;
+    *)
+        echo "ERROR: HWIL_GNSS_OUTPUT_MODE must be gpsd or direct" >&2
+        exit 1
+        ;;
+esac
+
+echo "GNSS destination: $HWIL_GNSS_EMULATOR_SEND_ADDRESS:$HWIL_GNSS_EMULATOR_SEND_PORT"
+
 localadapterPath=$VUG_LOCAL_INSTALL_PATH/$VUG_GNSS_EMULATOR_VERSION
 
 adapterVerbosity='1'
@@ -105,6 +142,6 @@ set -x
     -sendAddress "$HWIL_GNSS_EMULATOR_SEND_ADDRESS" \
     -sendPort "$HWIL_GNSS_EMULATOR_SEND_PORT" \
     -gnssType "$GNSS_TYPE" \
-    -commandPort "$HWIL_GNSS_EMULATOR_COMMAND_PORT" \    
+    -commandPort "$HWIL_GNSS_EMULATOR_COMMAND_PORT" \
     | awk -v adapter="[$VUG_GNSS_EMULATOR_VERSION]" '{ print adapter, $0; fflush(); }' \
     | tee -a "$adapterLogFile"

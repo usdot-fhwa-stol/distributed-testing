@@ -115,6 +115,8 @@ USER root
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
         build-essential \
+        # GPSD service and TCP-to-UDP bridge
+        gpsd gpsd-tools socat util-linux \
         # qt packages
         libxcb-xinerama0 libfreetype6 libfontconfig1 libsm6 libxi6 libx11-xcb1 \
         libxcb-cursor0 libxcb-icccm4 libxcb-image0 libxcb-keysyms1 libxcb-randr0 \
