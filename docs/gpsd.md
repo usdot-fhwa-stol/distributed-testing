@@ -6,7 +6,7 @@ GPSD and its TCP-to-UDP bridge run inside dt-core. No separate GPSD
 container or published Docker port mapping is required because dt-core
 uses host networking.
 
-Default data flow:
+Data flow when GPSD is enabled:
 
     GNSS emulator
       -> configured host address, TCP 51928
@@ -47,8 +47,8 @@ GPSD settings belong in the selected site configuration.
 
 | Setting | Default | Purpose |
 | --- | --- | --- |
-| GPSD_ENABLED | true | Start GPSD inside dt-core |
-| HWIL_GNSS_OUTPUT_MODE | gpsd | Route emulator output through GPSD |
+| GPSD_ENABLED | false | Enable GPSD inside dt-core when needed |
+| HWIL_GNSS_OUTPUT_MODE | direct | Use gpsd to route emulator output through GPSD |
 | GPSD_INPUT_ADDRESS | empty | Use effective VUG_LOCAL_ADDRESS |
 | GPSD_INPUT_PORT | 51928 | TCP bridge listener |
 | GPSD_CLIENT_PORT | 52947 | GPSD client TCP listener |
@@ -97,6 +97,12 @@ source ~/.bashrc
 Select the intended site and scenario. Confirm GPSD settings, local
 address, EM endpoint, emulator version, adapter ID, GNSS configuration
 file, and GNSS_TYPE.
+
+GPSD is disabled by default. Before this test, edit the selected
+local site configuration to include:
+
+    export GPSD_ENABLED=true
+    export HWIL_GNSS_OUTPUT_MODE="gpsd"
 
 For a manual test, set VUG_DOCKER_START_GNSS_EMULATOR=false.
 For automatic launch, set it to true and skip the manual launch below.
@@ -284,9 +290,10 @@ The GPSD launcher manages separate process groups for GPSD and the
 forking bridge. Its cleanup terminates those groups. dt-core's cleanup
 also signals and waits for the launcher.
 
-The current foreground DT shutdown preserves Compose-managed named
-volumes. Detached startup and other stop entry points require separate
-validation.
+Foreground DT shutdown runs Docker Compose down -v, removing containers
+and Compose-managed named and anonymous volumes, including their stored
+data. External volumes and host bind-mounted files are not removed.
+Detached startup and other stop entry points require separate validation.
 
 ### 9. Verify direct-mode fallback
 

@@ -13,7 +13,7 @@ WORKDIR /home/dt_user
 USER root
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    build-essential g++ curl zstd ca-certificates python3-dev \
+    build-essential g++ curl zstd ca-certificates python3-dev python3-pip \
     binutils \
     && rm -rf /var/lib/apt/lists/*
 
@@ -97,6 +97,10 @@ RUN --mount=from=build,source=/home/dt_user/opt/TENA,target=/mnt/TENA,rw \
     DSTROOT=/home/dt_user ./TENA/postinst-DIST && \
     chown -R dt_user:dt_user /home/dt_user/TENA
 
+# add the STOL APT repository
+RUN echo "deb [trusted=yes] http://s3.amazonaws.com/stol-apt-repository develop jammy" > /etc/apt/sources.list.d/stol-apt-repository.list
+RUN apt update --fix-missing && apt install stol-j2735-2024-carma-1
+
 USER dt_user
 
 ARG VERSION=dev
@@ -109,4 +113,3 @@ ARG DEBIAN_FRONTEND="noninteractive"
 ARG TZ="America/New_York"
 
 RUN echo 'source /home/dt_user/TENA/6.0.11/scripts/tenaenv-u2204-gcc11-64-v6.0.11.sh' >> /home/dt_user/.bashrc
-

@@ -28,13 +28,6 @@ import lxml.etree as ET  # pylint: disable=import-error
 # -- find carla module -----------------------------------------------------------------------------
 # ==================================================================================================
 
-try:
-    sys.path.append(
-        glob.glob('../../../PythonAPI/carla/dist/carla-*%d.%d-%s.egg' %
-                  (sys.version_info.major, sys.version_info.minor,
-                   'win-amd64' if os.name == 'nt' else 'linux-x86_64'))[0])
-except IndexError:
-    pass
 
 import carla  # pylint: disable=import-error, wrong-import-position
 

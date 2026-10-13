@@ -5,7 +5,7 @@ stopDocker()
 
 echo
 echo STOPPING AND REMOVING VUG CONTAINERS
-$docker_compose_cmd "${compose_env_args[@]}" -f "$docker_compose_file" "${compose_profile_args[@]}" down
+$docker_compose_cmd "${compose_env_args[@]}" -f "$docker_compose_file" "${compose_profile_args[@]}" down -v
 if [ $VUG_FORMAL_EVENT = true ]; then 
     source $VUG_LOCAL_DT_PATH/scripts/utils/stop_current_vpn_connection.sh
 fi

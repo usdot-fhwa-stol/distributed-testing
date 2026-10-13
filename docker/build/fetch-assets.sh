@@ -64,7 +64,7 @@ check_pattern_match() {
   # nullglob only helps for patterns containing glob metacharacters; a literal pattern
   # (no *, ?, [) never expands at all, so it passes through unchanged even when the
   # file doesn't exist. Filter to entries that actually exist on disk either way
-  local matches = ()
+  local matches=()
   for f in "${candidates[@]}"; do
     [[ -e "$f" ]] && matches+=("$f")
   done

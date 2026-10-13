@@ -33,7 +33,7 @@ function print_help {
 	echo "    [5]  vug-v2x-adapter"
 	echo "    [6]  vug-entity-generator"
 	echo "    [7]  vug-v2xhub-v2x-plugin"
-	echo "    [8]  hwil-gnss-emulator"
+	echo "    [8]  vug-radio-adapter"
 	echo
 	echo "Examples:"
 	echo "    # Build vug-carla-adapter in release mode:"
@@ -115,7 +115,7 @@ done
 VUG_LOCAL_TENADEV_DIR=$VUG_LOCAL_TENADEV_DIR			#location of local tenadev
 localInstallDir=$VUG_LOCAL_INSTALL_PATH		#location to install/build TENA adapters
 localDTDir=$VUG_LOCAL_DT_PATH
-numBuildJobs=4    # number of build jobs to speed up compilation
+numBuildJobs="${TENA_BUILD_JOBS:-4}"    # number of build jobs to speed up compilation
 #---------------------------------------------------------#
 
 # Ensure the install directory exists so Docker doesn't create it as root
@@ -135,6 +135,7 @@ tenaBuildVersion=u2204-gcc11-64
 remoteTenaDir=/home/dt_user/TENA			#DO NOT CHANGE: internal docker directory mapped to localTenaDir
 remoteInstallDir=/home/dt_user/INSTALL		#DO NOT CHANGE: internal docker directory mapped to localInstallDir	
 remoteCarlaDir=/home/dt_user/carla
+remoteCarlaBuildDir=$remoteCarlaDir/Build
 #--------------------------------------------------------#
 
 middlewareVersion="MiddlewareSDK-v6.0.11"
@@ -161,15 +162,15 @@ else
 	echo "    [5]  vug-v2x-adapter"
 	echo "    [6]  vug-entity-generator"
 	echo "    [7]  vug-v2xhub-v2x-plugin"
-	echo "    [8]  hwil-gnss-emulator"
+	echo "    [8]  vug-radio-adapter"
 	echo
 	read -p "--> " tenaAppIndex
 fi
 
 carlaTenaAdapterGitUrl="git@github.com:usdot-fhwa-stol/vug-carla-adapter.git"
 
-buildGeneralImage="harbor.distributedtesting.org/distributed-testing/dt-build-general:latest"
-buildCarlaImage="harbor.distributedtesting.org/distributed-testing/dt-build-carla:latest"
+buildGeneralImage="${VUG_BUILD_GENERAL_IMAGE:-harbor.distributedtesting.org/distributed-testing/dt-build-general:latest}"
+buildCarlaImage="${VUG_BUILD_CARLA_IMAGE:-harbor.distributedtesting.org/distributed-testing/dt-build-carla:latest}"
 buildV2xImage="usdotfhwaops/v2xhubamd:dt-P-1.1.0"
 
 if [[ $tenaAppIndex == 1 ]]; then
@@ -247,18 +248,18 @@ elif [[ $tenaAppIndex == 7 ]]; then
 	requiresProtocolio=false
 	defaultBranch='develop'
 	noBuildVersion=false
-	applicationFolderName=TenaV2XPlugin # Need to find actual name
+	applicationFolderName=TenaV2XPlugin
 
 elif [[ $tenaAppIndex == 8 ]]; then
-	tenaApp=DT4ITS-RadioHWIL
-	gitCloneUrl="git@github.com:usdot-fhwa-stol/DT4ITS-RadioHWIL.git"
+	tenaApp=vug-radio-adapter
+	gitCloneUrl="git@github.com:usdot-fhwa-stol/vug-radio-adapter.git"
 	dockerContainer=$buildGeneralImage
 	remoteAppDir=/home/dt_user/$tenaApp	#DO NOT CHANGE: internal docker directory mapped to localAppDir
 	isV2xhubPlugin=false
 	requiresProtocolio=false
 	defaultBranch='develop'
 	noBuildVersion=false
-	applicationFolderName=DT4ITS-RadioHWIL
+	applicationFolderName=vug-radio-adapter
 
 else
 	echo "Invalid selection, try again..."
@@ -322,9 +323,12 @@ if ! $downloadedSource; then
 	if [[ -n "$arg_branch" ]]; then
 
 		echo "Switching to branch: $arg_branch"
-		git pull || exit 
+		git fetch --tags origin || exit
 		git checkout $arg_branch || exit
-		git pull || exit 
+		# A tag leaves HEAD detached with nothing to pull; only pull when on a branch
+		if git symbolic-ref -q HEAD >/dev/null; then
+			git pull || exit
+		fi
 
 	elif [ $arg_no_branch_change == false ]; then
 		echo
@@ -382,9 +386,9 @@ else
 		buildVersionCmakeArg="-D CMAKE_BUILD_TYPE=RELEASE"
 		
 	elif [[ $releaseOrDebug == 2 ]]; then
-		buildVersion="-B debug"
-		buildVersionDirCmd=
-		buildVersionCaps="-D CMAKE_BUILD_TYPE=DEBUG"
+		buildVersion="debug"
+		buildVersionDirArg="-B debug"
+		buildVersionCmakeArg="-D CMAKE_BUILD_TYPE=DEBUG"
 
 	else
 		echo
@@ -398,34 +402,6 @@ fi
 
 echo
 echo "The looking for packages to be installed:"
-
-
-## TODO: replace these check with a docker exec command into build container
-
-# look for middleware
-# if [ -d $localTenaDir/$tenaVersion ]; then
-# 	echo "TENA Middleware $tenaVersion found..."
-# else
-# 	echo
-# 	echo "The proper TENA Middleware version was not found. Please install version $tenaVersion"
-# 	exit
-# fi
-
-# #look for boost
-# if [ -d $localTenaDir/$boostVersion* ]; then
-# 	echo "$boostVersion found..."
-# else
-# 	echo "The proper Boost version was not found. Please install version $boostVersion"
-# 	exit
-# fi
-
-#look for VUG Combined
-# if [ -d $localTenaDir/$tenaVersion/src/$vugCombinedVersion* ]; then
-# 	echo "$vugCombinedVersion found..."
-# else
-# 	echo "The proper VUG-Combined was not found. Please install version $vugCombinedVersion"
-# 	exit
-# fi
 
 #look for VUG Threads
 # set -x
@@ -453,30 +429,11 @@ if $isV2xhubPlugin; then
 	remoteInstallDir=/home/plugin/INSTALL		#DO NOT CHANGE: internal docker directory mapped to localInstallDir	
 fi
 
-currentDockerImages=$(docker image list -q $dockerContainer)
-
-build_container_exists=false
-
-if [[ -n $currentDockerImages ]] ; then
-	echo
-	echo "Found build docker container: $dockerContainer, pulling the latest version"
-	docker pull $dockerContainer
-
+# CI must use the images built in this run, never a stale registry copy.
+if [[ "${VUG_SKIP_DOCKER_PULL:-false}" == "true" ]]; then
+    docker image inspect "$dockerContainer" >/dev/null || exit 1
 else
-	echo
-	echo "Build docker container $dockerContainer not found, pulling"
-	docker pull $dockerContainer
-
-	# verify it exists now
-	currentDockerImages=$(docker image list -q $dockerContainer)
-
-	if [[ -n $currentDockerImages ]] ; then
-		echo "Build container successfully downloaded"
-	else
-		echo "[!!!] Unable to download build container"
-		exit 1
-	fi
-
+    docker pull "$dockerContainer" || exit 1
 fi
 
 #-- Cmake example
@@ -492,21 +449,19 @@ chmod a+rw $localAppDir/build
 
 echo
 echo "#### Running CMAKE ####"
-
-#check for mw library
-#ls $localTenaDir/lib/cmake
-# if [[ ! -d $localTenaDir/lib/cmake/mw ]]; then
-# 	echo
-# 	echo mw library not installed in local TENA install $localTenaDir/lib/cmake/mw
-# 	echo Pulling mw library
-# 	git clone git@github.com:usdot-fhwa-stol/vug-cmake-package.git cmake_temp || exit
-# 	mv cmake_temp/cmake/ $localTenaDir/lib/ || exit
-# 	rm -rf cmake_temp || exit
-# fi
-
 echo
 
-if ! ( set -x ; docker run --entrypoint /bin/bash --rm -v $localAppDir:$remoteAppDir  -v $localInstallDir:$remoteInstallDir $dockerContainer -c "cd $remoteAppDir/build; export TENA_PLATFORM=$tenaBuildVersion; export TENA_HOME=$remoteTenaDir; export TENA_VERSION=$tenaVersion; export CARLA_HOME=$remoteCarlaDir; cmake -D CMAKE_EXPORT_COMPILE_COMMANDS=ON $buildVersionDirArg $buildVersionCmakeArg -D CMAKE_PREFIX_PATH='$remoteTenaDir/lib/cmake;$remoteInstallDir;/opt/carma/cmake;/opt/carma/lib' -D CMAKE_MODULE_PATH='/opt/carma/cmake' -D VUG_INSTALL_DIR=$remoteInstallDir -D tmx-plugin_DIR=/usr/local/share/tmx/ ../" ); then
+additionalBuildEnv=""
+additionalCmakeArgs=""
+
+# CARLA 0.10.0 is built through its native CMake project. Keep these settings
+# scoped to the CARLA adapter so builds for the other adapters remain unchanged.
+if [[ $tenaAppIndex == 4 ]]; then
+    additionalBuildEnv="export CARLA_BUILD_DIR=$remoteCarlaBuildDir; export CC=/usr/bin/gcc-11; export CXX=/usr/bin/g++-11;"
+    additionalCmakeArgs="-D CMAKE_C_COMPILER=/usr/bin/gcc-11 -D CMAKE_CXX_COMPILER=/usr/bin/g++-11 -D CARLA_ROOT=$remoteCarlaDir -D FETCHCONTENT_BASE_DIR=$remoteCarlaBuildDir/_deps"
+fi
+
+if ! ( set -x ; docker run --entrypoint /bin/bash --rm -v $localAppDir:$remoteAppDir  -v $localInstallDir:$remoteInstallDir $dockerContainer -c "set -e; cd $remoteAppDir/build; export TENA_PLATFORM=$tenaBuildVersion; export TENA_HOME=$remoteTenaDir; export TENA_VERSION=$tenaVersion; export CARLA_HOME=$remoteCarlaDir; $additionalBuildEnv cmake -D CMAKE_EXPORT_COMPILE_COMMANDS=ON $additionalCmakeArgs $buildVersionDirArg $buildVersionCmakeArg -D CMAKE_PREFIX_PATH='$remoteTenaDir/lib/cmake;$remoteInstallDir;/opt/carma/cmake;/opt/carma/lib' -D CMAKE_MODULE_PATH='/opt/carma/cmake' -D VUG_INSTALL_DIR=$remoteInstallDir -D tmx-plugin_DIR=/usr/local/share/tmx/ ../" ); then
 	echo
 	echo "[!!!] CMAKE FAILED"
 	exit 1
@@ -530,7 +485,7 @@ if [[ "$skipMake" == true ]]
 		echo
 		echo "MAKE COMMAND: "
 		echo
-		if ! ( set -x ; docker run --entrypoint /bin/bash --rm -v $localAppDir:$remoteAppDir  -v $localInstallDir:$remoteInstallDir $dockerContainer -c "cd $remoteAppDir/build/$buildVersion; export TENA_PLATFORM=$tenaBuildVersion; export TENA_HOME=$remoteTenaDir; export TENA_VERSION=$tenaVersion; export CARLA_HOME=$remoteCarlaDir; make -j $numBuildJobs VERBOSE=1" ); then
+		if ! ( set -x ; docker run --entrypoint /bin/bash --rm -v $localAppDir:$remoteAppDir  -v $localInstallDir:$remoteInstallDir $dockerContainer -c "set -e; cd $remoteAppDir/build/$buildVersion; export TENA_PLATFORM=$tenaBuildVersion; export TENA_HOME=$remoteTenaDir; export TENA_VERSION=$tenaVersion; export CARLA_HOME=$remoteCarlaDir; make -j $numBuildJobs VERBOSE=1" ); then
 			echo
 			echo "[!!!] MAKE FAILED"
 			exit 1
@@ -547,7 +502,7 @@ if [[ "$skipMake" == true ]]
 				
 				echo
 				echo "MAKE PACKAGE COMMAND: "
-				if ! ( set -x ; docker run --entrypoint /bin/bash --rm -v $localAppDir:$remoteAppDir  -v $localInstallDir:$remoteInstallDir $dockerContainer -c "cd $remoteAppDir/build/$buildVersion; export TENA_PLATFORM=$tenaBuildVersion; export TENA_HOME=$remoteTenaDir; export TENA_VERSION=$tenaVersion; export CARLA_HOME=$remoteCarlaDir; make -j $numBuildJobs package VERBOSE=1" ); then
+				if ! ( set -x ; docker run --entrypoint /bin/bash --rm -v $localAppDir:$remoteAppDir  -v $localInstallDir:$remoteInstallDir $dockerContainer -c "set -e; cd $remoteAppDir/build/$buildVersion; export TENA_PLATFORM=$tenaBuildVersion; export TENA_HOME=$remoteTenaDir; export TENA_VERSION=$tenaVersion; export CARLA_HOME=$remoteCarlaDir; make -j $numBuildJobs package VERBOSE=1" ); then
 					echo
 					echo "[!!!] MAKE PACKAGE FAILED"
 					exit 1
@@ -563,7 +518,7 @@ if [[ "$skipMake" == true ]]
 				
 				echo
 				echo "MAKE INSTALL COMMAND: "
-				if ! ( set -x ; docker run --entrypoint /bin/bash --rm -v $localAppDir:$remoteAppDir -v $localInstallDir:$remoteInstallDir $dockerContainer -c "cd $remoteAppDir/build/$buildVersion; export TENA_PLATFORM=$tenaBuildVersion; export TENA_HOME=$remoteTenaDir; export TENA_VERSION=$tenaVersion; export CARLA_HOME=$remoteCarlaDir; make install VERBOSE=1" ); then
+				if ! ( set -x ; docker run --entrypoint /bin/bash --rm -v $localAppDir:$remoteAppDir -v $localInstallDir:$remoteInstallDir $dockerContainer -c "set -e; cd $remoteAppDir/build/$buildVersion; export TENA_PLATFORM=$tenaBuildVersion; export TENA_HOME=$remoteTenaDir; export TENA_VERSION=$tenaVersion; export CARLA_HOME=$remoteCarlaDir; make install VERBOSE=1" ); then
 					echo
 					echo "[!!!] MAKE INSTALL FAILED"
 					exit 1
@@ -571,7 +526,7 @@ if [[ "$skipMake" == true ]]
 
 				echo
 				echo "Changing permissions for built applications"
-				sudo chown -R $USER:$USER $localInstallDir
+				sudo chown -R $username:$username $localInstallDir
 				sudo chmod -R a+rwx $localInstallDir
 				sudo -k
 

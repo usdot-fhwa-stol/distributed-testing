@@ -69,6 +69,8 @@ localadapterPath=$VUG_LOCAL_INSTALL_PATH/$VUG_ENTITY_GENERATOR_VERSION
 
 adapterVerbosity='1'
 
+staleSdsmThreshMs=${VUG_ENTITY_GENERATOR_STALE_SDSM_THRESH_MS:-1000}
+
 useBestEffort=''
 if [[ $VUG_USE_BEST_EFFORT == true ]]; then
     useBestEffort='-bestEffort'
@@ -92,5 +94,5 @@ BASH_XTRACEFD=4
 
 set -x
 
-$localadapterPath/bin/tena-entity-generator $useBestEffort -emEndpoints $VUG_EM_ADDRESS:$VUG_EM_PORT -listenEndpoints $VUG_LOCAL_ADDRESS -siteID $siteID -applicationID $applicationID -verbosity $adapterVerbosity | awk -v adapter="[$VUG_ENTITY_GENERATOR_VERSION]" '{ print adapter, $0; fflush(); }'| tee -a $adapterLogFile
+$localadapterPath/bin/tena-entity-generator $useBestEffort -emEndpoints $VUG_EM_ADDRESS:$VUG_EM_PORT -listenEndpoints $VUG_LOCAL_ADDRESS -siteID $siteID -applicationID $applicationID -verbosity $adapterVerbosity -staleSdsmThreshMs $staleSdsmThreshMs | awk -v adapter="[$VUG_ENTITY_GENERATOR_VERSION]" '{ print adapter, $0; fflush(); }'| tee -a $adapterLogFile
 

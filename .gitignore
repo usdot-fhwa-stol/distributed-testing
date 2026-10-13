@@ -48,7 +48,8 @@ scripts/performance_analysis/performance_analysis.log
 docker/build/lib/BUILD
 docker/build/lib/COPY/VUG_Adapters
 docker/build/lib/COPY/CARLA*
-docker/build/lib/MAPS
+docker/build/lib/MAPS/*
+!docker/build/lib/MAPS/.gitkeep
 docker/build/lib/MAPS_915
 docker/build/lib/OLD
 docker/build/lib/CARLA_TFHRC
@@ -69,6 +70,19 @@ config/*.log
 
 # ignore generated png files
 scripts/utils/*.png
+scripts/performance_analysis/**/*.png
+
+# ignore generated csv files
+scripts/performance_analysis/**/*.csv
+
+# ignore generated json files
+scripts/performance_analysis/**/*.json
+
+# ignore generated log files
+scripts/performance_analysis/**/*.log
+
+# ignore virtual environments
+*.venv/
 
 # ignore v2xhub secrets
 docker/build/dt-v2xhub/secrets

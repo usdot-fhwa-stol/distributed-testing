@@ -93,11 +93,6 @@ trap cleanup TERM INT
 
 source $HOME/start_scripts/setup-docker.sh
 
-if [[ $VUG_DEV_MODE == true ]]; then
-   echo "DEV MODE ENABLED, PLEASE RUN START SCRIPT MANUALLY"
-   exit 0
-fi
-
 gpsd_service_pid=""
 gpsd_ready_dir=""
 
@@ -161,18 +156,12 @@ if [[ $VUG_DOCKER_START_CARLA == "local" ]] || [[ $VUG_DOCKER_START_CARLA == "re
          --host "$VUG_CARLA_ADDRESS" 2>&1 | awk '{ print "BLANK SIGNALS: ", $0; fflush(); }'
    fi
 
-   # set spectator view
-   if [[ $VUG_CARLA_MAP_NAME == *"mcity"* ]]; then
-      python3 $HOME/distributed-testing/scripts/carla_python_scripts/spectator_view_mcity.py --host $VUG_CARLA_ADDRESS 2>&1 | awk '{ print "SET VIEW: ", $0; fflush(); }'
-   fi
+   if [[ $VUG_CARLA_VR_MODE == false ]]; then
+       # set spectator view
+       python3 $HOME/distributed-testing/scripts/carla_python_scripts/spectator_view.py --host $VUG_CARLA_ADDRESS 2>&1 | awk '{ print "SET VIEW: ", $0; fflush(); }'
+   fi 
 
-   # set spectator view
-   if [[ $VUG_CARLA_MAP_NAME == *"Delave"* ]]; then
-      python3 $HOME/distributed-testing/scripts/carla_python_scripts/spectator_view_delave.py --host $VUG_CARLA_ADDRESS 2>&1 | awk '{ print "SET VIEW: ", $0; fflush(); }'
-   fi
-  
-
-   if [[ $VUG_DISPLAY_VEHICLE_ROLENAMES == true ]] || [[ $VUG_DISPLAY_TRAFFIC_SIGNAL_STATES == true ]]; then
+   if [[ $VUG_DISPLAY_VEHICLE_ROLENAMES == true ]] || [[ $VUG_DISPLAY_TRAFFIC_SIGNAL_STATES == true ]] || [[ $VUG_DISPLAY_WALKER_ROLENAMES == true ]]; then
       # display vehicle names and/or traffic light info
       python3 $HOME/distributed-testing/scripts/carla_python_scripts/display_carla_info.py --host $VUG_CARLA_ADDRESS -d 0 2>&1 | awk '{ print "CARLA INFO: ", $0; fflush(); }' &
    fi
@@ -187,9 +176,8 @@ fi
 
 if [[ $VUG_DOCKER_START_SUMO == true ]]; then
    echo "STARTING SUMO"
-   cd $HOME/distributed-testing/scripts/carla_python_scripts/Sumo/
    python3 $HOME/distributed-testing/scripts/carla_python_scripts/Sumo/run_synchronization.py $HOME/distributed-testing/scripts/carla_python_scripts/Sumo/$VUG_DOCKER_SUMO_CONFIG --sumo-gui --tls-manager carla --carla-host $VUG_LOCAL_ADDRESS --sumo-host $VUG_LOCAL_ADDRESS &
-   cd $HOME
+   
    sleep 5s
 fi
 

@@ -1,9 +1,6 @@
 #!/usr/bin/env python3
 import os, sys, argparse, random, time, select, tty, termios
 
-from find_carla_egg import find_carla_egg
-carla_egg_file = find_carla_egg()
-sys.path.append(carla_egg_file)
 sys.stdout.reconfigure(line_buffering=True)
 import carla
 
