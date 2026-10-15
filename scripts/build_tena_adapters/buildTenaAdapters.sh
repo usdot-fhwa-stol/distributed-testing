@@ -168,9 +168,16 @@ else
 fi
 
 carlaTenaAdapterGitUrl="git@github.com:usdot-fhwa-stol/vug-carla-adapter.git"
+# Load shared Docker image configuration for local builds.
+DT_ENV="$(dirname "${BASH_SOURCE[0]}")/../../docker/.env"
 
-buildGeneralImage="${VUG_BUILD_GENERAL_IMAGE:-harbor.distributedtesting.org/distributed-testing/dt-build-general:latest}"
-buildCarlaImage="${VUG_BUILD_CARLA_IMAGE:-harbor.distributedtesting.org/distributed-testing/dt-build-carla:latest}"
+if [[ -f "$DT_ENV" ]]; then
+    source "$DT_ENV"
+fi
+
+buildGeneralImage="${VUG_BUILD_GENERAL_IMAGE:-${DT_REGISTRY:-harbor.distributedtesting.org/distributed-testing}/dt-build-general:${DT_IMAGE_TAG:-belair}}"
+
+buildCarlaImage="${VUG_BUILD_CARLA_IMAGE:-${DT_REGISTRY:-harbor.distributedtesting.org/distributed-testing}/dt-build-carla:${DT_IMAGE_TAG:-belair}}"
 buildV2xImage="usdotfhwaops/v2xhubamd:dt-P-1.1.0"
 
 if [[ $tenaAppIndex == 1 ]]; then

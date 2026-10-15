@@ -24,9 +24,12 @@ RUN apt update && apt-get install -y \
     cmake cmake-data git build-essential clang gcc-11 g++-11 lld ninja-build \
     libvulkan1 libpng-dev libtiff5-dev libjpeg-dev tzdata sed curl openssl unzip autoconf libtool rsync libxml2-dev
 
-RUN --mount=type=secret,id=usdotfhwastol_token \
-    AUTH=$(printf 'x-access-token:%s' "$(cat /run/secrets/usdotfhwastol_token)" | base64 -w0) && \
-    git -c "http.https://github.com/.extraheader=AUTHORIZATION: basic ${AUTH}" clone https://github.com/usdot-fhwa-stol/vug-cmake-package.git cmake_temp && \
+RUN --mount=type=secret,id=usdotfhwastol_token,required=true \
+    TOKEN="$(cat /run/secrets/usdotfhwastol_token)" && [ -n "$TOKEN" ] || \
+        { echo "ERROR: usdotfhwastol_token build secret is missing or empty" >&2; exit 1; }; \
+    AUTH="$(printf 'x-access-token:%s' "$TOKEN" | base64 -w0)" && \
+    git -c "http.https://github.com/.extraheader=AUTHORIZATION: basic ${AUTH}" \
+        clone --quiet https://github.com/usdot-fhwa-stol/vug-cmake-package.git cmake_temp && \
     chown -R dt_user:dt_user cmake_temp && \
     mv cmake_temp/cmake/ /home/dt_user/TENA/lib/ && \
     rm -rf cmake_temp
