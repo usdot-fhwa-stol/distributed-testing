@@ -18,28 +18,28 @@ BUILD_MODE="release"
 # You can modify these variables to change the target branch for each adapter
 
 # [1] vug-threads-library
-BRANCH_APP_1="develop"
+BRANCH_APP_1="release/belair"
 
 # [2] vug-udp-protocolio
-BRANCH_APP_2="develop"
+BRANCH_APP_2="release/belair"
 
 # [3] scenario-publisher
-BRANCH_APP_3="develop"
+BRANCH_APP_3="release/belair"
 
 # [4] vug-carla-adapter
-BRANCH_APP_4="develop"
+BRANCH_APP_4="release/belair"
 
 # [5] tena-v2x-adapter
-BRANCH_APP_5="develop"
+BRANCH_APP_5="release/belair"
 
 # [6] tena-entity-generator
-BRANCH_APP_6="develop"
+BRANCH_APP_6="release/belair"
 
 # [7] v2xhub-tena-v2x-plugin
-BRANCH_APP_7="develop"
+BRANCH_APP_7="release/belair"
 
 # [8] vug-radio-adapter
-BRANCH_APP_8="develop"
+BRANCH_APP_8="release/belair"
 
 # -----------------------------------------------
 
