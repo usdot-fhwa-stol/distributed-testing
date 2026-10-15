@@ -25,10 +25,10 @@ RUN apt update && apt-get install -y \
     libvulkan1 libpng-dev libtiff5-dev libjpeg-dev tzdata sed curl openssl unzip autoconf libtool rsync libxml2-dev
 
 RUN --mount=type=secret,id=usdotfhwastol_token \
-    AUTH=$(printf 'x-access-token:%s' "$(cat /run/secrets/usdotfhwastol_token)" | base64 -w0) && \
-    git -c "http.https://github.com/.extraheader=AUTHORIZATION: basic ${AUTH}" clone https://github.com/usdot-fhwa-stol/vug-cmake-package.git cmake_temp && \
+    USDOTFHWASTOL_TOKEN=$(cat /run/secrets/usdotfhwastol_token) && \
+    git clone https://${USDOTFHWASTOL_TOKEN}@github.com/usdot-fhwa-stol/vug-cmake-package.git cmake_temp && \
     chown -R dt_user:dt_user cmake_temp && \
-    mv cmake_temp/cmake/ /home/dt_user/TENA/lib/ && \
-    rm -rf cmake_temp
+	mv cmake_temp/cmake/ /home/dt_user/TENA/lib/ && \
+	rm -rf cmake_temp
 
 USER dt_user
