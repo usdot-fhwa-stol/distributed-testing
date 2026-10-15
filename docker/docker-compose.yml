@@ -1,7 +1,7 @@
 services:
   dt-core:
     container_name: dt-core
-    image: harbor.distributedtesting.org/distributed-testing/dt-core:latest
+    image: harbor.distributedtesting.org/distributed-testing/dt-core:develop
     profiles: ["core"]
     tty: true 
     network_mode: "host"
@@ -29,7 +29,7 @@ services:
   
   dt-carla:
     container_name: dt-carla
-    image: harbor.distributedtesting.org/distributed-testing/dt-carla:latest
+    image: harbor.distributedtesting.org/distributed-testing/dt-carla:develop
     profiles: ["carla"]
     privileged: true
     network_mode: "host"
@@ -55,7 +55,7 @@ services:
               capabilities: [gpu]
 
   v2xhub:
-    image: harbor.distributedtesting.org/distributed-testing/dt-v2xhub:latest
+    image: harbor.distributedtesting.org/distributed-testing/dt-v2xhub:develop
     container_name: v2xhub
     profiles: ["v2xhub"]
     network_mode: host

@@ -125,13 +125,13 @@ def safe_stop_and_destroy(actor):
         if getattr(actor, "is_listening", False):
             actor.stop()
     except Exception as e:
-        raise e
+        logging.warning("Failed to stop/destroy %s: %s", actor, e)
 
     try:
         if getattr(actor, "is_alive", True):
             actor.destroy()
     except Exception as e:
-        raise e
+        logging.warning("Failed to stop/destroy %s: %s", actor, e)
 
 
 def spring_arm_attachment():
@@ -292,16 +292,20 @@ class World:
 
         if blueprint.has_attribute("speed"):
             values = blueprint.get_attribute("speed").recommended_values
-            try:
-                if len(values) > 1:
-                    self.player_max_speed = float(values[1])
-                if len(values) > 2:
-                    self.player_max_speed_fast = float(values[2])
-            except (TypeError, ValueError):
-                logging.warning(
-                    "Blueprint %s has invalid speed recommendations.",
-                    blueprint.id,
-                )
+            if blueprint.id.startswith("walker.pedestrian"):
+                self.player_max_speed = 14
+                self.player_max_speed_fast = 20
+            else:
+                try:
+                    if len(values) > 1:
+                        self.player_max_speed = float(values[1])
+                    if len(values) > 2:
+                        self.player_max_speed_fast = float(values[2])
+                except (TypeError, ValueError):
+                    logging.warning(
+                        "Blueprint %s has invalid speed recommendations.",
+                        blueprint.id,
+                    )
 
         return blueprint
 
@@ -404,10 +408,13 @@ class World:
             self.player,
             self.hud,
         )
-        self.lane_invasion_sensor = LaneInvasionSensor(
-            self.player,
-            self.hud,
-        )
+        if isinstance(self.player, carla.Vehicle):
+            self.lane_invasion_sensor = LaneInvasionSensor(
+                self.player,
+                self.hud,
+            )
+        else:
+            self.lane_invasion_sensor = None 
         self.gnss_sensor = GnssSensor(self.player)
         self.imu_sensor = IMUSensor(self.player)
         self.camera_manager = CameraManager(
@@ -499,6 +506,7 @@ class KeyboardControl:
         self._autopilot_enabled = start_in_autopilot
         self._steer_cache = 0.0
         self._previous_speed_error = 0.0
+        self._lights = carla.VehicleLightState.NONE
 
         if isinstance(world.player, carla.Vehicle):
             self._control = carla.VehicleControl()
