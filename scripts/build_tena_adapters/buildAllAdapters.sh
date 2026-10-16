@@ -18,7 +18,13 @@ BUILD_MODE="release"
 # You can modify these variables to change the target branch for each adapter, or
 # override them from the environment (e.g. in CI) without editing this file.
 # ADAPTER_BRANCH sets the default for every adapter; BRANCH_APP_<n> overrides one.
-ADAPTER_BRANCH="${ADAPTER_BRANCH:-release/belair}"
+DT_ENV="$(dirname "${BASH_SOURCE[0]}")/../../docker/.env"
+
+if [[ -f "$DT_ENV" ]]; then
+    source "$DT_ENV"
+fi
+
+ADAPTER_BRANCH="${ADAPTER_BRANCH:-develop}"
 
 # [1] vug-threads-library
 BRANCH_APP_1="${BRANCH_APP_1:-$ADAPTER_BRANCH}"

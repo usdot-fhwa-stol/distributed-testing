@@ -175,9 +175,9 @@ if [[ -f "$DT_ENV" ]]; then
     source "$DT_ENV"
 fi
 
-buildGeneralImage="${VUG_BUILD_GENERAL_IMAGE:-${DT_REGISTRY:-harbor.distributedtesting.org/distributed-testing}/dt-build-general:${DT_IMAGE_TAG:-belair}}"
+buildGeneralImage="${VUG_BUILD_GENERAL_IMAGE:-${DT_REGISTRY:-harbor.distributedtesting.org/distributed-testing}/dt-build-general:${DT_IMAGE_TAG:-develop}}"
 
-buildCarlaImage="${VUG_BUILD_CARLA_IMAGE:-${DT_REGISTRY:-harbor.distributedtesting.org/distributed-testing}/dt-build-carla:${DT_IMAGE_TAG:-belair}}"
+buildCarlaImage="${VUG_BUILD_CARLA_IMAGE:-${DT_REGISTRY:-harbor.distributedtesting.org/distributed-testing}/dt-build-carla:${DT_IMAGE_TAG:-develop}}"
 buildV2xImage="usdotfhwaops/v2xhubamd:dt-P-1.1.0"
 
 if [[ $tenaAppIndex == 1 ]]; then
