@@ -256,11 +256,17 @@ def display_vehicle_rolenames(
             label_lifetime=label_lifetime,
         )
 
+def traffic_signal_display(state: carla.TrafficLightState):
+    if state == carla.TrafficLightState.Green:
+        return "GREEN", TRAFFIC_GREEN_COLOR
+    if state == carla.TrafficLightState.Red:
+        return "RED", TRAFFIC_RED_COLOR
+    if state == carla.TrafficLightState.Yellow:
+        return "YELLOW", TRAFFIC_YELLOW_COLOR
+    return "UNKNOWN", TRAFFIC_UNKNOWN_COLOR
 
-def display_walker_rolenames(
-    world: carla.World,
-    args: argparse.Namespace,
-) -> None:
+
+def display_walker_rolenames(world, args) -> None:
     walker_list = world.get_actors().filter(args.filterw)
     label_lifetime = get_label_lifetime(args)
 
@@ -275,7 +281,6 @@ def display_walker_rolenames(
     for walker in walker_list:
         role_name = walker.attributes.get("role_name", "pedestrian")
         display_name = clean_role_name(role_name)
-        walker_location = walker.get_location()
 
         label = actor_label(
             actor=walker,
@@ -285,12 +290,9 @@ def display_walker_rolenames(
         )
 
         if args.verbose:
-            print(
-                f"    Walker ID {walker.id}: "
-                f"role_name={role_name!r}, "
-                f"location=({walker_location.x:.2f}, "
-                f"{walker_location.y:.2f}, {walker_location.z:.2f})"
-            )
+            loc = walker.get_location()
+            print(f"    Walker ID {walker.id}: role_name={role_name!r}, "
+                  f"location=({loc.x:.2f}, {loc.y:.2f}, {loc.z:.2f})")
 
         draw_actor_label(
             world=world,
@@ -302,33 +304,9 @@ def display_walker_rolenames(
         )
 
 
-def traffic_signal_display(
-    signal_state: carla.TrafficLightState,
-) -> tuple[str, carla.Color]:
-    match signal_state:
-        case carla.TrafficLightState.Green:
-            return "[GREEN]", TRAFFIC_GREEN_COLOR
-        case carla.TrafficLightState.Red:
-            return "[RED]", TRAFFIC_RED_COLOR
-        case carla.TrafficLightState.Yellow:
-            return "[YELLOW]", TRAFFIC_YELLOW_COLOR
-        case carla.TrafficLightState.Off:
-            return "[OFF]", TRAFFIC_UNKNOWN_COLOR
-        case _:
-            return f"[{str(signal_state).upper()}]", TRAFFIC_UNKNOWN_COLOR
-
-
-def display_traffic_signal_state(
-    world: carla.World,
-    args: argparse.Namespace,
-) -> None:
-    signal_list = world.get_actors().filter("traffic.traffic_light*")
+def display_traffic_signal_state(world, args) -> None:
+    signal_list = world.get_actors().filter("traffic.traffic_light")
     label_lifetime = get_label_lifetime(args)
-
-    if not signal_list:
-        if args.verbose:
-            print("    NO TRAFFIC SIGNALS FOUND")
-        return
 
     if args.verbose:
         print("\nTRAFFIC SIGNALS:")
@@ -346,13 +324,9 @@ def display_traffic_signal_state(
         )
 
         if args.verbose:
-            signal_location = signal.get_location()
-            print(
-                f"    Signal ID {signal.id}: "
-                f"state={signal_state}, "
-                f"location=({signal_location.x:.2f}, "
-                f"{signal_location.y:.2f}, {signal_location.z:.2f})"
-            )
+            loc = signal.get_location()
+            print(f"    Signal ID {signal.id}: state={signal_state}, "
+                  f"location=({loc.x:.2f}, {loc.y:.2f}, {loc.z:.2f})")
 
         draw_actor_label(
             world=world,
@@ -362,7 +336,7 @@ def display_traffic_signal_state(
             height_offset=args.signal_label_height,
             label_lifetime=label_lifetime,
         )
-
+        
 
 def clear_all_labels(world: carla.World) -> None:
     world.debug.draw_string(
@@ -462,7 +436,4 @@ def main() -> None:
 
 
 if __name__ == "__main__":
-    try:
-        main()
-    except KeyboardInterrupt:
-        print("\nCancelled by user. Bye!")
+    main()

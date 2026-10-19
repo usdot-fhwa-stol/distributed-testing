@@ -1,7 +1,6 @@
 import os, pyshark
 from binascii import unhexlify
 from io import TextIOWrapper
-from tkinter import Tk, filedialog
 from collections import defaultdict
 
 # Monkey-patch imports to control JSON encoding behavior used by to_jer()
@@ -67,21 +66,6 @@ def output(message: str, w: TextIOWrapper | None = None, newline: bool = True, f
             except Exception:
                 # Ignore flush errors
                 pass
-
-def browse_file() -> str:
-    """Open file dialog and return the selected file path
-    
-    Returns:
-        str: The selected file path.
-    """
-    root = Tk()
-    root.withdraw()
-    srcDir = os.path.dirname(os.path.abspath(__file__))
-    logDir = os.path.join(srcDir, '../logs')
-    filename = filedialog.askopenfilename(initialdir=logDir,
-                                          title = "Select a File",
-                                          filetypes=[("PCAP Files", "*.pcap")])
-    return filename
 
 def formatFileName(file: str) -> str:
     """Format the file name for the decoded output.
