@@ -26,17 +26,6 @@
     </vehicle>
 
   </vehicles>
-
-  <pedestrians>
-
-    <pedestrian name="FLIR-P-1" safetyid="12345678" type="walker.pedestrian.0015" cosimulationIdentifier="V2XHUB-FLIR-1" identifierType="psm" organization="FLIR" lvcIndicator="Live">
-      <initialTSPI>
-        <GeodeticPosition latitudeInDegrees="0.001532" longitudeInDegrees="0.001931" heightAboveEllipsoidInMeters="1"> </GeodeticPosition>
-        <Heading>38</Heading>
-      </initialTSPI>
-    </pedestrian>
-
-  </pedestrians>
   
   <simulations>
 
