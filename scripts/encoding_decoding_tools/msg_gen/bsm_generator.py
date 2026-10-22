@@ -11,7 +11,10 @@ import sys
 import json
 from datetime import datetime
 from time import sleep
-import time, threading
+import time
+import threading
+import argparse
+
 
 # Global variables
 msgCnt = 0
@@ -40,6 +43,10 @@ def send_bsm(stdout_lock):
         sleep(0.1)
 
 def main():
+
+    parser = argparse.ArgumentParser(description="V2X BSM Connectivity Test Script")
+
+    parser.add_argument("--org", type=str, default="FHWA", help="Your organization, used to determine BSM ID")
 
     # Create a lock so threads are not accessing stdout at the same time
     stdout_lock = threading.Lock()
