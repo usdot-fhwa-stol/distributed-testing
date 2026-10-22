@@ -381,7 +381,7 @@ else
     echo "V2XHub profile not enabled"
 fi
 
-
+compose_env_args+=(--env-file "$SCRIPT_DIR/.env")
 
 trap 'stopDocker; exit 130' SIGINT
 trap 'stopDocker; exit 143' SIGTERM
