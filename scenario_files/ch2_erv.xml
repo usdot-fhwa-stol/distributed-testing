@@ -21,7 +21,7 @@
             </initialTSPI>
         </vehicle>
 
-        <vehicle name="PATH-M-1" bsmid="11111110" type="vehicle.ambulance.ford" simulationIdentifier="CARLA-PATH-1" material="Aluminum" lvcIndicator="Constructive" generate_bsms="true" organization="PATH">
+        <vehicle name="PATH-M-1" bsmid="11111100" type="vehicle.ambulance.ford" simulationIdentifier="CARLA-PATH-1" material="Aluminum" lvcIndicator="Constructive" generate_bsms="true" organization="PATH">
             <initialTSPI>
                 <GeodeticPosition latitudeInDegrees="0.002791" longitudeInDegrees="0.002422" heightAboveEllipsoidInMeters="1.001166">
                 </GeodeticPosition>
@@ -62,6 +62,46 @@
         </vehicle>
 
         <vehicle name="PATH-BG-5" bsmid="11111115" type="vehicle.lincoln.mkz" simulationIdentifier="CARLA-PATH-1" material="Aluminum" lvcIndicator="Virtual" generate_bsms="true" organization="PATH">
+            <initialTSPI>
+                <GeodeticPosition latitudeInDegrees="0.001452" longitudeInDegrees="0.001815" heightAboveEllipsoidInMeters="1.014136">
+                </GeodeticPosition>
+                <Heading>270.078583</Heading>
+            </initialTSPI>
+        </vehicle>
+
+        <vehicle name="PATH-BG-6" bsmid="11111116" type="vehicle.lincoln.mkz" simulationIdentifier="CARLA-PATH-1" material="Aluminum" lvcIndicator="Virtual" generate_bsms="true" organization="PATH">
+            <initialTSPI>
+                <GeodeticPosition latitudeInDegrees="0.001452" longitudeInDegrees="0.001815" heightAboveEllipsoidInMeters="1.014136">
+                </GeodeticPosition>
+                <Heading>270.078583</Heading>
+            </initialTSPI>
+        </vehicle>
+
+        <vehicle name="PATH-BG-7" bsmid="11111117" type="vehicle.lincoln.mkz" simulationIdentifier="CARLA-PATH-1" material="Aluminum" lvcIndicator="Virtual" generate_bsms="true" organization="PATH">
+            <initialTSPI>
+                <GeodeticPosition latitudeInDegrees="0.001452" longitudeInDegrees="0.001815" heightAboveEllipsoidInMeters="1.014136">
+                </GeodeticPosition>
+                <Heading>270.078583</Heading>
+            </initialTSPI>
+        </vehicle>
+
+        <vehicle name="PATH-BG-8" bsmid="11111118" type="vehicle.lincoln.mkz" simulationIdentifier="CARLA-PATH-1" material="Aluminum" lvcIndicator="Virtual" generate_bsms="true" organization="PATH">
+            <initialTSPI>
+                <GeodeticPosition latitudeInDegrees="0.001452" longitudeInDegrees="0.001815" heightAboveEllipsoidInMeters="1.014136">
+                </GeodeticPosition>
+                <Heading>270.078583</Heading>
+            </initialTSPI>
+        </vehicle>
+
+        <vehicle name="PATH-BG-9" bsmid="11111119" type="vehicle.lincoln.mkz" simulationIdentifier="CARLA-PATH-1" material="Aluminum" lvcIndicator="Virtual" generate_bsms="true" organization="PATH">
+            <initialTSPI>
+                <GeodeticPosition latitudeInDegrees="0.001452" longitudeInDegrees="0.001815" heightAboveEllipsoidInMeters="1.014136">
+                </GeodeticPosition>
+                <Heading>270.078583</Heading>
+            </initialTSPI>
+        </vehicle>
+
+        <vehicle name="PATH-BG-10" bsmid="11111110" type="vehicle.lincoln.mkz" simulationIdentifier="CARLA-PATH-1" material="Aluminum" lvcIndicator="Virtual" generate_bsms="true" organization="PATH">
             <initialTSPI>
                 <GeodeticPosition latitudeInDegrees="0.001452" longitudeInDegrees="0.001815" heightAboveEllipsoidInMeters="1.014136">
                 </GeodeticPosition>
