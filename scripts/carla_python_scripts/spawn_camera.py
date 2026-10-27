@@ -3,8 +3,27 @@ import cv2
 import numpy as np
 import queue
 import time
+import os
 
-# User defined locations for cameras
+### CARLA Connection Defaults
+CARLA_HOST = os.getenv("VUG_LOCAL_ADDRESS")
+CARLA_PORT = 2000
+CARLA_TIMEOUT = 10.0
+
+### CARLA Camera Settings
+CAMERA_WIDTH = 1920
+CAMERA_HEIGHT = 1080
+CAMERA_FOV = 70
+CAMERA_POSTPROCESS = True
+
+# Maximum number of frames buffered per camera. Older frames are discarded to keep the display responsive
+IMAGE_QUEUE_SIZE = 2
+
+### Camera Configurations
+# One camera is spawned for every entry in this list
+# location: (x,y,z)
+# rotation: (pitch, yaw, roll)
+# TODO: Add, remove, or modify entries to configure your camera
 CAMERA_CONFIGS = [
     {
         "name": "Camera 1 - Top Down (Town10)",
@@ -18,124 +37,206 @@ CAMERA_CONFIGS = [
     },
 ]
 
+### Image Callback
+def make_image_callback(image_queue):
+    """
+    Create an independent callback for a camera's image queue.
+
+    CARLA invokes this asynchronously. OpenCV GUI operations are intentionally kept out of this callback.
+    """
+
+    def on_image(image):
+        try:
+            # Discard an older frame if the queue is full
+            if image_queue.full():
+                try:
+                    image_queue.get_nowait()
+                except queue.Empty:
+                    pass
+
+            image_queue.put_nowait(image)
+
+        except queue.Full:
+            pass
+
+    return on_image
+
+
 def main():
-    client = carla.Client("localhost", 2000)
-    client.set_timeout(10.0)
+
+    if not CARLA_HOST:
+        raise RuntimeError(
+            "Environment variable VUG_LOCAL_ADDRESS is not set."
+            "Set it to the CARLA server hostname or IP address."
+        )
+
+    if not CAMERA_CONFIGS:
+        raise RuntimeError(
+            "CAMERA_CONFIGS is empty. Configure at least one camera."
+        )
+
+    client = carla.Client(CARLA_HOST, CARLA_PORT)
+    client.set_timeout(CARLA_TIMEOUT)
 
     world = client.get_world()
 
-    print(f"Connected to CARLA. Map: {world.get_map().name}")
+    print(f"Connected to CARLA at {CARLA_HOST}:{CARLA_PORT}")
+    print(f"Map: {world.get_map().name}")
+    print(f"Configured cameras: {len(CAMERA_CONFIGS)}")
 
-    # Create the RGB camera
+    # Prepare Camera Blueprint
     blueprint_library = world.get_blueprint_library()
     camera_bp = blueprint_library.find("sensor.camera.rgb")
 
-    camera_bp.set_attribute("image_size_x", "1920")
-    camera_bp.set_attribute("image_size_y", "1080")
-    camera_bp.set_attribute("fov", "70")
-    camera_bp.set_attribute("enable_postprocess_effects", "True")
+    camera_bp.set_attribute("image_size_x", str(CAMERA_WIDTH))
+    camera_bp.set_attribute("image_size_y", str(CAMERA_HEIGHT))
+    camera_bp.set_attribute("fov", str(CAMERA_FOV))
+    camera_bp.set_attributed("enable_postprocess_effects", str(CAMERA_POSTPROCESS))
 
-    # Fixed world position: adjust these coordinates for your map
-    
-    ## RFS spectator location
-    # transform = carla.Transform(
-    #     carla.Location(x=219.0, y=131.0, z=169.0),
-    #     carla.Rotation(pitch=-33.0, yaw=236.0, roll=0.0)
-    # )
-
-    ## RFS zoomed location
-    transform = carla.Transform(
-        carla.Location(x=9.1715, y=-70.0701, z=39.8687),
-        carla.Rotation(pitch=-25.0499, yaw=-37.5619, roll=0.0)
-    )
-
-    camera = None
-    image_queue = queue.Queue(maxsize=2)
-    image_count = 0
-
+    # Camera State
+    cameras = []
     try:
-        camera = world.spawn_actor(camera_bp, transform)
+        #Spawn Cameras
+        for config in CAMERA_CONFIGS:
+            camera_name = config["name"]
 
-        print(f"Camera spawned: {camera}")
-        print(f"Camera location: {camera.get_location()}")
+            location = carla.Location(
+                x=config["location"][0],
+                y=config["location"][1],
+                z=config["location"][2]
+            )
+
+            rotation = carla.Rotation(
+                pitch=config["rotation"][0],
+                yaw=config["rotation"][1],
+                roll=config["lrotation"][2]
+            )
+
+            transform = carla.Transform(location, rotation)
+
+            image_queue = queue.Queue(maxsize=IMAGE_QUEUE_SIZE)
+            
+            print(f"\nSpawning {camera_name}...")
+            camera = world.spawn_actor(camera_bp, transform)
+            camera_state = {
+                "name": camera_name,
+                "window_name": camera_name,
+                "actor": camera,
+                "image_queue": image_queue,
+                "image_count": 0,
+                "last_image_time": time.monotonic(),
+                "last_warning_time": 0.0,
+            }
+            cameras.append(camera_state)
+            print(f"\tActor ID: {camera.id}")
+            print(f"\tLocation: {camera.get_location()}")
+            print(f"\tRotation: {camera.get_transform().rotation}")
+
+            camera.listen(make_image_callback(image_queue))
+
+            # Create OpenCV Window
+            cv2.namedWindow(
+                camera_state["window_name"],
+                cv2.WINDOW_NORMAL
+            )
+
+        print(f"\nSuccessfully spawned {len(cameras)} camera(s).")
         print("Waiting for camera images...")
+        print("Press Q or ESC to exit.\n")
 
-        # This callback runs asynchronously.
-        # Do not call cv2.imshow() here.
-        def on_image(image):
-            try:
-                if image_queue.full():
-                    try:
-                        image_queue.get_nowait()
-                    except queue.Empty:
-                        pass
-
-                image_queue.put_nowait(image)
-
-            except queue.Full:
-                pass
-
-        camera.listen(on_image)
-
-        # OpenCV GUI operations run on the main thread.
-        cv2.namedWindow("CARLA Fixed Camera", cv2.WINDOW_NORMAL)
-
-        start_time = time.time()
-
+        # Video Streaming Loop
         while True:
-            try:
-                # Get the latest available camera image.
-                image = image_queue.get(timeout=0.1)
+            current_time = time.monotonic()
+            for camera_state in cameras:
+                image_queue = camera_state["image_queue"]
+                latest_image = None
 
-                # CARLA camera data is BGRA.
-                array = np.frombuffer(
-                    image.raw_data,
-                    dtype=np.uint8
-                ).reshape((image.height, image.width, 4))
+                # Retrieve the newest available frame, draining older frames to minimize latency
+                while True
+                    try:
+                        latest_image = image_queue.get_nowait()
+                    except queue.Empty:
+                        break
 
-                frame = array[:, :, :3].copy()
-
-                cv2.imshow("CARLA Fixed Camera", frame)
-
-                image_count += 1
-
-                if image_count == 1:
-                    print(
-                        f"First image received! "
-                        f"Frame={image.frame}, "
-                        f"Resolution={image.width}x{image.height}"
+                if latest_image is Not None:
+                    image = latest_image
+                    # CARLA camera data is BGRA, first three channels are BGR, expected by OpenCV
+                    array = np.frombuffer(
+                        image.raw_data,
+                        dtype=np.uint8
+                    ).reshape(
+                        (image.height, image.width, 4)
                     )
 
-                if image_count % 100 == 0:
-                    print(f"Received {image_count} camera images.")
+                    frame = array[:,:,:3].copy()
 
-            except queue.Empty:
-                # Tell us if no image has arrived.
-                if time.time() - start_time > 5:
+                    cv2.imshow(
+                        camera_state["window_name"],
+                        frame
+                    )
+
+                    camera_state["image_count"] += 1
+                    camera_state["last_image_time"] = current_time
+
+                    image_count = camera_state["image_count"]
+
+                    if image_count == 1:
+                        print(
+                            f"[{camera_state['name']}] "
+                            f"First image received! "
+                            f"Frame={image.frame}, "
+                            f"Resolution="
+                            f"{image.width}x{image.height}"
+                        )
+
+                    if image_count % 100 == 0:
+                        print(
+                            f"[{camera_state['name']}] "
+                            f"Received {image_count} images."
+                        )
+
+                elif (current_time - camera_state["last_image_time"] > 5.0) and (current_time - camera_state["last_warning_time"] > 5.0):
                     print(
+                        f"[{camera_state['name']}] "
                         "Still waiting for camera images. "
-                        "Check whether the CARLA simulation is advancing."
+                        "Check the camera configuration and "
+                        "whether the CARLA simulation is advancing."
                     )
-                    start_time = time.time()
 
+                    camera_state["last_warning_time"] = current_time
+            
             # Process GUI events on the main thread.
             key = cv2.waitKey(1) & 0xFF
 
-            if key == ord("q") or key == 27:
+            if key == ord("q") or key == 27: #ESC
+                print("\nExit requested.")
                 break
-
     except Exception as exc:
         print(f"Error: {exc}")
         raise
 
     finally:
-        if camera is not None:
-            camera.stop()
-            camera.destroy()
+        # Cleanup
+        print("\nCleaning up cameras...")
+        for camera_state in cameras:
+            camera = camera_state["actor"]
+
+            try:
+                if camera.is_alive:
+                    camera.stop()
+            except Exception as e:
+                print(f"Warning: Could not stop {camera_state['name']}: {e}")
+
+            try:
+                if camera.is_alive:
+                    camera.destroy()
+                    print(f"Destroyed {camera_state['name']}.")
+            except Exception as e:
+                print(f"Warning: Could not destroy {camera_state['name']}: {e}")
 
         cv2.destroyAllWindows()
-        print("Camera cleaned up.")
 
+        print("Camera cleanup complete")
 
 if __name__ == "__main__":
     main()
