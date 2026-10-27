@@ -4,6 +4,19 @@ import numpy as np
 import queue
 import time
 
+# User defined locations for cameras
+CAMERA_CONFIGS = [
+    {
+        "name": "Camera 1 - Top Down (Town10)",
+        "location": (0,0,0),
+        "rotation": (0,0,0),
+    },
+    {
+        "name": "Camera 2 - Street View (Town10)",
+        "location": (0,0,0),
+        "rotation": (0,0,0),
+    },
+]
 
 def main():
     client = carla.Client("localhost", 2000)
