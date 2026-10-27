@@ -15,6 +15,7 @@ CAMERA_WIDTH = 1920
 CAMERA_HEIGHT = 1080
 CAMERA_FOV = 70
 CAMERA_POSTPROCESS = True
+CAMERA_SENSOR_TICK = 0.0
 
 # Maximum number of frames buffered per camera. Older frames are discarded to keep the display responsive
 IMAGE_QUEUE_SIZE = 2
@@ -27,13 +28,13 @@ IMAGE_QUEUE_SIZE = 2
 CAMERA_CONFIGS = [
     {
         "name": "Camera 1 - Top Down (Town10)",
-        "location": (0,0,0),
-        "rotation": (0,0,0),
+        "location": (-41.353390,73.122391,100.442856),
+        "rotation": (-87.815765,-89.706406,0.0),
     },
     {
         "name": "Camera 2 - Street View (Town10)",
-        "location": (0,0,0),
-        "rotation": (0,0,0),
+        "location": (-51.879086,24.768240,3.243282),
+        "rotation": (-5.975470,79.513199,0.0),
     },
 ]
 
@@ -91,7 +92,8 @@ def main():
     camera_bp.set_attribute("image_size_x", str(CAMERA_WIDTH))
     camera_bp.set_attribute("image_size_y", str(CAMERA_HEIGHT))
     camera_bp.set_attribute("fov", str(CAMERA_FOV))
-    camera_bp.set_attributed("enable_postprocess_effects", str(CAMERA_POSTPROCESS))
+    camera_bp.set_attribute("enable_postprocess_effects", str(CAMERA_POSTPROCESS))
+    camera_bp.set_attribute("sensor_tick", str(CAMERA_SENSOR_TICK))
 
     # Camera State
     cameras = []
@@ -109,7 +111,7 @@ def main():
             rotation = carla.Rotation(
                 pitch=config["rotation"][0],
                 yaw=config["rotation"][1],
-                roll=config["lrotation"][2]
+                roll=config["rotation"][2]
             )
 
             transform = carla.Transform(location, rotation)
@@ -152,13 +154,13 @@ def main():
                 latest_image = None
 
                 # Retrieve the newest available frame, draining older frames to minimize latency
-                while True
+                while True:
                     try:
                         latest_image = image_queue.get_nowait()
                     except queue.Empty:
                         break
 
-                if latest_image is Not None:
+                if latest_image is not None:
                     image = latest_image
                     # CARLA camera data is BGRA, first three channels are BGR, expected by OpenCV
                     array = np.frombuffer(

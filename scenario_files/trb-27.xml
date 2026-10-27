@@ -13,14 +13,14 @@
       
     <vehicle name="carma_1" bsmid="00000000" type="vehicle.lincoln.mkz" simulationIdentifier="CARLA-FHWA-1" material="Aluminum" lvcIndicator="Virtual" generate_bsms="false" organization="FHWA">
         <initialTSPI>
-            <GeodeticPosition latitudeInDegrees="0.001078" longitudeInDegrees="0.000884" heightAboveEllipsoidInMeters="1"> </GeodeticPosition>
-            <Heading>300</Heading>
+            <GeodeticPosition latitudeInDegrees="-0.000986" longitudeInDegrees="-0.000403" heightAboveEllipsoidInMeters="1"> </GeodeticPosition>
+            <Heading>270</Heading>
         </initialTSPI>
     </vehicle>
 
     <vehicle name="fire_truck" bsmid="f03ad610" type="vehicle.firetruck.actors" simulationIdentifier="CARLA-FHWA-1" material="Aluminum" lvcIndicator="Constructive" generate_bsms="true" organization="FHWA">
         <initialTSPI>
-            <GeodeticPosition latitudeInDegrees="0.000428" longitudeInDegrees="0.000989" heightAboveEllipsoidInMeters="1"> </GeodeticPosition>
+            <GeodeticPosition latitudeInDegrees="0.000401" longitudeInDegrees="-0.000373" heightAboveEllipsoidInMeters="1"> </GeodeticPosition>
             <Heading>270</Heading>
         </initialTSPI>
     </vehicle>
