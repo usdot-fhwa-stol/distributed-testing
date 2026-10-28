@@ -42,6 +42,7 @@ services:
       - VUG_SCENARIO_CONFIG_FILE=${VUG_SCENARIO_CONFIG_FILE}
       - VUG_VPN_LOCAL_ADDRESS=${VUG_VPN_LOCAL_ADDRESS}
       - VUG_VPN_EM_ADDRESS=${VUG_VPN_EM_ADDRESS}
+      - NVIDIA_DRIVER_CAPABILITIES=all
     volumes:
       - /tmp/.X11-unix:/tmp/.X11-unix:rw
       - ${VUG_LOCAL_DT_PATH}:/home/carla/distributed-testing
@@ -64,6 +65,7 @@ services:
       # Keeps plugin defaults that reference host.docker.internal working
       # (e.g. CARMACloudPlugin's CARMACloudBaseUrl).
       - "host.docker.internal:127.0.0.1"
+      - "kafka:127.0.0.1"
     restart: always
     depends_on:
       db:
