@@ -144,9 +144,23 @@ fi
 
 # try to change carla map 
 if [[ $VUG_DOCKER_START_CARLA == "local" ]] || [[ $VUG_DOCKER_START_CARLA == "remote" ]]; then
-   echo "CHANGING CARLA MAP TO: $VUG_CARLA_MAP_NAME"
+   
+   if [[ -f "$VUG_CARLA_MAP_NAME" ]]; then
+      echo "CHANGING CARLA MAP TO CUSTOM OpenDRIVE FILE: $VUG_CARLA_MAP_NAME"
+      MAP_ARGS=(-x "$VUG_CARLA_MAP_NAME")
+
+   elif [[ "$VUG_CARLA_MAP_NAME" == */* || "$VUG_CARLA_MAP_NAME" == *.xodr* ]]; then
+      echo "ERROR: Custom map file not found: $VUG_CARLA_MAP_NAME"
+      echo "Defaulting to Town10"
+      MAP_ARGS=(-m "Town10HD_Opt")
+
+   else
+      echo "CHANGING CARLA MAP TO: $VUG_CARLA_MAP_NAME"
+      MAP_ARGS=(-m "$VUG_CARLA_MAP_NAME")
+   fi
+   
 	python3 $HOME/distributed-testing/scripts/carla_python_scripts/config.py \
-      -m $VUG_CARLA_MAP_NAME --weather ClearNoon --host $VUG_CARLA_ADDRESS 2>&1 | awk '{ print "CHANGE MAP: ", $0; fflush(); }'
+      "${MAP_ARGS[@]}" --weather ClearNoon --host $VUG_CARLA_ADDRESS 2>&1 | awk '{ print "CHANGE MAP: ", $0; fflush(); }'
 
    sleep 5s
    
