@@ -31,7 +31,8 @@ org_bsmid_map = {
     "Omniair": "a7c29e41",
     "Keysight": "3f8b12d6",
     "Kapsch": "e05a74bc",
-    "Indra": "91d4f603"
+    "Indra": "91d4f603",
+    "FHWA": "0dc325ae"
 }
 # For easy reverse searching (organization using the bsm ID), create the same map in reverse "<bsm ID>":"<organization>"
 bsmid_org_map = {v: k for k, v in org_bsmid_map.items()}
