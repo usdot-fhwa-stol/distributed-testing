@@ -1,0 +1,38 @@
+<?xml version="1.0.0" encoding="UTF-8"?>
+<scenario>
+  <identifier>
+    <name>V2X Interoperability Cohort - Tolling</name>
+  </identifier>
+  <OpenDrive>
+    <MapFileName name="suntrax_031022.xodr">
+      <MapOrigin latitudeInDegrees="28.11858865984839" longitudeInDegrees="-81.83068406678619" heightAboveEllipsoidInMeters="0"> </MapOrigin>
+    </MapFileName>
+  </OpenDrive>
+
+  <vehicles>
+      
+  </vehicles>
+
+  <radios>
+    
+  </radios>
+
+  <intersectionSignalControllers>
+      
+  </intersectionSignalControllers>
+  
+  <phaseSignalMappings>
+      
+  </phaseSignalMappings>
+  
+  <simulations>
+    <simulation name="FHWA-1" type="CARLA">
+      <WeatherState>ClearNoon</WeatherState>
+    </simulation>
+  </simulations>
+
+  <routes>
+    
+  </routes>
+  
+</scenario>
