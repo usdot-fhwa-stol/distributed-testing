@@ -3,6 +3,7 @@
 import argparse
 import sys
 import time
+import os
 
 import carla
 
@@ -26,6 +27,10 @@ MAP_PRESETS = {
     "richmond_field_station_richmond_ca": {
         "location": carla.Location(x=219, y=131, z=169),
         "rotation": carla.Rotation(pitch=-33, yaw=-124, roll=0.0),
+    },
+    "suntrax_031022": {
+        "location": carla.Location(x=44.296967, y=-34.435844, z=899.172668),
+        "rotation": carla.Rotation(pitch=-88.789513, yaw=-16.211327, roll=0.0),
     },
     "default": {
         "location": carla.Location(x=100, y=0, z=75),
@@ -96,6 +101,13 @@ def main() -> None:
             return
 
         current_map_name = world.get_map().name.split("/")[-1].lower()
+
+        if current_map_name.lower() == "opendrivemap":
+            xodr_map_name = os.environ.get("VUG_CARLA_MAP_NAME", "")
+
+            if xodr_map_name:
+                current_map_name = os.path.splitext(os.path.basename(xodr_map_name))[0]
+
         preset = MAP_PRESETS.get(current_map_name, MAP_PRESETS["default"])
 
         target_x = args.x if args.x is not None else preset["location"].x
