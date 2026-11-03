@@ -125,6 +125,8 @@ try:
                         life_time=label_duration,
                         persistent_lines=True)
 
+ 
+        
         if args.duration != 0:
             sys.exit()
 

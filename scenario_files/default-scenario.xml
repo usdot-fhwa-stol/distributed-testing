@@ -10,8 +10,8 @@
   </OpenDrive>
 
   <vehicles>
-
-   <vehicle name="DEFAULT-M-1" bsmid="f03ad610" type="vehicle.lincoln.mkz" simulationIdentifier="CARLA-DEFAULT-1" material="Aluminum" lvcIndicator="Constructive" generate_bsms="true" organization="DEFAULT">
+      
+    <vehicle name="DEFAULT-M-1" bsmid="f03ad610" type="vehicle.lincoln.mkz" simulationIdentifier="CARLA-DEFAULT-1" material="Aluminum" lvcIndicator="Constructive" generate_bsms="true" organization="DEFAULT">
         <initialTSPI>
             <GeodeticPosition latitudeInDegrees="0.001800" longitudeInDegrees="0.001122" heightAboveEllipsoidInMeters="1"> </GeodeticPosition>
             <Heading>21.85235</Heading>
@@ -20,7 +20,7 @@
   </vehicles>
 
   <pedestrians>
-    <pedestrian name="DEFAULT-P-1" safetyid="12345678" type="walker.pedestrian.0001" cosimulationIdentifier="CARLA-DEFAULT-1" identifierType="psm" organization="DEFAULT" lvcIndicator="Live">
+    <pedestrian name="DEFAULT-P-1" safetyid="12345678" type="walker.pedestrian.0015" cosimulationIdentifier="CARLA-DEFAULT-1" identifierType="psm" organization="DEFAULT" lvcIndicator="Live">
       <initialTSPI>
         <GeodeticPosition latitudeInDegrees="0.001532" longitudeInDegrees="0.001931" heightAboveEllipsoidInMeters="1"> </GeodeticPosition>
         <Heading>38</Heading>

@@ -1,0 +1,42 @@
+<?xml version="1.0.0" encoding="UTF-8"?>
+<scenario>
+  <identifier>
+    <name>TRB 2027 Booth Demo</name>
+  </identifier>
+  <OpenDrive>
+    <MapFileName name="Town10HD_Opt.xodr">
+      <MapOrigin latitudeInDegrees="0" longitudeInDegrees="0" heightAboveEllipsoidInMeters="0"> </MapOrigin>
+    </MapFileName>
+  </OpenDrive>
+
+  <vehicles>
+      
+    <vehicle name="carma_1" bsmid="00000000" type="vehicle.lincoln.mkz" simulationIdentifier="CARLA-FHWA-1" material="Aluminum" lvcIndicator="Virtual" generate_bsms="false" organization="FHWA">
+        <initialTSPI>
+            <GeodeticPosition latitudeInDegrees="-0.000986" longitudeInDegrees="-0.000403" heightAboveEllipsoidInMeters="1"> </GeodeticPosition>
+            <Heading>270</Heading>
+        </initialTSPI>
+    </vehicle>
+
+    <vehicle name="fire_truck" bsmid="f03ad610" type="vehicle.firetruck.actors" simulationIdentifier="CARLA-FHWA-1" material="Aluminum" lvcIndicator="Constructive" generate_bsms="true" organization="FHWA">
+        <initialTSPI>
+            <GeodeticPosition latitudeInDegrees="0.000401" longitudeInDegrees="-0.000373" heightAboveEllipsoidInMeters="1"> </GeodeticPosition>
+            <Heading>270</Heading>
+        </initialTSPI>
+    </vehicle>
+
+  </vehicles>
+  
+  <simulations>
+
+    <simulation name="FHWA-1" type="CARLA">
+      <WeatherState>ClearNoon</WeatherState>
+    </simulation>
+
+    <simulation name="FLIR-1" type="V2XHUB">
+      <WeatherState>ClearNoon</WeatherState>
+    </simulation>
+
+  </simulations>
+
+</scenario>

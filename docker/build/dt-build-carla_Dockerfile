@@ -6,7 +6,9 @@
 #
 # NOTE: This builds the CARLA 0.10.0 adapter toolchain image; it is not a CARLA simulator runtime image.
 
-FROM harbor.distributedtesting.org/distributed-testing/dt-build-general:latest
+ARG DOCKER_ORG=distributed-testing
+ARG DOCKER_TAG=latest
+FROM harbor.distributedtesting.org/${DOCKER_ORG}/dt-build-general:${DOCKER_TAG}
 
 ARG VERSION=dev
 ARG DEBIAN_FRONTEND="noninteractive"

@@ -36,7 +36,7 @@ Tab                Change camera position
 1-9                Select sensor
 G                  Toggle radar
 C / Shift+C        Next/previous weather
-Backspace          Respawn vehicle
+Backspace          Teleport vehicle back to its spawn point
 
 R                  Toggle image recording
 Ctrl+R             Toggle CARLA simulation recording
@@ -125,14 +125,13 @@ def safe_stop_and_destroy(actor):
         if getattr(actor, "is_listening", False):
             actor.stop()
     except Exception as e:
-        raise e
+        logging.warning("Failed to stop/destroy %s: %s", actor, e)
 
     try:
         if getattr(actor, "is_alive", True):
             actor.destroy()
     except Exception as e:
-        # Catch std::excerption/RuntimeError thrown by C++ API wrapper
-        raise e
+        logging.warning("Failed to stop/destroy %s: %s", actor, e)
 
 
 def spring_arm_attachment():
@@ -175,7 +174,28 @@ def get_actor_display_name(actor, truncate=250):
 
     return name
 
+def _env_float(name):
+    raw = os.environ.get(name)
+    return float(raw)
 
+def _spawn_transform_from_env():
+    x = _env_float("VUG_MANUAL_VEHICLE_SPAWN_X")
+    y = _env_float("VUG_MANUAL_VEHICLE_SPAWN_Y")
+    z = _env_float("VUG_MANUAL_VEHICLE_SPAWN_Z")
+
+    roll = _env_float("VUG_MANUAL_VEHICLE_SPAWN_ROLL")
+    pitch = _env_float("VUG_MANUAL_VEHICLE_SPAWN_PITCH")
+    yaw = _env_float("VUG_MANUAL_VEHICLE_SPAWN_YAW")
+
+    return carla.Transform(
+        carla.Location(x=x, y=y, z=z),
+        carla.Rotation(
+            roll=roll,
+            pitch=pitch,
+            yaw=yaw,
+        ),
+    )
+    
 class World:
     def __init__(self, carla_world, hud, args):
         self.world = carla_world
@@ -192,6 +212,7 @@ class World:
             ) from error
 
         self.player = None
+        self.spawn_transform = None
         self.collision_sensor = None
         self.lane_invasion_sensor = None
         self.gnss_sensor = None
@@ -271,16 +292,20 @@ class World:
 
         if blueprint.has_attribute("speed"):
             values = blueprint.get_attribute("speed").recommended_values
-            try:
-                if len(values) > 1:
-                    self.player_max_speed = float(values[1])
-                if len(values) > 2:
-                    self.player_max_speed_fast = float(values[2])
-            except (TypeError, ValueError):
-                logging.warning(
-                    "Blueprint %s has invalid speed recommendations.",
-                    blueprint.id,
-                )
+            if blueprint.id.startswith("walker.pedestrian"):
+                self.player_max_speed = 14
+                self.player_max_speed_fast = 20
+            else:
+                try:
+                    if len(values) > 1:
+                        self.player_max_speed = float(values[1])
+                    if len(values) > 2:
+                        self.player_max_speed_fast = float(values[2])
+                except (TypeError, ValueError):
+                    logging.warning(
+                        "Blueprint %s has invalid speed recommendations.",
+                        blueprint.id,
+                    )
 
         return blueprint
 
@@ -317,6 +342,22 @@ class World:
             spawn_points.insert(0, previous_transform)
 
         return spawn_points
+
+    def teleport_to_spawn(self):
+        spawn = _spawn_transform_from_env()
+
+        if self.constant_velocity_enabled:
+            self.player.disable_constant_velocity()
+            self.constant_velocity_enabled = False
+
+        self.player.set_transform(spawn)
+
+        if isinstance(self.player, carla.Vehicle):
+            zero = carla.Vector3D(0.0, 0.0, 0.0)
+            self.player.set_target_velocity(zero)
+            self.player.set_target_angular_velocity(zero)
+
+        self.hud.notification("Teleported to spawn point")
 
     def restart(self):
         camera_index = 0
@@ -367,10 +408,13 @@ class World:
             self.player,
             self.hud,
         )
-        self.lane_invasion_sensor = LaneInvasionSensor(
-            self.player,
-            self.hud,
-        )
+        if isinstance(self.player, carla.Vehicle):
+            self.lane_invasion_sensor = LaneInvasionSensor(
+                self.player,
+                self.hud,
+            )
+        else:
+            self.lane_invasion_sensor = None 
         self.gnss_sensor = GnssSensor(self.player)
         self.imu_sensor = IMUSensor(self.player)
         self.camera_manager = CameraManager(
@@ -462,6 +506,7 @@ class KeyboardControl:
         self._autopilot_enabled = start_in_autopilot
         self._steer_cache = 0.0
         self._previous_speed_error = 0.0
+        self._lights = carla.VehicleLightState.NONE
 
         if isinstance(world.player, carla.Vehicle):
             self._control = carla.VehicleControl()
@@ -511,16 +556,7 @@ class KeyboardControl:
                 return True
 
             if event.key == K_BACKSPACE:
-                was_autopilot = self._autopilot_enabled
-
-                if was_autopilot and isinstance(
-                    world.player,
-                    carla.Vehicle,
-                ):
-                    world.player.set_autopilot(False)
-
-                world.restart()
-                self._autopilot_enabled = was_autopilot
+                world.teleport_to_spawn()
                 self._restore_control_after_restart(world)
                 current_lights = self._lights
 

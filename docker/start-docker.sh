@@ -345,7 +345,7 @@ echo
 # dt-core hosts a set of TENA apps that are each started inside the container by
 # start_scripts/startup-apps.sh based on their own individual VUG_DOCKER_START_* flags,
 # so dt-core is only needed if at least one of those flags is enabled.
-if [[ $VUG_DOCKER_START_EM == true || $VUG_DOCKER_START_CONSOLE == true || $VUG_DOCKER_START_CANARY == true || \
+if [[ ${GPSD_ENABLED:-false} == true || $VUG_DOCKER_START_EM == true || $VUG_DOCKER_START_CONSOLE == true || $VUG_DOCKER_START_CANARY == true || \
         $VUG_DOCKER_START_TDCS == true || $VUG_DOCKER_START_TENA_PLAYBACK == true || $VUG_DOCKER_START_DATAVIEW == true || \
         $VUG_DOCKER_START_SCENARIO_PUBLIHSER == true || $VUG_DOCKER_START_V2X_ADAPTER == true || $VUG_DOCKER_START_TENA_CARLA_ADAPTER == true || \
         $VUG_DOCKER_START_JSON_STREAMER == true || $VUG_DOCKER_START_JSON_PUBLISHER == true || $VUG_DOCKER_START_ENTITY_GENERATOR == true || \
@@ -382,6 +382,10 @@ else
 fi
 
 
-trap stopDocker SIGINT
+
+trap 'stopDocker; exit 130' SIGINT
+trap 'stopDocker; exit 143' SIGTERM
+
+
 
 $docker_compose_cmd "${compose_env_args[@]}" -f "$docker_compose_file" "${compose_profile_args[@]}" up "${EXTRA_ARGS[@]}"
