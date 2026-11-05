@@ -20,26 +20,27 @@ def main():
 
   sk.sendto(start_command,(LOCAL_ADDRESS,HWIL_GNSS_EMULATOR_COMMAND_PORT))
   print(f'Sent command \"start\" to HWIL_GNSS_EMULATOR at {LOCAL_ADDRESS}:{HWIL_GNSS_EMULATOR_COMMAND_PORT}. Press Ctrl-C to stop and exit')
-  print(f'Server listening on {HWIL_GNSS_EMULATOR_SEND_ADDRESS}:{HWIL_GNSS_EMULATOR_SEND_PORT} for TCP data...')
-  sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-  sock.bind((HWIL_GNSS_EMULATOR_SEND_ADDRESS, HWIL_GNSS_EMULATOR_SEND_PORT))
-  sock.listen(1)
-  conn, addr = sock.accept()
+  if LOCAL_ADDRESS == HWIL_GNSS_EMULATOR_SEND_ADDRESS:
+    print(f'Server listening on {LOCAL_ADDRESS}:{HWIL_GNSS_EMULATOR_SEND_PORT} for TCP data...')
+    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    sock.bind((LOCAL_ADDRESS, HWIL_GNSS_EMULATOR_SEND_PORT))
+    sock.listen(1)
+    conn, addr = sock.accept()
 
-  try:
-    while True:
-      data = conn.recv(65536)
-      if not data:
-          break
-      print(f"{data.decode('utf-8')}")
+    try:
+      while True:
+        data = conn.recv(65536)
+        if not data:
+            break
+        print(f"{data.decode('utf-8')}")
 
-  except KeyboardInterrupt:
-    print("\nCtrl+C detected! Cleaning up and exiting safely.")
-    sk.sendto(stop_command,(LOCAL_ADDRESS,HWIL_GNSS_EMULATOR_COMMAND_PORT))
+    except KeyboardInterrupt:
+      print("\nCtrl+C detected! Cleaning up and exiting safely.")
+      sk.sendto(stop_command,(LOCAL_ADDRESS,HWIL_GNSS_EMULATOR_COMMAND_PORT))
 
-  finally:
-    conn.close()
-    sock.close()
+    finally:
+      conn.close()
+      sock.close()
 
 
 if __name__ == "__main__":
