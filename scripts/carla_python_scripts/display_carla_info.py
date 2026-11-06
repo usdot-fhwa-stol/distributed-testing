@@ -22,6 +22,14 @@ TRAFFIC_RED_COLOR = carla.Color(r=255, g=0, b=0)
 TRAFFIC_YELLOW_COLOR = carla.Color(r=255, g=255, b=0)
 TRAFFIC_UNKNOWN_COLOR = carla.Color(r=255, g=255, b=255)
 
+COHORT2_COLORS = {
+    "PATH": carla.Color(r=0, g=0, b=255),
+    "AMG": carla.Color(r=255, g=0, b=0),
+    "VW": carla.Color(r=0, g=0, b=0),
+    "UTC": carla.Color(r=255, g=0, b=255),
+}
+DEFAULT_COLOR = carla.Color(r=255, g=255, b=255)
+
 
 def env_bool(name: str, default: bool = False) -> bool:
     value = os.getenv(name)
@@ -159,29 +167,18 @@ def actor_label(
     return f"{prefix}{display_name}"
 
 
-def get_vehicle_color(
-    world_map: carla.Map,
-    vehicle_location: carla.Location,
-    surface_tolerance: float,
-) -> carla.Color:
-    waypoint = world_map.get_waypoint(
-        vehicle_location,
-        project_to_road=True,
-    )
+def get_vehicle_color(role_name: str) -> carla.Color:
+    """
+    Determine vehicle label color based on organization prefix.
 
-    if waypoint is None:
-        return VEHICLE_SURFACE_COLOR
+    Expected role_name format: <ORG>-M-<#>
+    Example: FHWA-M-1
+    """
 
-    road_z = waypoint.transform.location.z
-    z_difference = vehicle_location.z - road_z
-
-    if z_difference > surface_tolerance:
-        return VEHICLE_ABOVE_SURFACE_COLOR
-
-    if z_difference < -surface_tolerance:
-        return VEHICLE_BELOW_SURFACE_COLOR
-
-    return VEHICLE_SURFACE_COLOR
+    # Extract organization
+    org_name = role_name.split("-")[0]
+    
+    return COHORT2_COLORS.get(org_name, DEFAULT_COLOR)
 
 
 def draw_actor_label(
@@ -226,11 +223,7 @@ def display_vehicle_rolenames(
         display_name = clean_role_name(role_name)
         vehicle_location = vehicle.get_location()
 
-        color = get_vehicle_color(
-            world_map=world_map,
-            vehicle_location=vehicle_location,
-            surface_tolerance=args.surface_tolerance,
-        )
+        color = get_vehicle_color(role_name)
 
         label = actor_label(
             actor=vehicle,
