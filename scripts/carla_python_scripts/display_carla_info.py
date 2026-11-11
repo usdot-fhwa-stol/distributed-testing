@@ -24,7 +24,7 @@ TRAFFIC_UNKNOWN_COLOR = carla.Color(r=255, g=255, b=255)
 
 COHORT2_COLORS = {
     "PATH": carla.Color(r=0, g=0, b=255),
-    "AMG": carla.Color(r=255, g=0, b=0),
+    "CCTA": carla.Color(r=255, g=0, b=0),
     "VW": carla.Color(r=0, g=0, b=0),
     "UTC": carla.Color(r=255, g=0, b=255),
 }

@@ -109,7 +109,7 @@
             </initialTSPI>
         </vehicle>
 
-        <vehicle name="AMG-BG-1" bsmid="22222221" type="vehicle.dodge.charger" simulationIdentifier="CARLA-AMG-1" material="Aluminum" lvcIndicator="Virtual" generate_bsms="true" organization="AMG">
+        <vehicle name="CCTA-BG-1" bsmid="22222221" type="vehicle.dodge.charger" simulationIdentifier="CARLA-CCTA-1" material="Aluminum" lvcIndicator="Virtual" generate_bsms="true" organization="CCTA">
             <initialTSPI>
                 <GeodeticPosition latitudeInDegrees="0.001452" longitudeInDegrees="0.001815" heightAboveEllipsoidInMeters="1.014136">
                 </GeodeticPosition>
@@ -117,7 +117,7 @@
             </initialTSPI>
         </vehicle>
 
-        <vehicle name="AMG-BG-2" bsmid="22222222" type="vehicle.dodge.charger" simulationIdentifier="CARLA-AMG-1" material="Aluminum" lvcIndicator="Virtual" generate_bsms="true" organization="AMG">
+        <vehicle name="CCTA-BG-2" bsmid="22222222" type="vehicle.dodge.charger" simulationIdentifier="CARLA-CCTA-1" material="Aluminum" lvcIndicator="Virtual" generate_bsms="true" organization="CCTA">
             <initialTSPI>
                 <GeodeticPosition latitudeInDegrees="0.001452" longitudeInDegrees="0.001815" heightAboveEllipsoidInMeters="1.014136">
                 </GeodeticPosition>
@@ -125,7 +125,7 @@
             </initialTSPI>
         </vehicle>
 
-        <vehicle name="AMG-BG-3" bsmid="22222223" type="vehicle.dodge.charger" simulationIdentifier="CARLA-AMG-1" material="Aluminum" lvcIndicator="Virtual" generate_bsms="true" organization="AMG">
+        <vehicle name="CCTA-BG-3" bsmid="22222223" type="vehicle.dodge.charger" simulationIdentifier="CARLA-CCTA-1" material="Aluminum" lvcIndicator="Virtual" generate_bsms="true" organization="CCTA">
             <initialTSPI>
                 <GeodeticPosition latitudeInDegrees="0.001452" longitudeInDegrees="0.001815" heightAboveEllipsoidInMeters="1.014136">
                 </GeodeticPosition>
@@ -133,7 +133,7 @@
             </initialTSPI>
         </vehicle>
 
-        <vehicle name="AMG-BG-4" bsmid="22222224" type="vehicle.dodge.charger" simulationIdentifier="CARLA-AMG-1" material="Aluminum" lvcIndicator="Virtual" generate_bsms="true" organization="AMG">
+        <vehicle name="CCTA-BG-4" bsmid="22222224" type="vehicle.dodge.charger" simulationIdentifier="CARLA-CCTA-1" material="Aluminum" lvcIndicator="Virtual" generate_bsms="true" organization="CCTA">
             <initialTSPI>
                 <GeodeticPosition latitudeInDegrees="0.001452" longitudeInDegrees="0.001815" heightAboveEllipsoidInMeters="1.014136">
                 </GeodeticPosition>
@@ -141,7 +141,7 @@
             </initialTSPI>
         </vehicle>
 
-        <vehicle name="AMG-BG-5" bsmid="22222225" type="vehicle.dodge.charger" simulationIdentifier="CARLA-AMG-1" material="Aluminum" lvcIndicator="Virtual" generate_bsms="true" organization="AMG">
+        <vehicle name="CCTA-BG-5" bsmid="22222225" type="vehicle.dodge.charger" simulationIdentifier="CARLA-CCTA-1" material="Aluminum" lvcIndicator="Virtual" generate_bsms="true" organization="CCTA">
             <initialTSPI>
                 <GeodeticPosition latitudeInDegrees="0.001452" longitudeInDegrees="0.001815" heightAboveEllipsoidInMeters="1.014136">
                 </GeodeticPosition>
@@ -201,7 +201,7 @@
 
     <simulations>
 
-        <simulation name="CARLA-AMG-1" type="CARLA">
+        <simulation name="CARLA-CCTA-1" type="CARLA">
             <WeatherState>ClearNoon</WeatherState>
         </simulation>
 
