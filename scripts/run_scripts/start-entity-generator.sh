@@ -76,8 +76,6 @@ fi
 
 siteID=$(( $(printf '%s' "$VUG_SHORT_IDENTIFIER" | cksum | awk '{print $1}') & 0xFFFF ))
 applicationID=$(( $(printf '%s' "$VUG_ENTITY_GENERATOR_VERSION" | cksum | awk '{print $1}') & 0xFFFF ))
-
-VUG_ENTITY_GENERATOR_STALE_SDSM_THRESH_MS=2000
 staleSdsmThreshMs=$VUG_ENTITY_GENERATOR_STALE_SDSM_THRESH_MS
 
 mkdir -p $VUG_ADAPTER_LOG_PATH
