@@ -63,3 +63,4 @@ config/*.log
 # ignore jsonl log files
 *.jsonl
 
+SIMDIS_Files
