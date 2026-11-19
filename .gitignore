@@ -1,0 +1,88 @@
+#ignore data and pycache for j2735 decoder
+scripts/encoding_decoding_tools/J2735_pcap_decoder/data/
+scripts/encoding_decoding_tools/decode_single_packet/decoded_packet.json
+
+#ignore log directories
+logs/
+
+#ignore all pycache
+**/__pycache__/
+
+#ignore venv
+venv/
+
+#ignore all pcap and sqlite data files
+**.pcap
+**.sqlite
+
+#ignore decoded jsons
+scripts/encoding_decoding_tools/decode_single_packet/*.json
+scripts/encoding_decoding_tools/encode_single_packet/*.json
+
+#ignore net.xml and xodr in Sumo util as we are likely just converting
+scripts/carla_python_scripts/Sumo/util/*.net.xml
+scripts/carla_python_scripts/Sumo/util/*.xodr
+
+#ignore the usdotfhwastol_token file for downloading private code
+docker/build/usdotfhwastol_token
+
+#ignore scripts working dir
+scripts/carla_python_scripts/misc
+
+#ignore SDSM.py because contains paid ASN1
+scripts/**/SDSM.py
+
+#intelliJ files
+.idea/
+
+#waypoint output files
+scripts/carla_python_scripts/waypoint_files/
+scripts/json_scripts/old_waypoints
+
+#performance analysis outputs
+scripts/performance_analysis/results/
+scripts/performance_analysis/generated_import_files/
+scripts/performance_analysis/performance_analysis.log
+
+# ignore docker lib files
+docker/build/lib/BUILD
+docker/build/lib/COPY/VUG_Adapters
+docker/build/lib/COPY/CARLA*
+docker/build/lib/MAPS/*
+!docker/build/lib/MAPS/.gitkeep
+docker/build/lib/MAPS_915
+docker/build/lib/OLD
+docker/build/lib/CARLA_TFHRC
+
+#ignore site configs except the default
+config/site_config/*
+!config/site_config/default_site.config
+
+# ignore config backups
+config/site_config/*.bak
+config/scenario_config/*.bak
+
+# ignore config validation logs
+config/*.log
+
+# ignore jsonl log files
+*.jsonl
+
+# ignore generated png files
+scripts/utils/*.png
+scripts/performance_analysis/**/*.png
+
+# ignore generated csv files
+scripts/performance_analysis/**/*.csv
+
+# ignore generated json files
+scripts/performance_analysis/**/*.json
+
+# ignore generated log files
+scripts/performance_analysis/**/*.log
+
+# ignore virtual environments
+*.venv/
+
+# ignore v2xhub secrets
+docker/build/dt-v2xhub/secrets

@@ -1,0 +1,9 @@
+[Desktop Entry]
+Path=/home/voices/voices-poc/scripts/carla_python_scripts/
+Exec='/home/voices/voices-poc/scripts/carla_python_scripts/first_person_live_vehicle.py'
+Icon=/home/voices/voices-poc/scripts/carla_python_scripts/ubuntu_desktop_shortcuts/first_person.png
+Name=Live Vehicle First Person View
+Comment=Start a CARLA pygame first person view of the Live CARLA Vehicle
+Encoding=UTF-8
+Type=Application
+#Terminal=false

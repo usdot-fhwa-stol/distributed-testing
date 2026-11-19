@@ -1,0 +1,116 @@
+<?xml version="1.0.0" encoding="UTF-8"?>
+<scenario>
+  <identifier>
+    <name>DEFAULT</name>
+  </identifier>
+  <OpenDrive>
+    <MapFileName name="Town10HD_Opt.xodr">
+      <MapOrigin latitudeInDegrees="0" longitudeInDegrees="0" heightAboveEllipsoidInMeters="0"> </MapOrigin>
+    </MapFileName>
+  </OpenDrive>
+
+  <vehicles>
+      
+    <vehicle name="DEFAULT-M-1" bsmid="f03ad610" type="vehicle.lincoln.mkz" simulationIdentifier="CARLA-DEFAULT-1" material="Aluminum" lvcIndicator="Constructive" generate_bsms="true" organization="DEFAULT">
+        <initialTSPI>
+            <GeodeticPosition latitudeInDegrees="0.001800" longitudeInDegrees="0.001122" heightAboveEllipsoidInMeters="1"> </GeodeticPosition>
+            <Heading>21.85235</Heading>
+        </initialTSPI>
+    </vehicle>
+  </vehicles>
+
+  <pedestrians>
+    <pedestrian name="DEFAULT-P-1" safetyid="12345678" type="walker.pedestrian.0015" cosimulationIdentifier="CARLA-DEFAULT-1" identifierType="psm" organization="DEFAULT" lvcIndicator="Live">
+      <initialTSPI>
+        <GeodeticPosition latitudeInDegrees="0.001532" longitudeInDegrees="0.001931" heightAboveEllipsoidInMeters="1"> </GeodeticPosition>
+        <Heading>38</Heading>
+      </initialTSPI>
+    </pedestrian>
+  </pedestrians>
+
+  <radios>
+    <radio name="DEFAULT-R-1" adapterIdentifier="GNSSEMU-1" lvcIndicator="Live" organization="DEFAULT" scmsEnrolled="true">
+      <initialTSPI>
+        <GeodeticPosition latitudeInDegrees="0.002066" longitudeInDegrees="0.002291" heightAboveEllipsoidInMeters="1"> </GeodeticPosition>
+        <Heading>90</Heading>
+      </initialTSPI>
+    </radio>
+  </radios>
+
+  <intersectionSignalControllers>
+      <intersectionSignalController name="Town10_01" adapterName="SPAT-1" lvcIndicator="Live">
+        <controller name="" id="1"/>
+      </intersectionSignalController>
+  
+      <intersectionSignalController name="Town10_02" adapterName="SPAT-1" lvcIndicator="Live">
+        <controller name="" id="2"/>
+      </intersectionSignalController>
+  
+      <intersectionSignalController name="Town10_03" adapterName="SPAT-1" lvcIndicator="Live">
+        <controller name="" id="3"/>
+      </intersectionSignalController>
+  
+      <intersectionSignalController name="Town10_04" adapterName="SPAT-1" lvcIndicator="Live">
+        <controller name="" id="4"/>
+      </intersectionSignalController>
+  
+      <intersectionSignalController name="Town10_05" adapterName="SPAT-1" lvcIndicator="Live">
+        <controller name="" id="5"/>
+      </intersectionSignalController>
+  </intersectionSignalControllers>
+  
+  <phaseSignalMappings>
+      <configuration name="Town10_01 Configuration" controllerName="Town10_01">
+        <GeodeticPosition latitudeInDegrees="0.000527" longitudeInDegrees="-0.000419" heightAboveEllipsoidInMeters="0"/>
+        <mapping signalId="945" phase="6"/>
+        <mapping signalId="944" phase="4"/>
+        <mapping signalId="943" phase="2"/>
+      </configuration>
+  
+      <configuration name="Town10_02 Configuration" controllerName="Town10_02">
+        <GeodeticPosition latitudeInDegrees="-0.000183" longitudeInDegrees="-0.000427" heightAboveEllipsoidInMeters="0"/>
+        <mapping signalId="949" phase="4"/>
+        <mapping signalId="951" phase="5"/>
+        <mapping signalId="952" phase="7"/>
+        <mapping signalId="950" phase="2"/>
+      </configuration>
+  
+      <configuration name="Town10_03 Configuration" controllerName="Town10_03">
+        <GeodeticPosition latitudeInDegrees="-0.001211" longitudeInDegrees="-0.000543" heightAboveEllipsoidInMeters="0"/>
+        <mapping signalId="954" phase="6"/>
+        <mapping signalId="953" phase="4"/>
+      </configuration>
+  
+      <configuration name="Town10_04 Configuration" controllerName="Town10_04">
+        <GeodeticPosition latitudeInDegrees="-0.000231" longitudeInDegrees="0.000957" heightAboveEllipsoidInMeters="0"/>
+        <mapping signalId="959" phase="3"/>
+        <mapping signalId="957" phase="6"/>
+        <mapping signalId="958" phase="2"/>
+      </configuration>
+  
+      <configuration name="Town10_05 Configuration" controllerName="Town10_05">
+        <GeodeticPosition latitudeInDegrees="-0.000133" longitudeInDegrees="-0.000998" heightAboveEllipsoidInMeters="0"/>
+        <mapping signalId="960" phase="4"/>
+        <mapping signalId="962" phase="1"/>
+        <mapping signalId="961" phase="6"/>
+      </configuration>
+  </phaseSignalMappings>
+  
+  <simulations>
+    <simulation name="DEFAULT-1" type="CARLA">
+      <WeatherState>ClearNoon</WeatherState>
+    </simulation>
+  </simulations>
+
+  <routes>
+    <route name="DEFAULT-Route-1" entityIdentifier="DEFAULT-R-1" csvRoute="route_files/test_route.csv"/>
+    <route name="DEFAULT-Route-2" entityIdentifier="DEFAULT-P-1">
+      <waypoint latitudeInDegrees="0.000000000" longitudeInDegrees="0.000000000" heightAboveEllipsoidInMeters="1" heading="90.0" time="0"/>
+      <waypoint latitudeInDegrees="0.000000000" longitudeInDegrees="0.000080317" heightAboveEllipsoidInMeters="1" heading="90.0" time="1"/>
+      <waypoint latitudeInDegrees="0.000000000" longitudeInDegrees="0.000160633" heightAboveEllipsoidInMeters="1" heading="90.0" time="2"/>
+      <waypoint latitudeInDegrees="0.000000000" longitudeInDegrees="0.000240950" heightAboveEllipsoidInMeters="1" heading="90.0" time="3"/>
+      <waypoint latitudeInDegrees="0.000000000" longitudeInDegrees="0.000321266" heightAboveEllipsoidInMeters="1" heading="90.0" time="4"/>
+      <waypoint latitudeInDegrees="0.000000000" longitudeInDegrees="0.000401583" heightAboveEllipsoidInMeters="1" heading="90.0" time="5"/>
+    </route>
+  </routes>
+</scenario>

@@ -1,0 +1,9 @@
+[Desktop Entry]
+Path=/home/voices/voices-poc/scripts/carla_python_scripts/
+Exec='/home/voices/voices-poc/scripts/carla_python_scripts/manual_control_steeringwheel_ff.py'
+Icon=/home/voices/voices-poc/scripts/carla_python_scripts/ubuntu_desktop_shortcuts/wheel.png
+Name=CARLA Manual Control Wheel
+Comment=Start a CARLA pygame manual control session using the steering wheel
+Encoding=UTF-8
+Type=Application
+#Terminal=false

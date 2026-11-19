@@ -1,0 +1,59 @@
+# syntax=docker/dockerfile:1
+#
+# BUILD COMMAND: ./build-image.sh dt-v2xhub
+#
+# V2X-Hub's own build-environment stage (via the v2xhub-build-dependencies context) plus TENA plus
+# TenaV2XPlugin's source, dropped into src/v2i-hub/ as a native plugin -- V2X-Hub's own
+# src/v2i-hub/CMakeLists.txt auto-discovers it there, so their own Dockerfile needs no changes.
+#
+# Used two ways: as the devcontainer image (bind-mount the plugin source over the injected copy and
+# build interactively), and as a drop-in replacement for V2X-Hub's own build-environment stage in
+# docker-bake.hcl's dt-v2xhub-image target -- their own "dependencies" and "v2xhub" stages then run
+# unmodified on top of it.
+#
+# TENA's cmake files resolve from $ENV{TENA_HOME}/$ENV{TENA_VERSION}/$ENV{TENA_PLATFORM}, so setting
+# those as ENV is enough for V2X-Hub's own ./build.sh to find TENA with no changes on their side.
+#
+# TENA lives under /opt/TENA so V2X-Hub's own final "v2xhub" stage's existing
+# `COPY --from=dependencies /opt/ /opt/` line sweeps its runtime .so files into the production image
+# for free. /home/plugin/TENA is just a symlink to it, kept because the plugin repo's own devcontainer
+# tooling hardcodes that path.
+FROM v2xhub-build-dependencies AS tena-v2xhub-build-dependencies
+ARG J2735_VERSION
+ARG TENA_VERSION
+ARG PLUGIN_REPO
+ARG PLUGIN_REF
+
+# ENV, not just ARG, for TENA_VERSION and J2735_VERSION -- ARG doesn't survive into V2X-Hub's own
+# later "dependencies" stage, which runs ./build.sh using both without redeclaring them itself.
+ENV CMAKE_PREFIX_PATH=/opt/TENA/lib/cmake:${CMAKE_PREFIX_PATH:-} \
+    TENA_HOME=/opt/TENA \
+    TENA_VERSION=${TENA_VERSION} \
+    TENA_PLATFORM=u2204-gcc11-64 \
+    J2735_VERSION=${J2735_VERSION}
+
+# database.sh creates the plugin user (idempotent) and its home dir, needed before /home/plugin/TENA
+# can be symlinked in below.
+RUN /home/V2X-Hub/container/database.sh && \
+    /home/V2X-Hub/container/library.sh && \
+    ldconfig
+
+COPY --from=tena-source --chown=plugin:nogroup /home/dt_user/TENA /opt/TENA
+RUN ln -s /opt/TENA /home/plugin/TENA
+
+# postinst baked dt-build-general's own /home/dt_user path into TENA's scripts (e.g. tenaenv.sh
+# hardcodes and re-exports TENA_HOME regardless of what's already set) -- repoint them at /opt (where
+# this image actually keeps TENA) so TENA_HOME still resolves correctly if anything sources them.
+RUN grep -rlZ '/home/dt_user' /opt/TENA | xargs -0r sed -i 's#/home/dt_user#/opt#g'
+
+# --mount=type=secret (not a git-URL context) so the token never appears in the build log, which only
+# shows this literal command text, never the expanded value.
+RUN --mount=type=secret,id=GIT_AUTH_TOKEN,required=true \
+    TOKEN="$(cat /run/secrets/GIT_AUTH_TOKEN)" && [ -n "$TOKEN" ] || \
+        { echo "ERROR: GIT_AUTH_TOKEN build secret is missing or empty" >&2; exit 1; }; \
+    AUTH="$(printf 'x-access-token:%s' "$TOKEN" | base64 -w0)" && \
+    git -c "http.https://github.com/.extraheader=AUTHORIZATION: basic ${AUTH}" \
+        clone --quiet "https://${PLUGIN_REPO#https://}" /tmp/plugin && \
+    git -C /tmp/plugin checkout --quiet "$PLUGIN_REF" && \
+    cp -r /tmp/plugin/TenaV2XPlugin /home/V2X-Hub/src/v2i-hub/TenaV2XPlugin && \
+    rm -rf /tmp/plugin
