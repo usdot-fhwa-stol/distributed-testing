@@ -29,7 +29,7 @@ env:
 
 jobs:
   determine_docker_org_and_tag:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-26.04
     steps:
       - name: Determine Docker organization and tag
         id: docker-org-and-tag
@@ -59,7 +59,7 @@ jobs:
 
   # Shared prerequisite: dt-core and dt-v2xhub FROM dt-base and/or build against dt-build-general.
   build-dt-base-general:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-26.04
     needs: determine_docker_org_and_tag
     env:
       DOCKER_ORG: ${{ needs.determine_docker_org_and_tag.outputs.docker_org }}
@@ -134,7 +134,7 @@ jobs:
   # Split from build-dt-base-general so the ~7min push runs in parallel with the downstream
   # build jobs instead of blocking them (they only need the artifact, not the push).
   push-dt-base-general:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-26.04
     if: needs.determine_docker_org_and_tag.outputs.publish == 'true' && github.event_name != 'pull_request'
     needs: [determine_docker_org_and_tag, build-dt-base-general]
     env:
@@ -186,7 +186,7 @@ jobs:
 
   # Package release adapters in dt-core.
   build-and-push-dt-core:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-26.04
     needs: [determine_docker_org_and_tag, build-dt-base-general]
     env:
       DOCKER_ORG: ${{ needs.determine_docker_org_and_tag.outputs.docker_org }}
@@ -306,7 +306,7 @@ jobs:
 
   # The simulator uses CARLA's image directly and does not need the DT base images.
   build-and-push-dt-carla:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-26.04
     needs: determine_docker_org_and_tag
     env:
       DOCKER_ORG: ${{ needs.determine_docker_org_and_tag.outputs.docker_org }}
@@ -345,7 +345,7 @@ jobs:
 
   # Build both the V2X Hub runtime and development images.
   build-and-push-dt-v2xhub:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-26.04
     needs: [determine_docker_org_and_tag, build-dt-base-general]
     env:
       DOCKER_ORG: ${{ needs.determine_docker_org_and_tag.outputs.docker_org }}
