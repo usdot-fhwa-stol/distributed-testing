@@ -207,16 +207,16 @@ try:
     
     
     
-    int_2_center = carla.Location(x=-44.09, y=44.07, z=0.2)
+    int_2_center = carla.Location(x=-477.5, y=771.0, z=0.2)
     # print(f'I2 Center: {int_2_center}')
     int_2_center_geo = world.get_map().transform_to_geolocation(int_2_center)
     # print(f'I2 Center Geo: {int_2_center_geo}')
     
-    draw_world_axes(world,origin=int_2_center, life_time=30)
+    draw_world_axes(world,origin=int_2_center, life_time=5)
     
     # dbg.draw_string(int_2_center, "o", False, carla.Color(255, 0, 0), 5)
     
-    # follow_vehicle_axes(world, role_name="FHWA-JSON-3", length=8.0, life_time=0.1)
+    follow_vehicle_axes(world, role_name="FHWA-JSON-3", length=8.0, life_time=0.1)
 
 finally:
     print('\nDone!')
