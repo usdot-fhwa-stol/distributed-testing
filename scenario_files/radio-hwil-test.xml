@@ -1,0 +1,60 @@
+<?xml version="1.0.0" encoding="UTF-8"?>
+<scenario>
+  <identifier>
+    <name>HWIL GNSS Emulator Test</name>
+  </identifier>
+  <OpenDrive>
+    <MapFileName name="Town04.xodr">
+      <MapOrigin latitudeInDegrees="0" longitudeInDegrees="0" heightAboveEllipsoidInMeters="0"> </MapOrigin>
+    </MapFileName>
+  </OpenDrive>
+
+  <radios>
+    <radio
+        name="DT4-R-1"
+        lvcIndicator="Live"
+        simulationIdentifier="CARLA-DT4-1"
+        adapterIdentifier="DT4-R-1"
+        organization="DT4"
+        scmsEnrolled="true">
+      <initialTSPI>
+        <GeodeticPosition
+            latitudeInDegrees="0.002066"
+            longitudeInDegrees="0.002291"
+            heightAboveEllipsoidInMeters="1">
+        </GeodeticPosition>
+        <Heading>90</Heading>
+      </initialTSPI>
+    </radio>
+    <radio
+        name="DT5-R-1"
+        lvcIndicator="Live"
+        simulationIdentifier="CARLA-DT5-1"
+        adapterIdentifier="DT5-R-1"
+        organization="DT5"
+        scmsEnrolled="true">
+      <initialTSPI>
+        <GeodeticPosition
+            latitudeInDegrees="0.002066"
+            longitudeInDegrees="0.002291"
+            heightAboveEllipsoidInMeters="1">
+        </GeodeticPosition>
+        <Heading>90</Heading>
+      </initialTSPI>
+    </radio>
+  </radios>
+
+  <simulations>
+    <simulation name="DT4-1" type="CARLA">
+      <WeatherState>ClearNoon</WeatherState>
+    </simulation>
+    <simulation name="DT5-1" type="CARLA">
+      <WeatherState>ClearNoon</WeatherState>
+    </simulation>
+  </simulations>
+
+  <routes>
+    <route name="DT4-Route-1" entityIdentifier="DT4-R-1" csvRoute="route_files/test_route.csv"/>
+    <route name="DT5-Route-1" entityIdentifier="DT5-R-1" csvRoute="route_files/test_route.csv"/>
+  </routes>
+</scenario>

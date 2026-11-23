@@ -1,0 +1,33 @@
+
+R1
+
+Start:   2024-04-05 17:28:33
+End:   2024-04-05 17:32:15
+
+ - FHWA did not generate BSMs for unknown reason 
+
+R2
+
+Start:   2024-04-05 17:52:50
+End:   2024-04-05 17:55:37
+
+R3
+
+Start:   2024-04-05 18:07:28
+End:   2024-04-05 18:11:29
+
+R4
+
+Start:   2024-04-05 18:21:53
+End:   2024-04-05 18:25:49
+
+
+R5
+
+Start:   2024-04-05 18:33:58
+End:   2024-04-05 18:37:42
+
+
+ALL:
+
+ - ANL always has two TDCS sqlite files?

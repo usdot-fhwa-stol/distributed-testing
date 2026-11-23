@@ -1,0 +1,39 @@
+#
+# BUILD COMMAND: VERSION=0.0.1 && sudo DOCKER_BUILDKIT=1 docker build --build-arg version=$VERSION -t harbor.distributedtesting.org/distributed-testing/dt-carla:$VERSION . --progress=plain -f dt-carla_Dockerfile
+#
+
+FROM carlasim/carla:0.10.0
+
+ARG VERSION
+
+LABEL version=${VERSION} \
+    description="Distributed Testing Docker image for CARLA including event maps"
+
+SHELL ["/bin/bash", "-ec"]
+
+ARG DEBIAN_FRONTEND="noninteractive"
+ARG TZ="America/New_York"
+
+COPY ./lib/MAPS /MAPS
+
+USER root
+
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+    python3-dev python3-pip && \
+    rm -rf /var/lib/apt/lists/*
+
+COPY --chown=carla:carla ./lib/COPY/start_scripts              /home/carla/start_scripts
+COPY --chown=carla:carla ./lib/COPY/.dt_site_config_docker     /home/carla/.dt_site_config_docker
+COPY --chown=carla:carla ./lib/COPY/.dt_scenario_config_docker /home/carla/.dt_scenario_config_docker
+
+RUN chmod +x /home/carla/start_scripts/*
+
+USER carla
+
+RUN pip3 install --no-cache-dir --user --upgrade pip setuptools wheel && \
+    pip3 install --no-cache-dir --user /home/carla/PythonAPI/carla/dist/carla-0.10.0-cp310-cp310-linux_x86_64.whl
+
+RUN echo 'source /home/carla/start_scripts/setup-carla-docker.sh' >> /home/carla/.bashrc
+
+CMD ["/bin/bash", "-l", "-c", "/home/carla/start_scripts/startup-carla.sh"]

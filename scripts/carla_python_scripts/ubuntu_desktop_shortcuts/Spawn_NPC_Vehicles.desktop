@@ -1,0 +1,9 @@
+[Desktop Entry]
+Path=/home/voices/voices-poc/scripts/carla_python_scripts
+Exec='/home/voices/voices-poc/scripts/carla_python_scripts/spawn_npc.py'
+Icon=/home/voices/voices-poc/scripts/carla_python_scripts/ubuntu_desktop_shortcuts/vehicles.png
+Name=Spawn NPC Vehicles
+Comment=Add NPC vehicles to the CARLA simulator
+Encoding=UTF-8
+Type=Application
+#Terminal=True

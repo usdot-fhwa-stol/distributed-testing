@@ -1,0 +1,89 @@
+<?xml version="1.0.0" encoding="UTF-8"?>
+<scenario>
+  <identifier>
+    <name>Integration Test 4</name>
+  </identifier>
+  <OpenDrive>
+    <MapFileName name="Town04.xodr">
+      <MapOrigin latitudeInDegrees="0.0" longitudeInDegrees="0.0" heightAboveEllipsoidInMeters="0"> </MapOrigin>
+    </MapFileName>
+  </OpenDrive>
+
+  <vehicles>
+    <vehicle name="annika-M-1" bsmid="f03ad620" type="vehicle.audi.etron" owner="CARLA-annika-1" material="Aluminum" lvcIndicator="Constructive">
+        <userData>
+            <CARLA manual="true" generate_bsms="true"></CARLA>
+        </userData>
+        <initialTSPI>
+            <GeodeticPosition latitudeInDegrees="0.002066" longitudeInDegrees="0.002291" heightAboveEllipsoidInMeters="1"> </GeodeticPosition>
+            <Heading>90</Heading>
+        </initialTSPI>
+    </vehicle>
+
+    <vehicle name="FHWA-M-3" bsmid="0a000000" type="vehicle.mustang.mustang" owner="CARLA-FHWA-3" material="Aluminum" lvcIndicator="Live">
+        <initialTSPI>
+            <GeodeticPosition latitudeInDegrees="0.001532" longitudeInDegrees="0.001931" heightAboveEllipsoidInMeters="1"> </GeodeticPosition>
+            <Heading>38</Heading>
+        </initialTSPI>
+    </vehicle>
+    <!-- <vehicle name="annika-M-1" bsmid="f03ad620" type="vehicle.audi.etron" owner="CARLA-annika-1" material="Aluminum" lvcIndicator="Constructive">
+        <userData>
+            <CARLA manual="true" generate_bsms="true"></CARLA>
+        </userData>
+        <initialTSPI>
+            <GeodeticPosition latitudeInDegrees="38.955812" longitudeInDegrees="-77.151061" heightAboveEllipsoidInMeters="75"> </GeodeticPosition>
+            <Heading>90</Heading>
+        </initialTSPI>
+    </vehicle>
+
+    <vehicle name="FHWA-M-3" bsmid="0a000000" type="vehicle.mustang.mustang" owner="CARLA-FHWA-3" material="Aluminum" lvcIndicator="Live">
+        <initialTSPI>
+            <GeodeticPosition latitudeInDegrees="38.955886" longitudeInDegrees="-77.151224" heightAboveEllipsoidInMeters="75"> </GeodeticPosition>
+            <Heading>38</Heading>
+        </initialTSPI>
+    </vehicle> -->
+  </vehicles>
+
+  <intersectionSignalControllers>
+  <!--                           this should be used as identifier -->
+    <intersectionSignalController name="Town04_Main" adapterType="spat-adapter" adapterName="SPAT-1" lvcIndicator="Live">
+      <userData>
+        <CARLA>
+          <controllers>
+          <!--     this is spat linking, we only use ID as name isnt required  -->
+          <!--   in future, maybe we try to check for both, but just ID for now-->
+            <controller name="" id="549"/>
+          </controllers>      
+        </CARLA>
+      </userData>
+    </intersectionSignalController>
+  </intersectionSignalControllers>
+
+  <phaseSignalMappings>
+  <!-- name of config doesnt matter, match controllerName with intersectionSignalController name  -->
+    <controllerMapping name="Town04_Main Configuration" controllerName="Town04_Main">
+
+        <trafficSignalPhase phase="4" >
+            <trafficSignalHead signalHeadID="1629"/>
+        </trafficSignalPhase>
+        <!-- propogate above change to these as well -->
+        <phaseSignalPair phase="2" signalId="1628"/>
+        <phaseSignalPair phase="8" signalId="1627"/>
+        <phaseSignalPair phase="6" signalId="1626"/>
+
+    </controllerMapping>
+
+
+  </phaseSignalMappings>
+
+  <simulations>
+    <simulation name="CARLA-annika-1" type="CARLA">
+      <WeatherState>ClearNoon</WeatherState>
+    </simulation>
+
+    <simulation name="CARLA-FHWA-3" type="CARLA">
+      <WeatherState>ClearNoon</WeatherState>
+    </simulation>
+  </simulations>
+
+</scenario>

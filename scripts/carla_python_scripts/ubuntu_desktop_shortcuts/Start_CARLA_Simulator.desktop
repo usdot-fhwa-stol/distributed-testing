@@ -1,0 +1,9 @@
+[Desktop Entry]
+Path=/home/voices/carla/BuiltEngines/CARLA_0.9.10_TFHRC_Ubuntu_20210110
+Exec='/home/voices/carla/BuiltEngines/CARLA_0.9.10_TFHRC_Ubuntu_20210110/CarlaUE4.sh'
+Icon=/home/voices/voices-poc/scripts/carla_python_scripts/ubuntu_desktop_shortcuts/voices.png
+Name=CARLA Simulator
+Comment=Start CARLA Simulator
+Encoding=UTF-8
+Type=Application
+#Terminal=false

@@ -1,0 +1,548 @@
+#!/bin/bash
+
+source ~/.dt_site_config
+source ~/.dt_scenario_config
+
+username=$(whoami)
+
+function print_help {
+	local script_name=$(basename "$0")
+	echo
+	echo "Usage: $script_name [OPTIONS]"
+	echo
+	echo "Builds TENA adapters and related applications for Distributed Testing using Docker."
+	echo
+	echo "Options:"
+	echo "    --app_index <index>   Build a specific app based on the index (see list below)."
+	echo "    --release             Build the release version of the source code."
+	echo "                          (Cannot be used with --debug)"
+	echo "    --debug               Build the debug version of the source code."
+	echo "                          (Cannot be used with --release)"
+	echo "    --no_branch_change    Do not prompt to change repository branches."
+	echo "    --branch <name>       Switch to the specified branch."
+	echo "    --no_pull             Do not prompt to pull the latest code from the repository."
+	echo "    --no_docker_rebuild   Do not pull/rebuild the build Docker container."
+	echo "    --auto_download       Automatically download the repository if it is missing."
+	echo "    --help                Show this help message and exit."
+	echo
+	echo "Application Indices:"
+	echo "    [1]  vug-threads-library"
+	echo "    [2]  vug-udp-protocolio"
+	echo "    [3]  vug-scenario-publisher"
+	echo "    [4]  vug-carla-adapter"
+	echo "    [5]  vug-v2x-adapter"
+	echo "    [6]  vug-entity-generator"
+	echo "    [7]  vug-v2xhub-v2x-plugin"
+	echo "    [8]  vug-radio-adapter"
+	echo
+	echo "Examples:"
+	echo "    # Build vug-carla-adapter in release mode:"
+	echo "    $script_name --app_index 4 --release"
+	echo
+	echo "    # Build vug-threads-library in debug mode without pulling latest code:"
+	echo "    $script_name --app_index 1 --debug --no_pull"
+	echo
+}
+
+
+arg_no_branch_change=false
+arg_no_pull=false
+arg_release_or_debug=false
+arg_app_index=''
+arg_branch=''
+arg_auto_download=false
+
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --no_branch_change)
+      arg_no_branch_change=true
+      shift
+      ;;
+    --branch)
+      arg_branch="$2"
+      shift
+      shift
+      ;;
+    --no_pull)
+      arg_no_pull=true
+      shift
+      ;;
+    --auto_download)
+      arg_auto_download=true
+      shift
+      ;;
+    --app_index)
+      arg_app_index="$2"
+      shift
+      shift
+      ;;
+    --release)
+      if [ ! "$arg_release_or_debug" = false ]; then
+        echo "ERROR: --release or --debug flag used more than once"
+        print_help
+        exit 1
+      fi
+      arg_release_or_debug=1
+      releaseOrDebug=1
+      shift
+      ;;
+    --debug)
+      if [ ! "$arg_release_or_debug" = false ]; then
+        echo "ERROR: --release or --debug flag used more than once"
+        print_help
+        exit 1
+      fi
+      arg_release_or_debug=2
+      releaseOrDebug=2
+      shift
+      ;;
+    --help)
+      print_help
+      exit
+      ;;
+
+    *)
+      echo "Invalid argument: $1"
+      print_help
+      exit 1
+      ;;
+  esac
+done
+
+#-------------------| LOCAL VARIABLES |-------------------#
+# localTenaDir=$VUG_LOCAL_TENA_PATH
+# localTenaPackageDownloadDir=/home/$username/Downloads/TENA	#location of the TENA dependency packages
+VUG_LOCAL_TENADEV_DIR=$VUG_LOCAL_TENADEV_DIR			#location of local tenadev
+localInstallDir=$VUG_LOCAL_INSTALL_PATH		#location to install/build TENA adapters
+localDTDir=$VUG_LOCAL_DT_PATH
+numBuildJobs="${TENA_BUILD_JOBS:-4}"    # number of build jobs to speed up compilation
+#---------------------------------------------------------#
+
+# Ensure the install directory exists so Docker doesn't create it as root
+mkdir -p "$localInstallDir"
+chmod 777 "$localInstallDir"
+
+#-------------------| TENA VARIABLES |-------------------#
+tenaVersion=6.0.11
+tenaBuildVersion=u2204-gcc11-64
+# VUG_TENA_SOURCE_SCRIPT_FILE=$VUG_TENA_SOURCE_SCRIPT_FILE
+#--------------------------------------------------------#
+
+
+#-------------------| REMOTE VARIABLES |-------------------#
+#-------------------|  DO NOT CHANGE   |-------------------#
+# remoteDownloadsDir=/home/Downloads 		#DO NOT CHANGE: internal docker directory mapped to localTenaPackageDownloadDir
+remoteTenaDir=/home/dt_user/TENA			#DO NOT CHANGE: internal docker directory mapped to localTenaDir
+remoteInstallDir=/home/dt_user/INSTALL		#DO NOT CHANGE: internal docker directory mapped to localInstallDir	
+remoteCarlaDir=/home/dt_user/carla
+remoteCarlaBuildDir=$remoteCarlaDir/Build
+#--------------------------------------------------------#
+
+middlewareVersion="MiddlewareSDK-v6.0.11"
+
+# boostVersion="TENA_boost_1.77.0.1_Library"
+# vugCombinedVersion="VUG-Combined-v1.0.0"
+
+
+vugThreadsVersion="vug-threads-2.2.0"
+vugUdpProtocolioVersion="vug-udp-protocolio-2.2.1"
+
+vug_carla_adapter_name="vug-carla-adapter"
+
+if [[ -n "$arg_app_index" ]]; then
+	tenaAppIndex=$arg_app_index
+else
+	echo
+	echo "What application would you like to install? [#]" 
+	echo 
+	echo "    [1]  vug-threads-library"
+	echo "    [2]  vug-udp-protocolio"
+	echo "    [3]  vug-scenario-publisher"
+	echo "    [4]  $vug_carla_adapter_name"
+	echo "    [5]  vug-v2x-adapter"
+	echo "    [6]  vug-entity-generator"
+	echo "    [7]  vug-v2xhub-v2x-plugin"
+	echo "    [8]  vug-radio-adapter"
+	echo
+	read -p "--> " tenaAppIndex
+fi
+
+carlaTenaAdapterGitUrl="git@github.com:usdot-fhwa-stol/vug-carla-adapter.git"
+# Load shared Docker image configuration for local builds.
+DT_ENV="$(dirname "${BASH_SOURCE[0]}")/../../docker/.env"
+
+if [[ -f "$DT_ENV" ]]; then
+    source "$DT_ENV"
+fi
+
+buildGeneralImage="${VUG_BUILD_GENERAL_IMAGE:-${DT_REGISTRY:-harbor.distributedtesting.org/distributed-testing}/dt-build-general:${DT_IMAGE_TAG:-develop}}"
+
+buildCarlaImage="${VUG_BUILD_CARLA_IMAGE:-${DT_REGISTRY:-harbor.distributedtesting.org/distributed-testing}/dt-build-carla:${DT_IMAGE_TAG:-develop}}"
+buildV2xImage="usdotfhwaops/v2xhubamd:dt-P-1.1.0"
+
+if [[ $tenaAppIndex == 1 ]]; then
+	tenaApp=vug-threads-library
+	gitCloneUrl="git@github.com:usdot-fhwa-stol/vug-threads-library.git"
+	dockerContainer=$buildGeneralImage
+	remoteAppDir=/home/dt_user/$tenaApp	#DO NOT CHANGE: internal docker directory mapped to localAppDir
+	isV2xhubPlugin=false
+	requiresProtocolio=false
+	defaultBranch='develop'
+	noBuildVersion=true
+	applicationFolderName=vug-threads
+
+elif [[ $tenaAppIndex == 2 ]]; then
+	tenaApp=vug-udp-protocolio
+	gitCloneUrl="git@github.com:usdot-fhwa-stol/vug-udp-protocolio.git"
+	dockerContainer=$buildGeneralImage
+	remoteAppDir=/home/dt_user/$tenaApp	#DO NOT CHANGE: internal docker directory mapped to localAppDir
+	isV2xhubPlugin=false
+	requiresProtocolio=false
+	defaultBranch='develop'
+	noBuildVersion=true
+	applicationFolderName=vug-udp-protocolio
+
+elif [[ $tenaAppIndex == 3 ]]; then
+	tenaApp=vug-scenario-publisher
+	gitCloneUrl="git@github.com:usdot-fhwa-stol/vug-scenario-publisher.git"
+	dockerContainer=$buildGeneralImage
+	remoteAppDir=/home/dt_user/$tenaApp	#DO NOT CHANGE: internal docker directory mapped to localAppDir
+	isV2xhubPlugin=false
+	requiresProtocolio=false
+	defaultBranch='develop'
+	noBuildVersion=false
+	applicationFolderName=vug-scenario-publisher
+
+elif [[ $tenaAppIndex == 4 ]]; then
+	tenaApp=$vug_carla_adapter_name
+	gitCloneUrl=$carlaTenaAdapterGitUrl
+	dockerContainer=$buildCarlaImage
+	remoteAppDir=/home/dt_user/$tenaApp 			#DO NOT CHANGE: internal docker directory mapped to localAppDir
+	isV2xhubPlugin=false
+	requiresProtocolio=false
+	defaultBranch='develop'
+	noBuildVersion=false
+	applicationFolderName=CARLAtenaAdapter
+
+elif [[ $tenaAppIndex == 5 ]]; then
+	tenaApp=vug-v2x-adapter
+	gitCloneUrl="git@github.com:usdot-fhwa-stol/vug-v2x-adapter.git"
+	dockerContainer=$buildGeneralImage
+	remoteAppDir=/home/dt_user/$tenaApp 			#DO NOT CHANGE: internal docker directory mapped to localAppDir
+	isV2xhubPlugin=false
+	requiresProtocolio=false
+	defaultBranch='develop'
+	noBuildVersion=false
+	applicationFolderName=TENAV2XMessageAdapter
+
+elif [[ $tenaAppIndex == 6 ]]; then
+	tenaApp=vug-entity-generator
+	gitCloneUrl="git@github.com:usdot-fhwa-stol/vug-entity-generator.git"
+	dockerContainer=$buildGeneralImage
+	remoteAppDir=/home/dt_user/$tenaApp	#DO NOT CHANGE: internal docker directory mapped to localAppDir
+	isV2xhubPlugin=false
+	requiresProtocolio=false
+	defaultBranch='develop'
+	noBuildVersion=false
+	applicationFolderName=tena-entity-generator
+
+elif [[ $tenaAppIndex == 7 ]]; then
+	tenaApp=vug-v2xhub-v2x-plugin
+	gitCloneUrl="git@github.com:usdot-fhwa-stol/vug-v2xhub-v2x-plugin.git"
+	dockerContainer=$buildV2xImage
+	remoteAppDir=/home/V2X-Hub/src/$tenaApp	#DO NOT CHANGE: internal docker directory mapped to localAppDir
+	isV2xhubPlugin=true
+	requiresProtocolio=false
+	defaultBranch='develop'
+	noBuildVersion=false
+	applicationFolderName=TenaV2XPlugin
+
+elif [[ $tenaAppIndex == 8 ]]; then
+	tenaApp=vug-radio-adapter
+	gitCloneUrl="git@github.com:usdot-fhwa-stol/vug-radio-adapter.git"
+	dockerContainer=$buildGeneralImage
+	remoteAppDir=/home/dt_user/$tenaApp	#DO NOT CHANGE: internal docker directory mapped to localAppDir
+	isV2xhubPlugin=false
+	requiresProtocolio=false
+	defaultBranch='develop'
+	noBuildVersion=false
+	applicationFolderName=vug-radio-adapter
+
+else
+	echo "Invalid selection, try again..."
+	exit
+fi
+
+if [[ -d $localInstallDir/$applicationFolderName* ]]; then
+	echo "Removing existing adapter build"
+	rm -rf $localInstallDir/$applicationFolderName*
+fi
+
+localAppDir=$VUG_LOCAL_TENADEV_DIR/$tenaApp	#location of git directory of application to be built
+			
+downloadedSource=false
+
+
+if [[ ! -d $localAppDir ]]; then
+	echo
+	if [ "$arg_auto_download" = true ]; then
+		echo "Application directory not found. Auto-downloading..."
+		downloadApp="y"
+	else
+		read -p "Application directory not found. Would you like to download the repository? [y/n] " downloadApp
+	fi
+
+	if [[ ! $downloadApp =~ ^[yY]$ ]]; then
+		echo "Please clone the latest application repository..."
+		exit 1
+	fi
+
+	
+	if [[ -n "$arg_branch" ]]; then
+		branchToDownload=$arg_branch
+	else
+		read -p "What branch would you like to use? [leave blank for $defaultBranch] " branchToDownload
+	fi
+
+	if [[ $branchToDownload == "" ]]; then
+		branchToDownload=$defaultBranch
+	fi
+	
+	git clone $gitCloneUrl -b $branchToDownload $localAppDir || exit
+
+	downloadedSource=true
+else
+	echo "$tenaApp directory found"
+fi
+
+cd $localAppDir
+
+if ! $downloadedSource; then
+	gitCommitId=$(git rev-parse HEAD)
+	gitBranch=$(git rev-parse --abbrev-ref HEAD)
+	gitInfo=$(git show $gitCommitId  | sed 's/^/    /' )
+	gitInfo="$(echo $gitInfo | sed 's/diff .*//' )"
+
+	echo
+	echo Current Branch: $gitBranch
+	
+
+	if [[ -n "$arg_branch" ]]; then
+
+		echo "Switching to branch: $arg_branch"
+		git fetch --tags origin || exit
+		git checkout $arg_branch || exit
+		# A tag leaves HEAD detached with nothing to pull; only pull when on a branch
+		if git symbolic-ref -q HEAD >/dev/null; then
+			git pull || exit
+		fi
+
+	elif [ $arg_no_branch_change == false ]; then
+		echo
+		read -p "Would you like to switch branches? [y/n] " switchBranch
+
+		if [[ $switchBranch =~ ^[yY]$ ]]; then
+			read -p "    Enter the desired branch name --> " newBranch
+			git pull || exit
+			git checkout $newBranch || exit
+			git pull || exit
+		fi
+
+	else
+		if [ $arg_no_pull == false ]; then 
+		
+			echo
+			echo "Current Commit Info:"
+			echo
+			echo "$gitInfo"
+
+			echo
+			read -p "Would you like to pull the latest code? [y/n] " pullLatest
+
+			if [[ $pullLatest =~ ^[yY]$ ]]; then
+				echo
+				git pull || exit
+			fi
+		fi
+	fi
+
+	
+fi
+
+if $noBuildVersion; then
+	buildVersion=""
+	buildVersionCaps=""
+	buildVersionDirArg=""
+	buildVersionCmakeArg=""
+else
+
+	if [ $arg_release_or_debug == false ] ; then
+		echo
+		echo "Would you like to build release or debug? [#]" 
+		echo 
+		echo "    [1]  	release"
+		echo "    [2]  	debug"
+		echo
+		read -p "--> " releaseOrDebug
+	fi
+
+	if [[ $releaseOrDebug == 1 ]]; then
+		buildVersion="release"
+		buildVersionDirArg="-B release"
+		buildVersionCmake="RELEASE"
+		buildVersionCmakeArg="-D CMAKE_BUILD_TYPE=RELEASE"
+		
+	elif [[ $releaseOrDebug == 2 ]]; then
+		buildVersion="debug"
+		buildVersionDirArg="-B debug"
+		buildVersionCmakeArg="-D CMAKE_BUILD_TYPE=DEBUG"
+
+	else
+		echo
+		echo "Invalid selection, try again..."
+		exit
+	fi
+fi
+
+
+##### Look for required packages to be installed
+
+echo
+echo "The looking for packages to be installed:"
+
+#look for VUG Threads
+# set -x
+if [ $tenaApp == "vug-threads-library" ] || [ -d $localInstallDir/$vugThreadsVersion ]; then
+	echo "vug-threads-library found..."
+else
+	echo "vug-threads-library was not found. Please install vug-threads-library"
+	exit
+fi
+
+#look for VUG ProtocolIO
+if $requiresProtocolio; then
+	if [ -d $localInstallDir/$vugUdpProtocolioVersion ]; then
+		echo "ProtocolIO found..."
+	else
+		echo "vug-udp-protocolio was not found. Please install vug-udp-protocolio"
+		exit
+	fi
+fi
+
+#if v2xhub plugin need to build image inside the V2X-Hub dir
+if $isV2xhubPlugin; then
+
+	remoteTenaDir=/home/plugin/TENA			#DO NOT CHANGE: internal docker directory mapped to localTenaDir
+	remoteInstallDir=/home/plugin/INSTALL		#DO NOT CHANGE: internal docker directory mapped to localInstallDir	
+fi
+
+# CI must use the images built in this run, never a stale registry copy.
+if [[ "${VUG_SKIP_DOCKER_PULL:-false}" == "true" ]]; then
+    docker image inspect "$dockerContainer" >/dev/null || exit 1
+else
+    docker pull "$dockerContainer" || exit 1
+fi
+
+#-- Cmake example
+# docker run --rm -v /home/ejslattery/dev/carlaadapter:/home/CarlaAdapter -v /home/ejslattery/dev/tenadev/u1804-gcc75-64/TENA:/home/TENA harbor.distributedtesting.org/distributed-testing/dt-build-carla:latest bash -c "cd /home/CarlaAdapter/build; export TENA_PLATFORM=u1804-gcc75-64; export TENA_HOME=/home/TENA; export TENA_VERSION=6.0.7; export CARLA_HOME=/home/carla; cmake -D CMAKE_EXPORT_COMPILE_COMMANDS=ON -D CMAKE_PREFIX_PATH=/home/TENA/lib/cmake -D BOOST_INCLUDEDIR=/home/TENA/TENA_boost_1.70.0.2_Library/u1804-gcc75-64/include -D VUG_INSTALL_DIR=/home/CarlaAdapter/INSTALL ../"
+#-- Cmake
+
+if [[ -d $localAppDir/build ]]; then
+	rm -rf $localAppDir/build
+fi
+
+mkdir $localAppDir/build
+chmod a+rw $localAppDir/build
+
+echo
+echo "#### Running CMAKE ####"
+echo
+
+additionalBuildEnv=""
+additionalCmakeArgs=""
+
+# CARLA 0.10.0 is built through its native CMake project. Keep these settings
+# scoped to the CARLA adapter so builds for the other adapters remain unchanged.
+if [[ $tenaAppIndex == 4 ]]; then
+    additionalBuildEnv="export CARLA_BUILD_DIR=$remoteCarlaBuildDir; export CC=/usr/bin/gcc-11; export CXX=/usr/bin/g++-11;"
+    additionalCmakeArgs="-D CMAKE_C_COMPILER=/usr/bin/gcc-11 -D CMAKE_CXX_COMPILER=/usr/bin/g++-11 -D CARLA_ROOT=$remoteCarlaDir -D FETCHCONTENT_BASE_DIR=$remoteCarlaBuildDir/_deps"
+fi
+
+if ! ( set -x ; docker run --entrypoint /bin/bash --rm -v $localAppDir:$remoteAppDir  -v $localInstallDir:$remoteInstallDir $dockerContainer -c "set -e; cd $remoteAppDir/build; export TENA_PLATFORM=$tenaBuildVersion; export TENA_HOME=$remoteTenaDir; export TENA_VERSION=$tenaVersion; export CARLA_HOME=$remoteCarlaDir; $additionalBuildEnv cmake -D CMAKE_EXPORT_COMPILE_COMMANDS=ON $additionalCmakeArgs $buildVersionDirArg $buildVersionCmakeArg -D CMAKE_PREFIX_PATH='$remoteTenaDir/lib/cmake;$remoteInstallDir;/opt/carma/cmake;/opt/carma/lib' -D CMAKE_MODULE_PATH='/opt/carma/cmake' -D VUG_INSTALL_DIR=$remoteInstallDir -D tmx-plugin_DIR=/usr/local/share/tmx/ ../" ); then
+	echo
+	echo "[!!!] CMAKE FAILED"
+	exit 1
+fi
+
+echo
+echo "#### CMAKE Complete ####"
+
+#--Make example
+# docker run --rm -v /home/ejslattery/dev/carlaadapter:/home/CarlaAdapter -v /home/ejslattery/dev/tenadev/u1804-gcc75-64/TENA:/home/TENA harbor.distributedtesting.org/distributed-testing/dt-build-carla:latest bash -c "cd /home/CarlaAdapter/build; export TENA_PLATFORM=u1804-gcc75-64; export TENA_HOME=/home/TENA; export TENA_VERSION=6.0.7; export CARLA_HOME=/home/carla; make VERBOSE=1"
+
+#-- make
+if [[ "$skipMake" == true ]]
+	then
+		echo
+		echo "#### Skipping Make ####"
+	else
+		echo
+		echo "#### Running Make ####"
+		
+		echo
+		echo "MAKE COMMAND: "
+		echo
+		if ! ( set -x ; docker run --entrypoint /bin/bash --rm -v $localAppDir:$remoteAppDir  -v $localInstallDir:$remoteInstallDir $dockerContainer -c "set -e; cd $remoteAppDir/build/$buildVersion; export TENA_PLATFORM=$tenaBuildVersion; export TENA_HOME=$remoteTenaDir; export TENA_VERSION=$tenaVersion; export CARLA_HOME=$remoteCarlaDir; make -j $numBuildJobs VERBOSE=1" ); then
+			echo
+			echo "[!!!] MAKE FAILED"
+			exit 1
+		fi
+
+		echo
+		echo "#### Make Complete ####"
+
+		if $isV2xhubPlugin
+			then
+		
+				echo
+				echo "#### Running Make Package ####"
+				
+				echo
+				echo "MAKE PACKAGE COMMAND: "
+				if ! ( set -x ; docker run --entrypoint /bin/bash --rm -v $localAppDir:$remoteAppDir  -v $localInstallDir:$remoteInstallDir $dockerContainer -c "set -e; cd $remoteAppDir/build/$buildVersion; export TENA_PLATFORM=$tenaBuildVersion; export TENA_HOME=$remoteTenaDir; export TENA_VERSION=$tenaVersion; export CARLA_HOME=$remoteCarlaDir; make -j $numBuildJobs package VERBOSE=1" ); then
+					echo
+					echo "[!!!] MAKE PACKAGE FAILED"
+					exit 1
+				fi
+
+				
+				echo
+				echo "#### Make Package Complete ####"
+			else
+			
+				echo
+				echo "#### Running Make Install ####"
+				
+				echo
+				echo "MAKE INSTALL COMMAND: "
+				if ! ( set -x ; docker run --entrypoint /bin/bash --rm -v $localAppDir:$remoteAppDir -v $localInstallDir:$remoteInstallDir $dockerContainer -c "set -e; cd $remoteAppDir/build/$buildVersion; export TENA_PLATFORM=$tenaBuildVersion; export TENA_HOME=$remoteTenaDir; export TENA_VERSION=$tenaVersion; export CARLA_HOME=$remoteCarlaDir; make install VERBOSE=1" ); then
+					echo
+					echo "[!!!] MAKE INSTALL FAILED"
+					exit 1
+				fi
+
+				echo
+				echo "Changing permissions for built applications"
+				sudo chown -R $username:$username $localInstallDir
+				sudo chmod -R a+rwx $localInstallDir
+				sudo -k
+
+				echo
+				echo "#### Make Install Complete ####"
+		fi
+fi
+
+echo
+echo
+echo "#### Build Script Complete ####"
+echo
