@@ -1,7 +1,7 @@
 services:
   dt-core:
     container_name: dt-core
-    image: harbor.distributedtesting.org/distributed-testing/dt-core:develop
+    image: harbor.distributedtesting.org/distributed-testing/dt-core:trb-2027
     profiles: ["core"]
     tty: true 
     network_mode: "host"
@@ -15,6 +15,7 @@ services:
       - VUG_SCENARIO_CONFIG_FILE=${VUG_SCENARIO_CONFIG_FILE}
       - VUG_VPN_LOCAL_ADDRESS=${VUG_VPN_LOCAL_ADDRESS}
       - VUG_VPN_EM_ADDRESS=${VUG_VPN_EM_ADDRESS}
+      - NVIDIA_DRIVER_CAPABILITIES=all
     volumes:
       - /tmp/.X11-unix:/tmp/.X11-unix:rw
       - ${VUG_LOCAL_DT_PATH}:/home/dt_user/distributed-testing
@@ -29,7 +30,7 @@ services:
   
   dt-carla:
     container_name: dt-carla
-    image: harbor.distributedtesting.org/distributed-testing/dt-carla:develop
+    image: harbor.distributedtesting.org/distributed-testing/dt-carla:trb-2027
     profiles: ["carla"]
     privileged: true
     network_mode: "host"
@@ -56,7 +57,7 @@ services:
               capabilities: [gpu]
 
   v2xhub:
-    image: harbor.distributedtesting.org/distributed-testing/dt-v2xhub:develop
+    image: harbor.distributedtesting.org/distributed-testing/dt-v2xhub:trb-2027
     container_name: v2xhub
     profiles: ["v2xhub"]
     network_mode: host
